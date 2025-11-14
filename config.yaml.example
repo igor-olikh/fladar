@@ -1,0 +1,61 @@
+# Flight Search Configuration
+
+# Origin cities (always the same)
+origins:
+  person1: "TLV"  # Tel Aviv
+  person2: "ALC"  # Alicante
+
+# Search parameters
+search:
+  # Date range for outbound flights (format: YYYY-MM-DD)
+  outbound_date: "2025-11-20"
+  
+  # Date range for return flights (format: YYYY-MM-DD)
+  return_date: "2025-11-25"
+  
+  # Maximum price per person for round trip (in EUR)
+  max_price: 600
+  
+  # Maximum number of stops (0 = direct flights only)
+  max_stops: 0
+  
+  # Arrival time tolerance in hours (how close arrivals should be)
+  arrival_tolerance_hours: 6
+  
+  # Maximum flight duration in hours (e.g., 5 = only destinations reachable within 5 hours)
+  # Set to 0 or empty to disable duration filtering
+  max_flight_duration_hours: 0  # 0 = no limit, or set to e.g., 5 for 5-hour max
+  
+  # Use dynamic destination discovery from Amadeus API instead of predefined list
+  # true = use Amadeus Flight Inspiration Search API to find destinations dynamically
+  # false = use predefined list of popular destinations
+  use_dynamic_destinations: true
+  
+  # Optional departure time constraints (format: HH:MM, leave empty to disable)
+  # These constraints apply to BOTH Person 1 and Person 2 flights
+  # 
+  # Minimum departure time for outbound flights (going to destination)
+  min_departure_time_outbound: "14:00"  # e.g., "08:00" - don't fly earlier than this time
+  
+  # Minimum departure time for return flights (coming back from destination)
+  min_departure_time_return: "14:00"  # e.g., "10:00" - don't fly earlier than this time
+
+# API Configuration
+api:
+  # Amadeus API credentials (get free API key at https://developers.amadeus.com/)
+  amadeus_api_key: "YOUR_API_KEY_HERE"
+  amadeus_api_secret: "YOUR_API_SECRET_HERE"
+  
+  # Environment: "test" or "production"
+  # - test: Uses test.api.amadeus.com (for testing with limited data)
+  # - production: Uses api.amadeus.com (for real-time data, requires production credentials)
+  environment: "test"  # Change to "production" when ready for live data
+
+# Output settings
+output:
+  # Output formats: "console", "csv", or both: "console,csv"
+  format: "console,csv"
+  
+  # CSV output file path
+  csv_file: "flight_results.csv"
+

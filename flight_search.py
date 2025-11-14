@@ -1,0 +1,556 @@
+"""
+Flight search module using Amadeus API
+"""
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional, Tuple
+from amadeus import Client, ResponseError
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class FlightSearch:
+    """Handles flight searches using Amadeus API"""
+    
+    def __init__(self, api_key: str, api_secret: str, environment: str = "test"):
+        """
+        Initialize Amadeus client
+        
+        Args:
+            api_key: Amadeus API key
+            api_secret: Amadeus API secret
+            environment: "test" or "production" - determines which API host to use
+        """
+        # Set hostname based on environment (SDK accepts "test" or "production")
+        if environment == "test":
+            hostname = "test"
+            logger.info(f"Using Amadeus TEST environment (test.api.amadeus.com)")
+        elif environment == "production":
+            hostname = "production"
+            logger.info(f"Using Amadeus PRODUCTION environment (api.amadeus.com)")
+        else:
+            logger.warning(f"Unknown environment '{environment}', defaulting to test")
+            hostname = "test"
+        
+        self.amadeus = Client(
+            client_id=api_key,
+            client_secret=api_secret,
+            hostname=hostname
+        )
+    
+    def search_flights(
+        self,
+        origin: str,
+        destination: str,
+        departure_date: str,
+        return_date: str,
+        max_stops: int = 0,
+        min_departure_time_outbound: Optional[str] = None,
+        min_departure_time_return: Optional[str] = None
+    ) -> List[Dict]:
+        """
+        Search for round-trip flights
+        
+        Args:
+            origin: IATA code of origin airport
+            destination: IATA code of destination airport
+            departure_date: Departure date (YYYY-MM-DD)
+            return_date: Return date (YYYY-MM-DD)
+            max_stops: Maximum number of stops
+            min_departure_time_outbound: Minimum departure time for outbound flights (HH:MM)
+            min_departure_time_return: Minimum departure time for return flights (HH:MM)
+        
+        Returns:
+            List of flight offers
+        """
+        logger.debug(f"Searching flights: {origin} → {destination} ({departure_date} to {return_date})")
+        
+        try:
+            # Search for flight offers
+            logger.debug(f"Calling Amadeus API for {origin} → {destination}")
+            response = self.amadeus.shopping.flight_offers_search.get(
+                originLocationCode=origin,
+                destinationLocationCode=destination,
+                departureDate=departure_date,
+                returnDate=return_date,
+                adults=1,
+                max=250  # Maximum results
+            )
+            
+            flights = response.data if response.data else []
+            logger.info(f"  → Amadeus API returned {len(flights)} flight(s) for {origin} → {destination}")
+            
+            initial_count = len(flights)
+            
+            # Filter by stops
+            if max_stops == 0:
+                flights_before = len(flights)
+                flights = [f for f in flights if self._is_direct_flight(f)]
+                if len(flights) < flights_before:
+                    logger.debug(f"  → Filtered to {len(flights)} direct flight(s) (removed {flights_before - len(flights)} with stops)")
+            else:
+                flights_before = len(flights)
+                flights = [f for f in flights if self._get_stops(f) <= max_stops]
+                if len(flights) < flights_before:
+                    logger.debug(f"  → Filtered to {len(flights)} flight(s) with ≤{max_stops} stop(s) (removed {flights_before - len(flights)})")
+            
+            # Filter by departure time constraints (separate for outbound and return)
+            if min_departure_time_outbound or min_departure_time_return:
+                flights_before = len(flights)
+                flights = self._filter_by_departure_times(flights, min_departure_time_outbound, min_departure_time_return)
+                if len(flights) < flights_before:
+                    outbound_str = f"outbound ≥ {min_departure_time_outbound}" if min_departure_time_outbound else "outbound: no limit"
+                    return_str = f"return ≥ {min_departure_time_return}" if min_departure_time_return else "return: no limit"
+                    logger.debug(f"  → Filtered to {len(flights)} flight(s) with {outbound_str}, {return_str} (removed {flights_before - len(flights)})")
+            
+            logger.info(f"  → Final result: {len(flights)} flight(s) after filtering for {origin} → {destination}")
+            return flights
+            
+        except ResponseError as error:
+            # Extract detailed error information
+            error_code = error.response.status_code if hasattr(error, 'response') else 'Unknown'
+            error_description = error.description() if hasattr(error, 'description') and callable(error.description) else (error.description if hasattr(error, 'description') else str(error))
+            error_body = error.response.body if hasattr(error, 'response') and hasattr(error.response, 'body') else None
+            
+            logger.error(f"  ❌ Amadeus API returned an error for {origin} → {destination}")
+            logger.error(f"     Status Code: {error_code}")
+            logger.error(f"     Error: {error_description}")
+            if error_body:
+                # Try to parse error details if it's JSON
+                import json
+                try:
+                    if isinstance(error_body, str):
+                        error_data = json.loads(error_body)
+                    else:
+                        error_data = error_body
+                    if 'errors' in error_data and len(error_data['errors']) > 0:
+                        first_error = error_data['errors'][0]
+                        logger.error(f"     Error Code: {first_error.get('code', 'N/A')}")
+                        logger.error(f"     Title: {first_error.get('title', 'N/A')}")
+                        logger.error(f"     Detail: {first_error.get('detail', 'N/A')}")
+                except:
+                    logger.error(f"     Details: {error_body}")
+            logger.error(f"     This is an error response from the Amadeus API service (not a connection issue)")
+            return []
+        except Exception as e:
+            logger.error(f"  ❌ Unexpected error while searching flights {origin} → {destination}: {e}")
+            logger.error(f"     This is a local error (not from Amadeus API)")
+            return []
+    
+    def _is_direct_flight(self, flight_offer: Dict) -> bool:
+        """Check if flight is direct (no stops)"""
+        for itinerary in flight_offer.get('itineraries', []):
+            for segment in itinerary.get('segments', []):
+                if segment.get('numberOfStops', 0) > 0:
+                    return False
+        return True
+    
+    def _get_stops(self, flight_offer: Dict) -> int:
+        """Get maximum number of stops in the flight"""
+        max_stops = 0
+        for itinerary in flight_offer.get('itineraries', []):
+            for segment in itinerary.get('segments', []):
+                max_stops = max(max_stops, segment.get('numberOfStops', 0))
+        return max_stops
+    
+    def _filter_by_departure_times(
+        self, 
+        flights: List[Dict], 
+        min_time_outbound: Optional[str] = None,
+        min_time_return: Optional[str] = None
+    ) -> List[Dict]:
+        """
+        Filter flights by minimum departure times (separate for outbound and return)
+        
+        Args:
+            flights: List of flight offers
+            min_time_outbound: Minimum departure time for outbound flights (HH:MM) or None
+            min_time_return: Minimum departure time for return flights (HH:MM) or None
+        """
+        filtered = []
+        
+        for flight in flights:
+            valid = True
+            
+            # Check outbound departure time
+            if min_time_outbound:
+                outbound = flight.get('itineraries', [{}])[0]
+                if outbound.get('segments'):
+                    first_segment = outbound['segments'][0]
+                    dep_time = first_segment.get('departure', {}).get('at', '')
+                    
+                    if dep_time:
+                        min_hour, min_minute = map(int, min_time_outbound.split(':'))
+                        dep_datetime = datetime.fromisoformat(dep_time.replace('Z', '+00:00'))
+                        if not (dep_datetime.hour > min_hour or (dep_datetime.hour == min_hour and dep_datetime.minute >= min_minute)):
+                            valid = False
+                            logger.debug(f"      Outbound departure {dep_time} is before {min_time_outbound}")
+            
+            # Check return departure time (if return flight exists and constraint is set)
+            if valid and min_time_return and len(flight.get('itineraries', [])) > 1:
+                return_trip = flight.get('itineraries', [{}])[1]
+                if return_trip.get('segments'):
+                    first_segment = return_trip['segments'][0]
+                    dep_time = first_segment.get('departure', {}).get('at', '')
+                    
+                    if dep_time:
+                        min_hour, min_minute = map(int, min_time_return.split(':'))
+                        dep_datetime = datetime.fromisoformat(dep_time.replace('Z', '+00:00'))
+                        if not (dep_datetime.hour > min_hour or (dep_datetime.hour == min_hour and dep_datetime.minute >= min_minute)):
+                            valid = False
+                            logger.debug(f"      Return departure {dep_time} is before {min_time_return}")
+            
+            if valid:
+                filtered.append(flight)
+        
+        return filtered
+    
+    def _filter_by_arrival_time(self, flights: List[Dict], min_time: str) -> List[Dict]:
+        """
+        Filter flights by minimum arrival time
+        Applies to BOTH outbound AND return arrival times
+        """
+        min_hour, min_minute = map(int, min_time.split(':'))
+        filtered = []
+        
+        for flight in flights:
+            valid = True
+            
+            # Check outbound arrival time
+            outbound = flight.get('itineraries', [{}])[0]
+            if outbound.get('segments'):
+                last_segment = outbound['segments'][-1]
+                arr_time = last_segment.get('arrival', {}).get('at', '')
+                
+                if arr_time:
+                    arr_datetime = datetime.fromisoformat(arr_time.replace('Z', '+00:00'))
+                    if not (arr_datetime.hour > min_hour or (arr_datetime.hour == min_hour and arr_datetime.minute >= min_minute)):
+                        valid = False
+                        logger.debug(f"      Outbound arrival {arr_time} is before {min_time}")
+            
+            # Check return arrival time (if return flight exists)
+            if valid and len(flight.get('itineraries', [])) > 1:
+                return_trip = flight.get('itineraries', [{}])[1]
+                if return_trip.get('segments'):
+                    last_segment = return_trip['segments'][-1]
+                    arr_time = last_segment.get('arrival', {}).get('at', '')
+                    
+                    if arr_time:
+                        arr_datetime = datetime.fromisoformat(arr_time.replace('Z', '+00:00'))
+                        if not (arr_datetime.hour > min_hour or (arr_datetime.hour == min_hour and arr_datetime.minute >= min_minute)):
+                            valid = False
+                            logger.debug(f"      Return arrival {arr_time} is before {min_time}")
+            
+            if valid:
+                filtered.append(flight)
+        
+        return filtered
+    
+    def get_destination_suggestions(
+        self, 
+        origin: str, 
+        departure_date: str,
+        use_dynamic: bool = True,
+        max_duration_hours: float = 0
+    ) -> List[str]:
+        """
+        Get destination suggestions from an origin
+        
+        Args:
+            origin: IATA code of origin airport
+            departure_date: Departure date (YYYY-MM-DD)
+            use_dynamic: If True, use Amadeus Flight Inspiration Search API
+            max_duration_hours: Maximum flight duration in hours (0 = no limit)
+        
+        Returns:
+            List of destination IATA codes
+        """
+        logger.info("📋 Determining which destinations to search...")
+        
+        if use_dynamic:
+            logger.info("   Using Amadeus Flight Inspiration Search API to discover destinations dynamically")
+            return self._get_destinations_from_inspiration_search(origin, departure_date, max_duration_hours)
+        else:
+            logger.info("   Using predefined list of popular European destinations")
+            return self._get_predefined_destinations()
+    
+    def _get_destinations_from_inspiration_search(
+        self, 
+        origin: str, 
+        departure_date: str,
+        max_duration_hours: float = 0
+    ) -> List[str]:
+        """
+        Get destinations dynamically using Amadeus Flight Inspiration Search API
+        """
+        destinations = []
+        
+        try:
+            logger.info(f"   Searching for destinations from {origin} using Flight Inspiration Search API...")
+            
+            # Use Flight Destinations API (Flight Inspiration Search)
+            # Note: This API doesn't require departureDate, it finds cheapest destinations
+            response = self.amadeus.shopping.flight_destinations.get(
+                origin=origin
+            )
+            
+            if response.data:
+                logger.info(f"   ✓ Found {len(response.data)} destination(s) from Amadeus API")
+                
+                for destination_info in response.data:
+                    destination_code = destination_info.get('destination')
+                    if destination_code:
+                        # If max_duration is set, we need to check flight duration
+                        # For now, we'll get all destinations and filter later during flight search
+                        destinations.append(destination_code)
+                
+                logger.info(f"   ✓ Extracted {len(destinations)} destination IATA code(s)")
+                logger.info(f"   Sample destinations: {', '.join(destinations[:10])}...")
+            else:
+                logger.warning(f"   No destinations found from Flight Inspiration Search API")
+                logger.info(f"   Falling back to predefined list")
+                return self._get_predefined_destinations()
+                
+        except ResponseError as error:
+            # Extract error details
+            error_code = error.response.status_code if hasattr(error, 'response') else 'Unknown'
+            error_body = error.response.body if hasattr(error, 'response') and hasattr(error.response, 'body') else None
+            
+            logger.warning(f"   Flight Inspiration Search API error: Status {error_code}")
+            if error_body:
+                import json
+                try:
+                    if isinstance(error_body, str):
+                        error_data = json.loads(error_body)
+                    else:
+                        error_data = error_body
+                    if 'errors' in error_data and len(error_data['errors']) > 0:
+                        first_error = error_data['errors'][0]
+                        logger.warning(f"   Error: {first_error.get('title', 'N/A')} - {first_error.get('detail', 'N/A')}")
+                except:
+                    pass
+            
+            logger.info(f"   Falling back to predefined list")
+            return self._get_predefined_destinations()
+        except Exception as e:
+            logger.warning(f"   Error using Flight Inspiration Search API: {e}")
+            logger.info(f"   Falling back to predefined list")
+            return self._get_predefined_destinations()
+        
+        if not destinations:
+            logger.warning(f"   No destinations found, falling back to predefined list")
+            return self._get_predefined_destinations()
+        
+        logger.info(f"   Total destinations discovered: {len(destinations)}")
+        logger.info(f"   Destination selection: Dynamically discovered from Amadeus API")
+        
+        return destinations
+    
+    def _get_predefined_destinations(self) -> List[str]:
+        """
+        Get predefined list of popular destinations (fallback)
+        """
+        # Popular European destinations (IATA codes) - prioritized by likelihood
+        # of having flights from both TLV and ALC
+        popular_destinations = [
+            # Major hubs (most likely to have flights)
+            "LON", "PAR", "MAD", "BCN", "AMS", "BER", "ROM", "FCO",
+            # Secondary popular destinations
+            "VIE", "PRG", "ATH", "LIS", "DUB", "CPH", "STO", "OSL",
+            # Mediterranean and nearby
+            "MIL", "VEN", "NAP", "PMO", "AGP", "SEV", "ZUR", "BRU",
+            # Eastern Europe
+            "WAR", "BUD", "ZAG", "SPL", "DBV",
+            # Northern Europe
+            "HEL", "REK", "OPO"
+        ]
+        
+        logger.info(f"   Using {len(popular_destinations)} predefined destinations")
+        return popular_destinations
+    
+    def get_common_destinations(
+        self,
+        origin1: str,
+        origin2: str,
+        departure_date: str,
+        use_dynamic: bool = True,
+        max_duration_hours: float = 0
+    ) -> List[str]:
+        """
+        Get destinations that are reachable from both origins
+        
+        Args:
+            origin1: IATA code for first origin
+            origin2: IATA code for second origin
+            departure_date: Departure date (YYYY-MM-DD)
+            use_dynamic: If True, use dynamic discovery
+            max_duration_hours: Maximum flight duration in hours
+        
+        Returns:
+            List of common destination IATA codes
+        """
+        logger.info("🔍 Finding common destinations from both origins...")
+        
+        # Get destinations from origin1
+        dest1 = set(self.get_destination_suggestions(origin1, departure_date, use_dynamic, max_duration_hours))
+        logger.info(f"   Destinations from {origin1}: {len(dest1)}")
+        
+        # Get destinations from origin2
+        dest2 = set(self.get_destination_suggestions(origin2, departure_date, use_dynamic, max_duration_hours))
+        logger.info(f"   Destinations from {origin2}: {len(dest2)}")
+        
+        # Find common destinations
+        common = sorted(list(dest1.intersection(dest2)))
+        logger.info(f"   Common destinations: {len(common)}")
+        
+        if common:
+            logger.info(f"   Common destinations: {', '.join(common[:20])}{'...' if len(common) > 20 else ''}")
+        else:
+            logger.warning(f"   No common destinations found! Using union of both lists...")
+            common = sorted(list(dest1.union(dest2)))
+            logger.info(f"   Using all destinations from both origins: {len(common)}")
+        
+        return common
+    
+    def find_matching_flights(
+        self,
+        origin1: str,
+        origin2: str,
+        destination: str,
+        departure_date: str,
+        return_date: str,
+        max_price: float,
+        max_stops: int = 0,
+        arrival_tolerance_hours: int = 3,
+        min_departure_time_outbound: Optional[str] = None,
+        min_departure_time_return: Optional[str] = None
+    ) -> List[Dict]:
+        """
+        Find flights from two origins to the same destination where arrivals are within tolerance
+        
+        Returns:
+            List of matching flight pairs with details
+        """
+        logger.info(f"🔍 Searching for matching flights to {destination}...")
+        logger.info(f"   Person 1: {origin1} → {destination}")
+        logger.info(f"   Person 2: {origin2} → {destination}")
+        
+        # Search flights for person 1
+        logger.debug(f"   Searching flights for Person 1 ({origin1} → {destination})...")
+        flights1 = self.search_flights(
+            origin1, destination, departure_date, return_date,
+            max_stops, min_departure_time_outbound, min_departure_time_return
+        )
+        
+        # Search flights for person 2
+        logger.debug(f"   Searching flights for Person 2 ({origin2} → {destination})...")
+        flights2 = self.search_flights(
+            origin2, destination, departure_date, return_date,
+            max_stops, min_departure_time_outbound, min_departure_time_return
+        )
+        
+        logger.info(f"   Found {len(flights1)} flight(s) for Person 1, {len(flights2)} flight(s) for Person 2")
+        
+        matching_pairs = []
+        price_filtered_count = 0
+        time_filtered_count = 0
+        
+        logger.debug(f"   Comparing {len(flights1)} × {len(flights2)} = {len(flights1) * len(flights2)} possible flight combinations...")
+        
+        for f1 in flights1:
+            # Get price and currency
+            price_info1 = f1.get('price', {})
+            price1 = float(price_info1.get('total', 0))
+            currency1 = price_info1.get('currency', 'EUR')
+            
+            # Check price constraint for person 1 (must be <= max_price)
+            if price1 > max_price:
+                price_filtered_count += len(flights2)
+                logger.debug(f"      Person 1 flight price {price1} {currency1} exceeds max {max_price} EUR")
+                continue
+            
+            for f2 in flights2:
+                # Get price and currency
+                price_info2 = f2.get('price', {})
+                price2 = float(price_info2.get('total', 0))
+                currency2 = price_info2.get('currency', 'EUR')
+                
+                # Check price constraint for person 2 (must be <= max_price)
+                if price2 > max_price:
+                    price_filtered_count += 1
+                    logger.debug(f"      Person 2 flight price {price2} {currency2} exceeds max {max_price} EUR")
+                    continue
+                
+                total_price = price1 + price2
+                
+                # Check arrival time matching
+                if self._arrivals_match(f1, f2, arrival_tolerance_hours):
+                    matching_pairs.append({
+                        'destination': destination,
+                        'person1_flight': f1,
+                        'person2_flight': f2,
+                        'total_price': total_price,
+                        'person1_price': price1,
+                        'person2_price': price2
+                    })
+                else:
+                    time_filtered_count += 1
+        
+        if price_filtered_count > 0:
+            logger.debug(f"   Filtered out {price_filtered_count} combination(s) due to price constraints")
+        if time_filtered_count > 0:
+            logger.debug(f"   Filtered out {time_filtered_count} combination(s) due to arrival time mismatch")
+        
+        # Sort by total price
+        matching_pairs.sort(key=lambda x: x['total_price'])
+        
+        if matching_pairs:
+            logger.info(f"   ✓ Found {len(matching_pairs)} matching flight pair(s) for {destination}")
+        else:
+            logger.info(f"   ✗ No matching flight pairs found for {destination}")
+        
+        return matching_pairs
+    
+    def _arrivals_match(self, flight1: Dict, flight2: Dict, tolerance_hours: int) -> bool:
+        """Check if two flights arrive within the tolerance window"""
+        try:
+            # Get outbound arrival times
+            arr1 = self._get_outbound_arrival_time(flight1)
+            arr2 = self._get_outbound_arrival_time(flight2)
+            
+            if not arr1 or not arr2:
+                logger.debug(f"      Cannot compare arrivals: missing arrival time data")
+                return False
+            
+            # Parse times
+            time1 = datetime.fromisoformat(arr1.replace('Z', '+00:00'))
+            time2 = datetime.fromisoformat(arr2.replace('Z', '+00:00'))
+            
+            # Check if within tolerance
+            time_diff = abs((time1 - time2).total_seconds() / 3600)
+            matches = time_diff <= tolerance_hours
+            
+            if matches:
+                logger.debug(f"      ✓ Arrivals match: {time_diff:.1f}h difference (within ±{tolerance_hours}h tolerance)")
+            else:
+                logger.debug(f"      ✗ Arrivals don't match: {time_diff:.1f}h difference (exceeds ±{tolerance_hours}h tolerance)")
+            
+            return matches
+            
+        except Exception as e:
+            logger.debug(f"      Error checking arrival match: {e}")
+            return False
+    
+    def _get_outbound_arrival_time(self, flight: Dict) -> Optional[str]:
+        """Get outbound arrival time from flight offer"""
+        try:
+            outbound = flight.get('itineraries', [{}])[0]
+            segments = outbound.get('segments', [])
+            if segments:
+                last_segment = segments[-1]
+                return last_segment.get('arrival', {}).get('at')
+        except Exception:
+            pass
+        return None
+
