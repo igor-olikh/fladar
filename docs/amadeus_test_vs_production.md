@@ -121,11 +121,16 @@ api:
 
 ⚠️ **Data Accuracy**: Always verify that your application works correctly in the production environment before deploying to users, as test data may behave differently.
 
-## References
+## Official Documentation
 
-- [Amadeus for Developers](https://developers.amadeus.com/)
-- [Amadeus API Documentation](https://developers.amadeus.com/self-service)
-- [Amadeus Test Data Guide](https://developers.amadeus.com/self-service/apis-docs/guides/developer-guides/test-data)
+For the most up-to-date and official information, please refer to:
+
+- [Amadeus for Developers - Main Portal](https://developers.amadeus.com/)
+- [Amadeus Self-Service API Documentation](https://developers.amadeus.com/self-service)
+- [Amadeus API Reference](https://developers.amadeus.com/self-service/apis-docs)
+- [Amadeus Getting Started Guide](https://developers.amadeus.com/get-started)
+
+**Note**: The information in this document is based on standard API practices and observations from using the Amadeus API. For the most current and accurate information about test vs production environments, please consult the official Amadeus documentation linked above.
 
 ## Summary
 
