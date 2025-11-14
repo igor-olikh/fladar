@@ -27,6 +27,40 @@ Amadeus provides two API environments for developers: **Test** and **Production*
 - **Booking Ready**: Data is suitable for actual flight booking applications
 - **Up-to-Date**: Continuously updated with the latest flight information
 
+### 1.1. Pricing Data Differences
+
+#### Test Environment Pricing
+- **Not Real Prices**: Prices in the test environment are **NOT real or accurate**
+- **Sample/Test Values**: Prices are sample values used for testing API functionality
+- **May Be Outdated**: Prices may reflect historical values from when test data was created
+- **No Booking Validity**: Prices cannot be used for actual booking - they are for testing only
+- **Inconsistent Pricing**: Prices may not follow real-world pricing patterns or market dynamics
+- **Fixed Values**: Some routes may always return the same price regardless of date or availability
+- **Currency Accuracy**: Currency values may not reflect actual exchange rates
+
+**⚠️ Critical Warning**: Never use test environment prices for:
+- Making booking decisions
+- Price comparisons
+- Budget planning
+- Showing prices to end users
+- Any production use case
+
+#### Production Environment Pricing
+- **Real-Time Market Prices**: Prices reflect actual current market rates
+- **Accurate and Current**: Prices are updated in real-time based on availability and demand
+- **Booking Valid**: Prices shown are the actual prices you would pay when booking
+- **Dynamic Pricing**: Prices follow real-world pricing patterns (higher for popular dates, lower for off-peak)
+- **Currency Accuracy**: Exchange rates are current and accurate
+- **Availability-Based**: Prices change based on seat availability and booking class
+- **Supplier Rates**: Prices come directly from airlines and reflect their current pricing
+
+**✅ Production prices are:**
+- Suitable for actual bookings
+- Accurate for customer-facing applications
+- Reliable for price comparisons
+- Valid for budget planning
+- Current and up-to-date
+
 ### 2. API Rate Limits
 
 #### Test Environment
@@ -76,6 +110,9 @@ The test environment has several limitations that developers should be aware of:
 3. **Missing Destinations**: Some destinations may not be available in test data
 4. **Date Restrictions**: Test data may only be available for specific date ranges
 5. **Incomplete Results**: Some API endpoints may return 404 errors for certain queries
+6. **Unrealistic Prices**: Prices may be artificially low or high, not reflecting real market conditions
+7. **No Price Variation**: Prices may not change based on booking date, seasonality, or demand
+8. **Missing Price Components**: Some price breakdowns (taxes, fees) may be incomplete or incorrect
 
 ### 5. Error Handling Differences
 
@@ -139,8 +176,31 @@ For the most up-to-date and official information, please refer to:
 | **Data Type** | Cached/Historical | Real-time |
 | **Data Accuracy** | May be outdated | Current and accurate |
 | **Route Coverage** | Limited | Complete |
+| **Price Accuracy** | ❌ Not real - sample/test values only | ✅ Real market prices |
+| **Price Validity** | ❌ Cannot use for booking | ✅ Valid for actual bookings |
+| **Price Updates** | ❌ Static/fixed | ✅ Dynamic, real-time |
 | **Use Case** | Development/Testing | Production |
 | **Rate Limits** | 2,000 calls/month | 2,000+ calls/month |
 | **Booking Ready** | ❌ No | ✅ Yes |
 | **Free Tier** | ✅ Yes | ✅ Yes |
+
+## Price Comparison Example
+
+### Test Environment
+```
+Route: TLV → PAR
+Date: 2025-11-20
+Price: 284.99 EUR
+Status: ⚠️ Sample/test price - NOT valid for booking
+```
+
+### Production Environment
+```
+Route: TLV → PAR
+Date: 2025-11-20
+Price: 450.00 EUR (example - actual price varies)
+Status: ✅ Real market price - valid for booking
+```
+
+**Important**: The same route and date may show completely different prices between test and production environments. Always use production environment for any price-related decisions.
 
