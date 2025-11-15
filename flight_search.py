@@ -982,7 +982,8 @@ class FlightSearch:
         arrival_tolerance_hours: int = 3,
         min_departure_time_outbound: Optional[str] = None,
         min_departure_time_return: Optional[str] = None,
-        nearby_airports_radius_km: int = 0
+        nearby_airports_radius_km: int = 0,
+        max_duration_hours: float = 0
     ) -> List[Dict]:
         """
         Find matching flights for a destination - this is the source of truth for route availability
