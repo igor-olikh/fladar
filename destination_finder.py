@@ -59,7 +59,8 @@ class DestinationFinder:
             destinations = self.flight_search.get_common_destinations(
                 origin1, origin2, departure_date, 
                 use_dynamic=True, 
-                max_duration_hours=max_flight_duration_hours
+                max_duration_hours=max_flight_duration_hours,
+                non_stop=(max_stops == 0)
             )
         else:
             # Use predefined list (more reliable, especially in test environment)
@@ -69,7 +70,8 @@ class DestinationFinder:
             destinations = self.flight_search.get_destination_suggestions(
                 origin1, departure_date, 
                 use_dynamic=False, 
-                max_duration_hours=max_flight_duration_hours
+                max_duration_hours=max_flight_duration_hours,
+                non_stop=(max_stops == 0)
             )
         
         # Limit destinations to check

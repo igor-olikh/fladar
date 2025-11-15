@@ -477,7 +477,8 @@ class FlightSearch:
         origin: str, 
         departure_date: str,
         use_dynamic: bool = True,
-        max_duration_hours: float = 0
+        max_duration_hours: float = 0,
+        non_stop: bool = False
     ) -> List[str]:
         """
         Get destination suggestions from an origin
@@ -509,7 +510,7 @@ class FlightSearch:
         
         if use_dynamic:
             logger.info("   Using Amadeus Flight Inspiration Search API to discover destinations dynamically")
-            return self._get_destinations_from_inspiration_search(origin, departure_date, max_duration_hours)
+            return self._get_destinations_from_inspiration_search(origin, departure_date, max_duration_hours, non_stop)
         else:
             logger.info("   Using predefined list of popular European destinations")
             return self._get_predefined_destinations()
@@ -588,7 +589,8 @@ class FlightSearch:
         self, 
         origin: str, 
         departure_date: str,
-        max_duration_hours: float = 0
+        max_duration_hours: float = 0,
+        non_stop: bool = False
     ) -> List[str]:
         """
         Get destinations dynamically using Amadeus Flight Inspiration Search API
@@ -672,6 +674,12 @@ class FlightSearch:
             
             # Set oneWay to false for round-trip flights
             api_params['oneWay'] = False
+            
+            # If non_stop is True, only get destinations with direct flights
+            # This is useful when max_stops=0 (user wants direct flights only)
+            if non_stop:
+                api_params['nonStop'] = True
+                logger.debug(f"   [DEBUG] nonStop=True: Only searching for destinations with direct flights")
             
             logger.debug(f"   [DEBUG] API Parameters: {api_params}")
             logger.debug(f"   [DEBUG] Making authenticated API call...")
@@ -899,7 +907,7 @@ class FlightSearch:
         # Try to get destinations from origin1
         dest1 = []
         try:
-            dest1 = self.get_destination_suggestions(origin1, departure_date, use_dynamic, max_duration_hours)
+            dest1 = self.get_destination_suggestions(origin1, departure_date, use_dynamic, max_duration_hours, non_stop)
             logger.info(f"   Destinations from {origin1}: {len(dest1)}")
             if len(dest1) == 0:
                 logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {origin1}")
@@ -922,7 +930,7 @@ class FlightSearch:
         # Try to get destinations from origin2
         dest2 = []
         try:
-            dest2 = self.get_destination_suggestions(origin2, departure_date, use_dynamic, max_duration_hours)
+            dest2 = self.get_destination_suggestions(origin2, departure_date, use_dynamic, max_duration_hours, non_stop)
             logger.info(f"   Destinations from {origin2}: {len(dest2)}")
             if len(dest2) == 0:
                 logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {origin2}")
