@@ -26,6 +26,8 @@ The application helps two people find a meeting destination by:
 
 ## 🚀 Quick Start
 
+> **⚠️ Security First:** Before you start, please read the **[Security Checklist](docs/SECURITY_CHECKLIST.md)** to understand how to protect your API credentials and avoid committing sensitive information to the repository.
+
 ### 1. Prerequisites
 
 - Python 3.11+
@@ -70,6 +72,8 @@ poetry env info
 4. Free tier includes 2,000 API calls per month
 
 ### 5. Configure the Application
+
+> **🔒 Important:** Make sure you've read the [Security Checklist](docs/SECURITY_CHECKLIST.md) before adding your API credentials!
 
 Copy the example config file and edit it:
 
