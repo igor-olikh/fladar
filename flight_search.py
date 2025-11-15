@@ -24,11 +24,10 @@ def _load_airport_names():
     # Try to load from data/airport_names.json
     # Get the directory where this file is located
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Go up one level to project root, then into data folder
-    project_root = os.path.dirname(current_dir)
-    airport_names_file = os.path.join(project_root, 'data', 'airport_names.json')
+    # Data folder is in the same directory as this file
+    airport_names_file = os.path.join(current_dir, 'data', 'airport_names.json')
     
-    # Also try relative to current directory (if running from project root)
+    # If not found, try relative to project root (if running from project root)
     if not os.path.exists(airport_names_file):
         airport_names_file = os.path.join(current_dir, '..', 'data', 'airport_names.json')
         airport_names_file = os.path.normpath(airport_names_file)
