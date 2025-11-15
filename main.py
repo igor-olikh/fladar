@@ -126,10 +126,48 @@ def main():
     # Initialize destination finder
     destination_finder = DestinationFinder(flight_search)
     
+    # Airport code to city name mapping for display
+    airport_names = {
+        'TLV': 'Tel Aviv',
+        'ALC': 'Alicante',
+        'BCN': 'Barcelona',
+        'LON': 'London',
+        'PAR': 'Paris',
+        'MAD': 'Madrid',
+        'ROM': 'Rome',
+        'AMS': 'Amsterdam',
+        'BER': 'Berlin',
+        'VIE': 'Vienna',
+        'PRG': 'Prague',
+        'ATH': 'Athens',
+        'LIS': 'Lisbon',
+        'DUB': 'Dublin',
+        'CPH': 'Copenhagen',
+        'STO': 'Stockholm',
+        'OSL': 'Oslo',
+        'MUC': 'Munich',
+        'FCO': 'Rome',
+        'BCN': 'Barcelona',
+        'AGP': 'Malaga',
+        'SEV': 'Seville',
+        'ZUR': 'Zurich',
+        'BRU': 'Brussels',
+        'WAR': 'Warsaw',
+        'BUD': 'Budapest',
+        'ZAG': 'Zagreb',
+        'HEL': 'Helsinki',
+        'REK': 'Reykjavik',
+        'OPO': 'Porto',
+    }
+    
+    # Get city names for display
+    origin1_name = airport_names.get(origin1.upper(), origin1)
+    origin2_name = airport_names.get(origin2.upper(), origin2)
+    
     # Display search parameters
     print(f"\n🔍 Search Parameters:")
-    print(f"   Person 1 Origin: {origin1} (Tel Aviv)")
-    print(f"   Person 2 Origin: {origin2} (Alicante)")
+    print(f"   Person 1 Origin: {origin1} ({origin1_name})")
+    print(f"   Person 2 Origin: {origin2} ({origin2_name})")
     print(f"   Outbound Date: {departure_date}")
     print(f"   Return Date: {return_date}")
     print(f"   Max Price (per person): {max_price} EUR")

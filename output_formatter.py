@@ -201,7 +201,8 @@ class OutputFormatter:
             print("-" * 100)
             
             # Person 1 details
-            print(f"\n👤 Person 1 (Tel Aviv → {dest}):")
+            p1_origin_code = p1_info.get('origin', 'TLV')
+            print(f"\n👤 Person 1 ({p1_origin_code} → {dest}):")
             print(f"   Outbound: {p1_info.get('outbound_departure', 'N/A')} → {p1_info.get('outbound_arrival', 'N/A')} "
                   f"({p1_info.get('outbound_duration', 'N/A')}, {p1_info.get('outbound_stops', 0)} stops)")
             print(f"   Return:   {p1_info.get('return_departure', 'N/A')} → {p1_info.get('return_arrival', 'N/A')} "
@@ -210,7 +211,8 @@ class OutputFormatter:
             print(f"   Price: {p1_price:.2f} {p1_info.get('currency', 'EUR')}")
             
             # Person 2 details
-            print(f"\n👤 Person 2 (Alicante → {dest}):")
+            p2_origin_code = p2_info.get('origin', 'ALC')
+            print(f"\n👤 Person 2 ({p2_origin_code} → {dest}):")
             print(f"   Outbound: {p2_info.get('outbound_departure', 'N/A')} → {p2_info.get('outbound_arrival', 'N/A')} "
                   f"({p2_info.get('outbound_duration', 'N/A')}, {p2_info.get('outbound_stops', 0)} stops)")
             print(f"   Return:   {p2_info.get('return_departure', 'N/A')} → {p2_info.get('return_arrival', 'N/A')} "
