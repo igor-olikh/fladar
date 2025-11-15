@@ -26,6 +26,60 @@ class OutputFormatter:
     """Formats and outputs flight search results"""
     
     @staticmethod
+    def create_flight_description(match: Dict, p1_info: Dict, p2_info: Dict) -> str:
+        """
+        Create a human-readable description of the flight option
+        
+        Args:
+            match: Match dictionary with total_price, person1_price, person2_price, destination
+            p1_info: Person 1 flight info dictionary
+            p2_info: Person 2 flight info dictionary
+        
+        Returns:
+            Human-readable description sentence
+        """
+        dest = match.get('destination', 'destination')
+        total_price = match.get('total_price', 0)
+        p1_price = match.get('person1_price', 0)
+        p2_price = match.get('person2_price', 0)
+        currency = p1_info.get('currency', 'EUR')
+        
+        p1_origin = p1_info.get('origin', '')
+        p2_origin = p2_info.get('origin', '')
+        
+        # Format durations
+        p1_outbound_duration = OutputFormatter.format_duration_human(p1_info.get('outbound_duration', ''))
+        p1_return_duration = OutputFormatter.format_duration_human(p1_info.get('return_duration', ''))
+        p2_outbound_duration = OutputFormatter.format_duration_human(p2_info.get('outbound_duration', ''))
+        p2_return_duration = OutputFormatter.format_duration_human(p2_info.get('return_duration', ''))
+        
+        # Get stops info
+        p1_outbound_stops = p1_info.get('outbound_stops', 0)
+        p1_return_stops = p1_info.get('return_stops', 0)
+        p2_outbound_stops = p2_info.get('outbound_stops', 0)
+        p2_return_stops = p2_info.get('return_stops', 0)
+        
+        # Build description
+        description = f"Both people meet in {dest}. "
+        description += f"Person 1 ({p1_origin}): {p1_outbound_duration} outbound"
+        if p1_outbound_stops > 0:
+            description += f" ({p1_outbound_stops} stop{'s' if p1_outbound_stops > 1 else ''})"
+        description += f", {p1_return_duration} return"
+        if p1_return_stops > 0:
+            description += f" ({p1_return_stops} stop{'s' if p1_return_stops > 1 else ''})"
+        description += f" - {p1_price:.2f} {currency}. "
+        description += f"Person 2 ({p2_origin}): {p2_outbound_duration} outbound"
+        if p2_outbound_stops > 0:
+            description += f" ({p2_outbound_stops} stop{'s' if p2_outbound_stops > 1 else ''})"
+        description += f", {p2_return_duration} return"
+        if p2_return_stops > 0:
+            description += f" ({p2_return_stops} stop{'s' if p2_return_stops > 1 else ''})"
+        description += f" - {p2_price:.2f} {currency}. "
+        description += f"Total: {total_price:.2f} {currency}."
+        
+        return description
+    
+    @staticmethod
     def format_duration_human(duration_str: str) -> str:
         """
         Convert ISO 8601 duration string (e.g., 'PT5H30M') to human-readable format (e.g., '5h 30m')
@@ -429,9 +483,20 @@ class OutputFormatter:
                     p2_return_arr_utc = p2_info.get('return_arrival', '')
                     p2_return_arr_local = OutputFormatter.convert_to_local_time(p2_return_arr_utc, p2_origin)
                     
+                    # Format durations to human-readable format
+                    p1_outbound_duration_human = OutputFormatter.format_duration_human(p1_info.get('outbound_duration', ''))
+                    p1_return_duration_human = OutputFormatter.format_duration_human(p1_info.get('return_duration', ''))
+                    p2_outbound_duration_human = OutputFormatter.format_duration_human(p2_info.get('outbound_duration', ''))
+                    p2_return_duration_human = OutputFormatter.format_duration_human(p2_info.get('return_duration', ''))
+                    
+                    # Create human-readable description
+                    description = OutputFormatter.create_flight_description(match, p1_info, p2_info)
+                    
                     row = {
                         # First column: Clear route description
                         'route': main_route,
+                        # Second column: Human-readable description
+                        'description': description,
                         'destination': dest,
                         'total_price_eur': f"{match['total_price']:.2f}",
                         'price_person1_eur': f"{match['person1_price']:.2f}",
