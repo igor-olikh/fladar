@@ -119,7 +119,7 @@ def resolve_airport_code(code: str) -> str:
 class FlightSearch:
     """Handles flight searches using Amadeus API"""
     
-    def __init__(self, api_key: str, api_secret: str, environment: str = "test", cache_expiration_days: int = 30):
+    def __init__(self, api_key: str, api_secret: str, environment: str = "test", cache_expiration_days: int = 30, use_flight_cache: bool = True):
         """
         Initialize Amadeus client
         
@@ -127,6 +127,8 @@ class FlightSearch:
             api_key: Amadeus API key
             api_secret: Amadeus API secret
             environment: "test" or "production" - determines which API host to use
+            cache_expiration_days: Number of days before cached destination data expires
+            use_flight_cache: Whether to cache flight search results (default: True)
         """
         # Set hostname based on environment (SDK accepts "test" or "production")
         # Handle "live" as an alias for "production"
@@ -153,6 +155,7 @@ class FlightSearch:
         self.environment = environment
         self.hostname = hostname
         self.cache_expiration_days = cache_expiration_days
+        self.use_flight_cache = use_flight_cache
         
         # Verify credentials are set
         if not api_key or not api_secret:
@@ -371,6 +374,21 @@ class FlightSearch:
         origin = origin_resolved
         destination = destination_resolved
         
+        # Check cache first (before any API calls)
+        cached_flights = self._get_cached_flights(
+            origin=origin,
+            destination=destination,
+            departure_date=departure_date,
+            return_date=return_date,
+            max_stops=max_stops,
+            nearby_airports_radius_km=nearby_airports_radius_km,
+            max_duration_hours=max_duration_hours
+        )
+        
+        if cached_flights is not None:
+            # Return cached results (they're already filtered)
+            return cached_flights
+        
         # Get nearby airports if radius is specified
         origins_to_search = [origin.upper()]
         if nearby_airports_radius_km > 0:
@@ -448,6 +466,19 @@ class FlightSearch:
                     logger.info(f"  → Filtered to {len(flights)} flight(s) with duration ≤ {max_duration_hours}h (removed {flights_before - len(flights)} flights exceeding duration limit)")
             
             logger.info(f"  → Final result: {len(flights)} flight(s) after filtering for {format_airport_code(origin)} → {format_airport_code(destination)}")
+            
+            # Save to cache after successful search and filtering
+            self._save_cached_flights(
+                origin=origin,
+                destination=destination,
+                departure_date=departure_date,
+                return_date=return_date,
+                max_stops=max_stops,
+                nearby_airports_radius_km=nearby_airports_radius_km,
+                max_duration_hours=max_duration_hours,
+                flights=flights
+            )
+            
             return flights
             
         except ResponseError as error:
@@ -702,6 +733,138 @@ class FlightSearch:
             logger.debug(f"   Cached {len(destinations)} destinations for {format_airport_code(origin)} to {cache_file}")
         except Exception as e:
             logger.debug(f"   Error saving cache for {format_airport_code(origin)}: {e}")
+    
+    def _get_cached_flights(
+        self,
+        origin: str,
+        destination: str,
+        departure_date: str,
+        return_date: str,
+        max_stops: int,
+        nearby_airports_radius_km: int,
+        max_duration_hours: float
+    ) -> Optional[List[Dict]]:
+        """
+        Get cached flight search results
+        
+        Args:
+            origin: IATA code of origin airport
+            destination: IATA code of destination airport
+            departure_date: Departure date (YYYY-MM-DD)
+            return_date: Return date (YYYY-MM-DD)
+            max_stops: Maximum number of stops
+            nearby_airports_radius_km: Search radius for nearby airports
+            max_duration_hours: Maximum flight duration in hours
+        
+        Returns:
+            List of cached flight offers if cache exists and is valid, None otherwise
+        """
+        if not self.use_flight_cache:
+            logger.debug(f"   Flight caching is disabled (use_flight_cache=False)")
+            return None
+        
+        # Create cache key from all search parameters
+        # This ensures we cache correctly based on all search criteria
+        cache_key = f"{origin.upper()}_{destination.upper()}_{departure_date}_{return_date}_{max_stops}_{nearby_airports_radius_km}_{max_duration_hours}"
+        
+        # Sanitize cache key for filename (replace invalid characters)
+        cache_key_safe = cache_key.replace('/', '_').replace(':', '_')
+        
+        cache_dir = os.path.join(os.path.dirname(__file__), 'data', 'destinations_cache')
+        os.makedirs(cache_dir, exist_ok=True)
+        
+        cache_file = os.path.join(cache_dir, f"flights_{cache_key_safe}.json")
+        
+        if not os.path.exists(cache_file):
+            logger.debug(f"   Cache file not found for {format_airport_code(origin)} → {format_airport_code(destination)} ({departure_date} to {return_date})")
+            return None
+        
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                cache_data = json.load(f)
+            
+            # Check if cache is still valid (same day - flights don't change for the same date)
+            cached_date_str = cache_data.get('cached_date', '')
+            if cached_date_str:
+                try:
+                    cached_date = datetime.fromisoformat(cached_date_str)
+                    today = datetime.now()
+                    
+                    # Cache is valid if it was created today (same day)
+                    # Flights for a specific date don't change during the same day
+                    if cached_date.date() == today.date():
+                        flights = cache_data.get('flights', [])
+                        logger.info(f"   ✓ Using cached flight results for {format_airport_code(origin)} → {format_airport_code(destination)} ({departure_date} to {return_date}) - {len(flights)} flight(s)")
+                        return flights
+                    else:
+                        logger.debug(f"   Cache expired (cached on {cached_date.date()}, today is {today.date()})")
+                except Exception as e:
+                    logger.debug(f"   Error parsing cache date: {e}")
+            
+            return None
+        except Exception as e:
+            logger.debug(f"   Error reading flight cache: {e}")
+            return None
+    
+    def _save_cached_flights(
+        self,
+        origin: str,
+        destination: str,
+        departure_date: str,
+        return_date: str,
+        max_stops: int,
+        nearby_airports_radius_km: int,
+        max_duration_hours: float,
+        flights: List[Dict]
+    ):
+        """
+        Save flight search results to cache
+        
+        Args:
+            origin: IATA code of origin airport
+            destination: IATA code of destination airport
+            departure_date: Departure date (YYYY-MM-DD)
+            return_date: Return date (YYYY-MM-DD)
+            max_stops: Maximum number of stops
+            nearby_airports_radius_km: Search radius for nearby airports
+            max_duration_hours: Maximum flight duration in hours
+            flights: List of flight offers to cache
+        """
+        if not self.use_flight_cache:
+            logger.debug(f"   Flight caching is disabled (use_flight_cache=False)")
+            return
+        
+        # Create cache key from all search parameters
+        cache_key = f"{origin.upper()}_{destination.upper()}_{departure_date}_{return_date}_{max_stops}_{nearby_airports_radius_km}_{max_duration_hours}"
+        
+        # Sanitize cache key for filename
+        cache_key_safe = cache_key.replace('/', '_').replace(':', '_')
+        
+        cache_dir = os.path.join(os.path.dirname(__file__), 'data', 'destinations_cache')
+        os.makedirs(cache_dir, exist_ok=True)
+        
+        cache_file = os.path.join(cache_dir, f"flights_{cache_key_safe}.json")
+        
+        try:
+            cache_data = {
+                'origin': origin.upper(),
+                'destination': destination.upper(),
+                'departure_date': departure_date,
+                'return_date': return_date,
+                'max_stops': max_stops,
+                'nearby_airports_radius_km': nearby_airports_radius_km,
+                'max_duration_hours': max_duration_hours,
+                'flights': flights,
+                'cached_date': datetime.now().isoformat(),
+                'count': len(flights)
+            }
+            
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(cache_data, f, indent=2, ensure_ascii=False)
+            
+            logger.debug(f"   Cached {len(flights)} flight(s) for {format_airport_code(origin)} → {format_airport_code(destination)} ({departure_date} to {return_date}) to {cache_file}")
+        except Exception as e:
+            logger.debug(f"   Error saving flight cache: {e}")
     
     def _get_destinations_from_inspiration_search(
         self, 

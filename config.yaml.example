@@ -46,6 +46,12 @@ search:
   # Set to 0 to disable caching
   destination_cache_expiration_days: 30
   
+  # Enable/disable flight result caching
+  # When enabled, flight search results are cached for the same day
+  # Flights for a specific date don't change during the same day, so caching saves API calls
+  # Set to false to always fetch fresh results from the API
+  use_flight_cache: true
+  
   # Maximum number of destinations to check (limits API usage)
   # If the API or predefined list returns 100 destinations, but you set this to 20,
   # only the first 20 destinations will be searched for flights
