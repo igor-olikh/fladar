@@ -421,9 +421,8 @@ class FlightSearch:
                 logger.warning(f"   ⚠️  No destinations found from Flight Inspiration Search API")
                 logger.warning(f"   This is expected in test environment - Inspiration Search uses cached data")
                 logger.warning(f"   Test environment may not have data for origin {origin} (especially TLV)")
-                logger.info(f"   Falling back to predefined list")
-                logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
-                return self._get_predefined_destinations()
+                logger.info(f"   Returning empty list - caller will handle fallback to predefined list")
+                return []  # Return empty so caller can detect failure and use predefined list
                 
         except ResponseError as error:
             # Extract error details with full debug information
@@ -481,8 +480,7 @@ class FlightSearch:
                 logger.debug(f"   [DEBUG]   - Body content: {error_body}")
             
             logger.error(f"   ERROR: API returned status {error_code}")
-            logger.info(f"   Falling back to predefined destination list")
-            logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
+            logger.info(f"   Returning empty list - caller will handle fallback to predefined list")
             
             if error_body:
                 import json
