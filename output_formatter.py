@@ -63,7 +63,7 @@ def format_airline_codes(codes_str: str) -> str:
     Format airline codes to include names
     
     Args:
-        codes_str: Comma-separated airline codes (e.g., "LX, OS")
+        codes_str: Comma-separated airline codes (e.g., "LX, OS" or "LXOS")
     
     Returns:
         Formatted string with codes and names (e.g., "LX (Swiss), OS (Austrian)")
@@ -72,16 +72,39 @@ def format_airline_codes(codes_str: str) -> str:
         return ""
     
     airline_names = _load_airline_names()
-    codes = [c.strip() for c in codes_str.split(',') if c.strip()]
+    
+    # Handle concatenated codes like "LXOS" - split into individual 2-letter codes
+    # First try to split by comma, then try to split concatenated codes
+    if ',' in codes_str:
+        codes = [c.strip() for c in codes_str.split(',') if c.strip()]
+    else:
+        # Try to split concatenated codes (e.g., "LXOS" -> ["LX", "OS"])
+        # IATA codes are typically 2 letters, so split every 2 characters
+        codes = []
+        code_str_clean = codes_str.strip().upper()
+        i = 0
+        while i < len(code_str_clean):
+            if i + 2 <= len(code_str_clean):
+                codes.append(code_str_clean[i:i+2])
+                i += 2
+            else:
+                # If odd number of characters, take the rest
+                codes.append(code_str_clean[i:])
+                break
     
     formatted = []
     for code in codes:
-        code_upper = code.upper()
+        code_upper = code.upper().strip()
+        if not code_upper:
+            continue
+        
+        # Check if it's a known airline code
         airline_name = airline_names.get(code_upper)
         if airline_name:
-            formatted.append(f"{code} ({airline_name})")
+            formatted.append(f"{code_upper} ({airline_name})")
         else:
-            formatted.append(code)
+            # If not found, just show the code
+            formatted.append(code_upper)
     
     return ", ".join(formatted)
 
