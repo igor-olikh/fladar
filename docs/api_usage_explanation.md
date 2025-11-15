@@ -9,6 +9,10 @@ This application uses **three Amadeus APIs** to find meeting destinations for tw
 ### 1. Flight Offers Search API
 **Purpose**: Get actual flight offers (prices, schedules, airlines) for a specific route
 
+**Official Documentation**: 
+- [Flight Offers Search API - Amadeus for Developers](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-offers-search)
+- [Flight APIs Tutorial](https://developers.amadeus.com/self-service/apis-docs/guides/developer-guides/resources/flights/)
+
 **When Used**: 
 - For every origin-destination pair we want to check
 - Called twice per destination: once for Person 1 (TLV → destination) and once for Person 2 (ALC → destination)
@@ -50,6 +54,10 @@ amadeus.shopping.flight_offers_search.get(
 ### 2. Flight Inspiration Search API (Flight Destinations)
 **Purpose**: Discover destinations dynamically from an origin airport
 
+**Official Documentation**: 
+- [Flight Inspiration Search API - Amadeus for Developers](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-inspiration-search)
+- [Flight Destinations API Reference](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-inspiration-search/api-reference)
+
 **When Used**: 
 - Only when `use_dynamic_destinations: true` in config
 - Called once per origin to find available destinations
@@ -85,6 +93,10 @@ amadeus.shopping.flight_destinations.get(
 
 ### 3. Airport Nearest Relevant API
 **Purpose**: Find nearby airports (not currently used in this application)
+
+**Official Documentation**: 
+- [Airport Nearest Relevant API - Amadeus for Developers](https://developers.amadeus.com/self-service/category/airport/api-doc/airport-nearest-relevant)
+- [Airport & City Search APIs](https://developers.amadeus.com/self-service/category/airport)
 
 **When Used**: 
 - **NOT USED** in the current implementation
@@ -304,13 +316,21 @@ Since duration filtering isn't fully implemented, you can:
 
 ## Summary
 
-| API | Purpose | Status | Usage |
-|-----|---------|--------|-------|
-| **Flight Offers Search** | Get actual flights | ✅ Working | 431 requests (main API) |
-| **Flight Inspiration Search** | Find destinations | ❌ Failing (test env) | 16 requests, all errors |
-| **Airport Nearest Relevant** | Find nearby airports | ⚠️ Not used | 1 request (testing) |
+| API | Purpose | Status | Usage | Documentation |
+|-----|---------|--------|-------|---------------|
+| **Flight Offers Search** | Get actual flights | ✅ Working | 431 requests (main API) | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-offers-search) |
+| **Flight Inspiration Search** | Find destinations | ❌ Failing (test env) | 16 requests, all errors | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-inspiration-search) |
+| **Airport Nearest Relevant** | Find nearby airports | ⚠️ Not used | 1 request (testing) | [Official Docs](https://developers.amadeus.com/self-service/category/airport/api-doc/airport-nearest-relevant) |
 
 **Destination Selection**: Currently uses predefined list (32 destinations) due to Flight Inspiration Search API failures in test environment.
 
 **Max Flight Duration**: Parameter exists but needs implementation to actually filter destinations by flight duration.
+
+## Additional Resources
+
+- **Amadeus for Developers Portal**: [developers.amadeus.com](https://developers.amadeus.com/)
+- **Self-Service APIs Documentation**: [Self-Service APIs](https://developers.amadeus.com/self-service)
+- **Flight APIs Guide**: [Flight APIs Tutorial](https://developers.amadeus.com/self-service/apis-docs/guides/developer-guides/resources/flights/)
+- **API Reference**: [API Reference](https://developers.amadeus.com/self-service/apis-docs)
+- **Python SDK**: [Amadeus Python SDK](https://github.com/amadeus4dev/amadeus-python)
 
