@@ -66,7 +66,7 @@ def main():
             destination="PAR",
             departure_date=departure_date,
             return_date=return_date,
-            max_stops=0
+            max_stops=0  # search_flights still uses single max_stops parameter
         )
         
         print()
@@ -123,7 +123,7 @@ def main():
             destination="PAR",
             departure_date=departure_date,
             return_date=return_date,
-            max_stops=0
+            max_stops=0  # search_flights still uses single max_stops parameter
         )
         
         print()

@@ -101,7 +101,8 @@ def main():
     departure_date = search_config['outbound_date']
     return_date = search_config['return_date']
     max_price = float(search_config['max_price'])
-    max_stops = search_config.get('max_stops', 0)
+    max_stops_person1 = search_config.get('max_stops_person1', 0)
+    max_stops_person2 = search_config.get('max_stops_person2', 0)
     arrival_tolerance = search_config.get('arrival_tolerance_hours', 3)
     min_departure_time_outbound = search_config.get('min_departure_time_outbound') or None
     min_departure_time_return = search_config.get('min_departure_time_return') or None
@@ -177,7 +178,8 @@ def main():
     print(f"   Outbound Date: {departure_date}")
     print(f"   Return Date: {return_date}")
     print(f"   Max Price (per person): {max_price} EUR")
-    print(f"   Max Stops: {max_stops}")
+    print(f"   Max Stops - Person 1: {max_stops_person1}")
+    print(f"   Max Stops - Person 2: {max_stops_person2}")
     print(f"   Arrival Tolerance: ±{arrival_tolerance} hours")
     if max_flight_duration > 0:
         print(f"   Max Flight Duration: {max_flight_duration} hours")
@@ -203,7 +205,8 @@ def main():
         departure_date=departure_date,
         return_date=return_date,
         max_price=max_price,
-        max_stops=max_stops,
+        max_stops_person1=max_stops_person1,
+        max_stops_person2=max_stops_person2,
         arrival_tolerance_hours=arrival_tolerance,
             min_departure_time_outbound=min_departure_time_outbound,
             min_departure_time_return=min_departure_time_return,

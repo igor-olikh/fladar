@@ -222,7 +222,8 @@ class TestDestinationFinder(unittest.TestCase):
             departure_date="2024-12-15",
             return_date="2024-12-22",
             max_price=500,
-            max_stops=0,
+            max_stops_person1=0,
+            max_stops_person2=0,
             arrival_tolerance_hours=3
         )
         
@@ -381,7 +382,8 @@ class TestIntegration(unittest.TestCase):
             departure_date="2024-12-15",
             return_date="2024-12-22",
             max_price=300.0,
-            max_stops=0,
+            max_stops_person1=0,
+            max_stops_person2=0,
             arrival_tolerance_hours=3
         )
         

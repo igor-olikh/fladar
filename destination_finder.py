@@ -21,7 +21,8 @@ class DestinationFinder:
         departure_date: str,
         return_date: str,
         max_price: float,
-        max_stops: int = 0,
+        max_stops_person1: int = 0,
+        max_stops_person2: int = 0,
         arrival_tolerance_hours: int = 3,
         min_departure_time_outbound: str = None,
         min_departure_time_return: str = None,
@@ -39,7 +40,8 @@ class DestinationFinder:
             departure_date: Departure date (YYYY-MM-DD)
             return_date: Return date (YYYY-MM-DD)
             max_price: Maximum total price for both flights
-            max_stops: Maximum number of stops
+            max_stops_person1: Maximum number of stops for Person 1 flights
+            max_stops_person2: Maximum number of stops for Person 2 flights
             arrival_tolerance_hours: Hours tolerance for arrival times
             min_departure_time_outbound: Minimum departure time for outbound flights (HH:MM)
             min_departure_time_return: Minimum departure time for return flights (HH:MM)
@@ -53,6 +55,8 @@ class DestinationFinder:
         """
         # Get common destinations from both origins
         # Note: Inspiration Search is optional - Flight Offers Search will validate actual availability
+        # For destination discovery, use the more restrictive max_stops (if either person wants direct, search for direct)
+        max_stops_for_discovery = min(max_stops_person1, max_stops_person2)
         if use_dynamic_destinations:
             logger.info("📋 Using dynamic destination discovery (Inspiration Search API)")
             logger.info("   Note: Inspiration Search uses cached data and may be incomplete")
@@ -61,7 +65,7 @@ class DestinationFinder:
                 origin1, origin2, departure_date, 
                 use_dynamic=True, 
                 max_duration_hours=max_flight_duration_hours,
-                non_stop=(max_stops == 0)
+                non_stop=(max_stops_for_discovery == 0)
             )
         else:
             # Use predefined list (more reliable, especially in test environment)
@@ -72,7 +76,7 @@ class DestinationFinder:
                 origin1, departure_date, 
                 use_dynamic=False, 
                 max_duration_hours=max_flight_duration_hours,
-                non_stop=(max_stops == 0)
+                non_stop=(max_stops_for_discovery == 0)
             )
         
         # Limit destinations to check
@@ -105,7 +109,8 @@ class DestinationFinder:
                     departure_date=departure_date,
                     return_date=return_date,
                     max_price=max_price,
-                    max_stops=max_stops,
+                    max_stops_person1=max_stops_person1,
+                    max_stops_person2=max_stops_person2,
                     arrival_tolerance_hours=arrival_tolerance_hours,
                     min_departure_time_outbound=min_departure_time_outbound,
                     min_departure_time_return=min_departure_time_return,

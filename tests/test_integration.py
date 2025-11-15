@@ -125,7 +125,8 @@ class TestFindAtLeastOneResult(unittest.TestCase):
             departure_date="2024-12-15",
             return_date="2024-12-22",
             max_price=500.0,  # Both flights are under 500
-            max_stops=0,
+            max_stops_person1=0,
+            max_stops_person2=0,
             arrival_tolerance_hours=3,  # 30 min difference is within 3 hours
             max_destinations=10
         )
@@ -173,7 +174,8 @@ class TestFindAtLeastOneResult(unittest.TestCase):
             departure_date="2024-12-15",
             return_date="2024-12-22",
             max_price=500.0,  # TLV flight is 600, should be filtered out
-            max_stops=0,
+            max_stops_person1=0,
+            max_stops_person2=0,
             arrival_tolerance_hours=3
         )
         
@@ -212,7 +214,8 @@ class TestFindAtLeastOneResult(unittest.TestCase):
             departure_date="2024-12-15",
             return_date="2024-12-22",
             max_price=500.0,
-            max_stops=0,
+            max_stops_person1=0,
+            max_stops_person2=0,
             arrival_tolerance_hours=3  # 5.5 hours is outside tolerance
         )
         

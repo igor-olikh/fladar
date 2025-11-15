@@ -1268,7 +1268,8 @@ class FlightSearch:
         departure_date: str,
         return_date: str,
         max_price: float,
-        max_stops: int = 0,
+        max_stops_person1: int = 0,
+        max_stops_person2: int = 0,
         arrival_tolerance_hours: int = 3,
         min_departure_time_outbound: Optional[str] = None,
         min_departure_time_return: Optional[str] = None,
@@ -1294,7 +1295,8 @@ class FlightSearch:
             departure_date: Departure date (YYYY-MM-DD)
             return_date: Return date (YYYY-MM-DD)
             max_price: Maximum price per person
-            max_stops: Maximum number of stops
+            max_stops_person1: Maximum number of stops for Person 1 flights
+            max_stops_person2: Maximum number of stops for Person 2 flights
             arrival_tolerance_hours: Hours tolerance for arrival times
             min_departure_time_outbound: Minimum departure time for outbound (HH:MM)
             min_departure_time_return: Minimum departure time for return (HH:MM)
@@ -1325,7 +1327,7 @@ class FlightSearch:
         logger.debug(f"   Searching flights for Person 1 ({format_airport_code(origin1_resolved)} → {format_airport_code(destination_resolved)})...")
         flights1 = self.search_flights(
             origin1_resolved, destination_resolved, departure_date, return_date,
-            max_stops, min_departure_time_outbound, min_departure_time_return,
+            max_stops_person1, min_departure_time_outbound, min_departure_time_return,
             nearby_airports_radius_km, max_duration_hours
         )
         
@@ -1333,7 +1335,7 @@ class FlightSearch:
         logger.debug(f"   Searching flights for Person 2 ({format_airport_code(origin2_resolved)} → {format_airport_code(destination_resolved)})...")
         flights2 = self.search_flights(
             origin2_resolved, destination_resolved, departure_date, return_date,
-            max_stops, min_departure_time_outbound, min_departure_time_return,
+            max_stops_person2, min_departure_time_outbound, min_departure_time_return,
             nearby_airports_radius_km, max_duration_hours
         )
         
