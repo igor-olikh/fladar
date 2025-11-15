@@ -658,9 +658,10 @@ class FlightSearch:
                     # Check if date is in the future and within 180 days
                     days_ahead = (dep_date - today).days
                     if days_ahead >= 0:
-                        # Create a range starting from the departure date (or a few days before for flexibility)
+                        # Create a range starting from the departure date from config
                         # Use the actual departure date from config, not today's date
-                        range_start = max(dep_date - timedelta(days=7), dep_date)  # Start from departure date (or 7 days before max)
+                        # Allow a few days before for flexibility (but not before today)
+                        range_start = max(today, dep_date - timedelta(days=7))  # Start from departure date (or 7 days before, but not before today)
                         range_end = dep_date + timedelta(days=60)  # End 60 days after departure date
                         api_params['departureDate'] = f"{range_start.strftime('%Y-%m-%d')},{range_end.strftime('%Y-%m-%d')}"
                         logger.debug(f"   [DEBUG] Using departure date range: {range_start.strftime('%Y-%m-%d')} to {range_end.strftime('%Y-%m-%d')} (based on config date: {departure_date})")
