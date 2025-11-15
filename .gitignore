@@ -42,6 +42,9 @@ flight_results.csv
 debug_logs/
 *.log
 
+# Cached destination data
+data/destinations_cache/
+
 # Config with secrets (keep template)
 config.yaml
 

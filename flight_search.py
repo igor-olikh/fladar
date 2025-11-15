@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 from amadeus import Client, ResponseError
 import logging
+import json
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -322,6 +324,71 @@ class FlightSearch:
             logger.info("   Using predefined list of popular European destinations")
             return self._get_predefined_destinations()
     
+    def _get_cached_destinations(self, origin: str) -> Optional[List[str]]:
+        """
+        Get cached destinations for an origin airport
+        
+        Args:
+            origin: IATA code of origin airport
+            
+        Returns:
+            List of destination codes if cache exists and is valid, None otherwise
+        """
+        cache_dir = "data/destinations_cache"
+        os.makedirs(cache_dir, exist_ok=True)
+        
+        cache_file = os.path.join(cache_dir, f"{origin.upper()}_destinations.json")
+        
+        if not os.path.exists(cache_file):
+            return None
+        
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                cache_data = json.load(f)
+            
+            # Check if cache is still valid (e.g., less than 7 days old)
+            cached_date = datetime.fromisoformat(cache_data.get('cached_date', ''))
+            days_old = (datetime.now() - cached_date).days
+            
+            # Cache is valid for 7 days (Inspiration Search data doesn't change frequently)
+            if days_old < 7:
+                logger.info(f"   ✓ Using cached destinations for {origin} (cached {days_old} day(s) ago)")
+                return cache_data.get('destinations', [])
+            else:
+                logger.debug(f"   Cache for {origin} is expired ({days_old} days old), will refresh")
+                return None
+        except Exception as e:
+            logger.debug(f"   Error reading cache for {origin}: {e}")
+            return None
+    
+    def _save_cached_destinations(self, origin: str, destinations: List[str]):
+        """
+        Save destinations to cache for an origin airport
+        
+        Args:
+            origin: IATA code of origin airport
+            destinations: List of destination IATA codes
+        """
+        cache_dir = "data/destinations_cache"
+        os.makedirs(cache_dir, exist_ok=True)
+        
+        cache_file = os.path.join(cache_dir, f"{origin.upper()}_destinations.json")
+        
+        try:
+            cache_data = {
+                'origin': origin.upper(),
+                'destinations': destinations,
+                'cached_date': datetime.now().isoformat(),
+                'count': len(destinations)
+            }
+            
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(cache_data, f, indent=2, ensure_ascii=False)
+            
+            logger.debug(f"   Cached {len(destinations)} destinations for {origin} to {cache_file}")
+        except Exception as e:
+            logger.debug(f"   Error saving cache for {origin}: {e}")
+    
     def _get_destinations_from_inspiration_search(
         self, 
         origin: str, 
@@ -330,7 +397,13 @@ class FlightSearch:
     ) -> List[str]:
         """
         Get destinations dynamically using Amadeus Flight Inspiration Search API
+        Uses caching to avoid redundant API calls for the same origin
         """
+        # Check cache first
+        cached_destinations = self._get_cached_destinations(origin)
+        if cached_destinations is not None:
+            return cached_destinations
+        
         destinations = []
         
         try:
@@ -435,6 +508,10 @@ class FlightSearch:
                 logger.info(f"   ✓ Extracted {len(destinations)} destination IATA code(s)")
                 logger.info(f"   Sample destinations: {', '.join(destinations[:10])}...")
                 logger.info(f"   Note: These are from Inspiration Search cache - Flight Offers Search will validate actual availability")
+                
+                # Save to cache for future use
+                if destinations:
+                    self._save_cached_destinations(origin, destinations)
             else:
                 logger.warning(f"   ⚠️  No destinations found from Flight Inspiration Search API")
                 logger.warning(f"   This is expected in test environment - Inspiration Search uses cached data")
