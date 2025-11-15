@@ -1053,10 +1053,12 @@ class FlightSearch:
                         # Create a range starting from the departure date from config
                         # Use the actual departure date from config as the start, not today's date
                         # This ensures we search for destinations around the user's specified departure date
+                        # Use wider date range (90 days instead of 60) to get more destination options
+                        # The API works better with wider ranges as it has more cached data to work with
                         range_start = dep_date  # Start from the departure date from config
-                        range_end = dep_date + timedelta(days=60)  # End 60 days after departure date
+                        range_end = dep_date + timedelta(days=90)  # End 90 days after departure date (increased from 60)
                         api_params['departureDate'] = f"{range_start.strftime('%Y-%m-%d')},{range_end.strftime('%Y-%m-%d')}"
-                        logger.debug(f"   [DEBUG] Using departure date range: {range_start.strftime('%Y-%m-%d')} to {range_end.strftime('%Y-%m-%d')} (based on config date: {departure_date})")
+                        logger.debug(f"   [DEBUG] Using departure date range: {range_start.strftime('%Y-%m-%d')} to {range_end.strftime('%Y-%m-%d')} (90 days, based on config date: {departure_date})")
                     else:
                         # Date is in the past, use just the date (API may still work)
                         api_params['departureDate'] = departure_date
@@ -1066,6 +1068,7 @@ class FlightSearch:
                     api_params['departureDate'] = departure_date
             
             # Explicitly set viewBy to DESTINATION to get unique destinations
+            # Note: Other options are DATE, DURATION, WEEK, COUNTRY - but DESTINATION is best for our use case
             api_params['viewBy'] = 'DESTINATION'
             
             # Set oneWay to false for round-trip flights
@@ -1073,9 +1076,17 @@ class FlightSearch:
             
             # If non_stop is True, only get destinations with direct flights
             # This is useful when max_stops=0 (user wants direct flights only)
+            # IMPORTANT: When non_stop is False, we don't set the parameter at all
+            # This allows the API to return destinations with connections, which should return MORE destinations
             if non_stop:
                 api_params['nonStop'] = True
+                logger.info(f"   🔍 Filtering for direct flights only (nonStop=True)")
                 logger.debug(f"   [DEBUG] nonStop=True: Only searching for destinations with direct flights")
+            else:
+                # Don't set nonStop parameter - this allows destinations with connections
+                # This should return MORE destinations than when nonStop=True
+                logger.info(f"   🔍 Including destinations with connections (nonStop not set)")
+                logger.debug(f"   [DEBUG] nonStop not set: Will return destinations with direct flights AND connections")
             
             logger.debug(f"   [DEBUG] API Parameters: {api_params}")
             logger.debug(f"   [DEBUG] Making authenticated API call...")
@@ -1083,15 +1094,35 @@ class FlightSearch:
             # Make the API call - SDK will handle authentication automatically
             response = self.amadeus.shopping.flight_destinations.get(**api_params)
             
-            # DEBUG: Log response details
+            # DEBUG: Log response details including pagination/metadata
             logger.debug(f"   [DEBUG] API Response:")
             logger.debug(f"   [DEBUG]   - Response type: {type(response)}")
             logger.debug(f"   [DEBUG]   - Has data attribute: {hasattr(response, 'data')}")
+            
+            # Check for pagination/metadata in response
+            if hasattr(response, 'meta'):
+                logger.debug(f"   [DEBUG]   - Response meta: {response.meta}")
+            if hasattr(response, 'links'):
+                logger.debug(f"   [DEBUG]   - Response links (pagination): {response.links}")
+            if hasattr(response, 'dictionaries'):
+                logger.debug(f"   [DEBUG]   - Response dictionaries: {response.dictionaries}")
+            
             if hasattr(response, 'data'):
                 logger.debug(f"   [DEBUG]   - Data type: {type(response.data)}")
                 logger.debug(f"   [DEBUG]   - Data length: {len(response.data) if response.data else 0}")
                 if response.data:
                     logger.debug(f"   [DEBUG]   - First item sample: {response.data[0] if len(response.data) > 0 else 'N/A'}")
+            
+            # Check if there are more results available (pagination)
+            has_more_results = False
+            if hasattr(response, 'meta') and response.meta:
+                if isinstance(response.meta, dict):
+                    count = response.meta.get('count', 0)
+                    logger.debug(f"   [DEBUG]   - Total count from meta: {count}")
+                    if count and count > len(response.data) if response.data else 0:
+                        has_more_results = True
+                        logger.warning(f"   ⚠️  API returned {len(response.data) if response.data else 0} results, but meta indicates {count} total results available")
+                        logger.warning(f"   ⚠️  Some results may be missing (pagination not implemented)")
             
             if response.data:
                 logger.info(f"   ✓ Found {len(response.data)} destination(s) from Amadeus API")
@@ -1126,6 +1157,10 @@ class FlightSearch:
                 
                 logger.info(f"   ✓ Extracted {len(destinations)} unique destination IATA code(s)")
                 logger.info(f"   Sample destinations: {', '.join(destinations[:10])}...")
+                if non_stop:
+                    logger.info(f"   Note: Results filtered to direct flights only (nonStop=True)")
+                else:
+                    logger.info(f"   Note: Results include destinations with direct flights AND connections (nonStop not set)")
                 logger.info(f"   Note: These are from Inspiration Search cache - Flight Offers Search will validate actual availability")
                 
                 # Save to cache for future use and return destinations
@@ -1134,6 +1169,15 @@ class FlightSearch:
                     return destinations  # Return immediately - first API succeeded
             else:
                 logger.warning(f"   ⚠️  No destinations found from Flight Inspiration Search API")
+                
+                # If we got no results and nonStop was set, try again without nonStop to get destinations with connections
+                if non_stop:
+                    logger.info(f"   Retrying without nonStop filter to include destinations with connections...")
+                    # Recursively call without nonStop parameter
+                    return self._get_destinations_from_inspiration_search(
+                        origin, departure_date, max_duration_hours, non_stop=False
+                    )
+                
                 logger.info(f"   Trying Airport Routes API as fallback...")
                 
                 # Fallback to Airport Routes API if Inspiration Search returns no results
@@ -1187,8 +1231,15 @@ class FlightSearch:
                 logger.error(f"   Check your API key permissions in the Amadeus Developer Portal")
             
             # If it's a 404, it might be due to limited test data or no data available
-            # Try Airport Routes API as fallback
+            # First, try again without nonStop filter if it was set (might return more results)
             if status_code == 404:
+                if non_stop:
+                    logger.info(f"   404 error with nonStop=True, retrying without nonStop filter...")
+                    # Recursively call without nonStop parameter
+                    return self._get_destinations_from_inspiration_search(
+                        origin, departure_date, max_duration_hours, non_stop=False
+                    )
+                
                 logger.info(f"   Trying Airport Routes API as fallback for 404 error...")
                 destinations = self._get_destinations_from_airport_routes(origin, non_stop)
                 if destinations:
@@ -1253,6 +1304,16 @@ class FlightSearch:
             logger.debug(f"   [DEBUG] Full exception: {e}")
             import traceback
             logger.debug(f"   [DEBUG] Traceback:\n{traceback.format_exc()}")
+            
+            # If nonStop was set, try again without it before falling back to Airport Routes API
+            if non_stop:
+                logger.info(f"   Retrying without nonStop filter after unexpected error...")
+                try:
+                    return self._get_destinations_from_inspiration_search(
+                        origin, departure_date, max_duration_hours, non_stop=False
+                    )
+                except Exception as retry_error:
+                    logger.warning(f"   Retry also failed: {retry_error}")
             
             # Try Airport Routes API as fallback for unexpected errors
             logger.info(f"   Trying Airport Routes API as fallback for unexpected error...")
