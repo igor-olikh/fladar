@@ -5,6 +5,7 @@ from typing import List, Dict, Optional
 from datetime import datetime
 import csv
 import os
+import json
 import pytz
 import airportsdata
 from timezonefinder import TimezoneFinder
@@ -20,6 +21,69 @@ except Exception as e:
     logger.warning(f"Could not load airports database: {e}. Will use fallback timezone mapping.")
     airports = None
     tf = None
+
+# Airline code to name mapping - loaded from external file
+_AIRLINE_NAMES = None
+
+
+def _load_airline_names():
+    """Load airline names from external JSON file"""
+    global _AIRLINE_NAMES
+    if _AIRLINE_NAMES is not None:
+        return _AIRLINE_NAMES
+    
+    # Try to load from data/airline_names.json
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    airline_names_file = os.path.join(current_dir, 'data', 'airline_names.json')
+    
+    # If not found, try relative to project root
+    if not os.path.exists(airline_names_file):
+        airline_names_file = os.path.join(current_dir, '..', 'data', 'airline_names.json')
+        airline_names_file = os.path.normpath(airline_names_file)
+    
+    try:
+        if os.path.exists(airline_names_file):
+            with open(airline_names_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Remove comment keys
+                _AIRLINE_NAMES = {k: v for k, v in data.items() if not k.startswith('_')}
+                logger.debug(f"Loaded {len(_AIRLINE_NAMES)} airline names from {airline_names_file}")
+        else:
+            logger.warning(f"Airline names file not found: {airline_names_file}, using empty mapping")
+            _AIRLINE_NAMES = {}
+    except Exception as e:
+        logger.warning(f"Error loading airline names from {airline_names_file}: {e}, using empty mapping")
+        _AIRLINE_NAMES = {}
+    
+    return _AIRLINE_NAMES
+
+
+def format_airline_codes(codes_str: str) -> str:
+    """
+    Format airline codes to include names
+    
+    Args:
+        codes_str: Comma-separated airline codes (e.g., "LX, OS")
+    
+    Returns:
+        Formatted string with codes and names (e.g., "LX (Swiss), OS (Austrian)")
+    """
+    if not codes_str:
+        return ""
+    
+    airline_names = _load_airline_names()
+    codes = [c.strip() for c in codes_str.split(',') if c.strip()]
+    
+    formatted = []
+    for code in codes:
+        code_upper = code.upper()
+        airline_name = airline_names.get(code_upper)
+        if airline_name:
+            formatted.append(f"{code} ({airline_name})")
+        else:
+            formatted.append(code)
+    
+    return ", ".join(formatted)
 
 
 class OutputFormatter:
@@ -376,7 +440,10 @@ class OutputFormatter:
                 'return_stops': return_stops,
                 'airlines': ', '.join(set(
                     seg.get('carrierCode', '') for seg in outbound_segments + return_segments
-                ))
+                )),
+                'airlines_formatted': format_airline_codes(', '.join(set(
+                    seg.get('carrierCode', '') for seg in outbound_segments + return_segments
+                )))
             }
         except Exception as e:
             return {'error': str(e)}
@@ -414,7 +481,7 @@ class OutputFormatter:
                   f"({p1_outbound_duration_human}, {p1_info.get('outbound_stops', 0)} stops)")
             print(f"   Return:   {p1_info.get('return_departure', 'N/A')} → {p1_info.get('return_arrival', 'N/A')} "
                   f"({p1_return_duration_human}, {p1_info.get('return_stops', 0)} stops)")
-            print(f"   Airlines: {p1_info.get('airlines', 'N/A')}")
+            print(f"   Airlines: {p1_info.get('airlines_formatted', p1_info.get('airlines', 'N/A'))}")
             print(f"   Price: {p1_price:.2f} {p1_info.get('currency', 'EUR')}")
             
             # Person 2 details
@@ -426,7 +493,7 @@ class OutputFormatter:
                   f"({p2_outbound_duration_human}, {p2_info.get('outbound_stops', 0)} stops)")
             print(f"   Return:   {p2_info.get('return_departure', 'N/A')} → {p2_info.get('return_arrival', 'N/A')} "
                   f"({p2_return_duration_human}, {p2_info.get('return_stops', 0)} stops)")
-            print(f"   Airlines: {p2_info.get('airlines', 'N/A')}")
+            print(f"   Airlines: {p2_info.get('airlines_formatted', p2_info.get('airlines', 'N/A'))}")
             print(f"   Price: {p2_price:.2f} {p2_info.get('currency', 'EUR')}")
             
             print("=" * 100)
@@ -460,15 +527,15 @@ class OutputFormatter:
                     'person1_route',
                     'person1_price_eur',
                     'person1_outbound_departure_utc',
-                    'person1_outbound_departure_local_tlv',
+                    'person1_outbound_departure_local',
                     'person1_outbound_arrival_utc',
-                    'person1_outbound_arrival_local_dest',
+                    'person1_outbound_arrival_local',
                     'person1_outbound_duration',
                     'person1_outbound_stops',
                     'person1_return_departure_utc',
-                    'person1_return_departure_local_dest',
+                    'person1_return_departure_local',
                     'person1_return_arrival_utc',
-                    'person1_return_arrival_local_tlv',
+                    'person1_return_arrival_local',
                     'person1_return_duration',
                     'person1_return_stops',
                     'person1_airlines',
@@ -477,15 +544,15 @@ class OutputFormatter:
                     'person2_route',
                     'person2_price_eur',
                     'person2_outbound_departure_utc',
-                    'person2_outbound_departure_local_alc',
+                    'person2_outbound_departure_local',
                     'person2_outbound_arrival_utc',
-                    'person2_outbound_arrival_local_dest',
+                    'person2_outbound_arrival_local',
                     'person2_outbound_duration',
                     'person2_outbound_stops',
                     'person2_return_departure_utc',
-                    'person2_return_departure_local_dest',
+                    'person2_return_departure_local',
                     'person2_return_arrival_utc',
-                    'person2_return_arrival_local_alc',
+                    'person2_return_arrival_local',
                     'person2_return_duration',
                     'person2_return_stops',
                     'person2_airlines'
@@ -618,39 +685,39 @@ class OutputFormatter:
                         'price_person2_eur': f"{match['person2_price']:.2f}",
                         'currency': p1_info.get('currency', 'EUR'),
                         
-                        # Person 1 - with local times
-                        'person1_route': f"{p1_origin} → {dest} (outbound), {p1_return_origin} → {p1_return_dest} (return)",
-                        'person1_price_eur': f"{match['person1_price']:.2f}",
-                        'person1_outbound_departure_utc': p1_outbound_dep_utc,
-                        'person1_outbound_departure_local_tlv': p1_outbound_dep_local,
-                        'person1_outbound_arrival_utc': p1_outbound_arr_utc,
-                        'person1_outbound_arrival_local_dest': p1_outbound_arr_local,
-                        'person1_outbound_duration': p1_outbound_duration_human,
-                        'person1_outbound_stops': p1_outbound_stops_str,
-                        'person1_return_departure_utc': p1_return_dep_utc,
-                        'person1_return_departure_local_dest': p1_return_dep_local,
-                        'person1_return_arrival_utc': p1_return_arr_utc,
-                        'person1_return_arrival_local_tlv': p1_return_arr_local,
-                        'person1_return_duration': p1_return_duration_human,
-                        'person1_return_stops': p1_return_stops_str,
-                        'person1_airlines': p1_info.get('airlines', ''),
+                    # Person 1 - with local times (using correct airport timezones)
+                    'person1_route': f"{p1_origin} → {dest} (outbound), {p1_return_origin} → {p1_return_dest} (return)",
+                    'person1_price_eur': f"{match['person1_price']:.2f}",
+                    'person1_outbound_departure_utc': p1_outbound_dep_utc,
+                    'person1_outbound_departure_local': p1_outbound_dep_local,  # Local time at origin airport
+                    'person1_outbound_arrival_utc': p1_outbound_arr_utc,
+                    'person1_outbound_arrival_local': p1_outbound_arr_local,  # Local time at destination airport
+                    'person1_outbound_duration': p1_outbound_duration_human,
+                    'person1_outbound_stops': p1_outbound_stops_str,
+                    'person1_return_departure_utc': p1_return_dep_utc,
+                    'person1_return_departure_local': p1_return_dep_local,  # Local time at destination airport
+                    'person1_return_arrival_utc': p1_return_arr_utc,
+                    'person1_return_arrival_local': p1_return_arr_local,  # Local time at origin airport
+                    'person1_return_duration': p1_return_duration_human,
+                    'person1_return_stops': p1_return_stops_str,
+                    'person1_airlines': p1_info.get('airlines_formatted', p1_info.get('airlines', '')),
                         
-                        # Person 2 - with local times
-                        'person2_route': f"{p2_origin} → {dest} (outbound), {p2_return_origin} → {p2_return_dest} (return)",
-                        'person2_price_eur': f"{match['person2_price']:.2f}",
-                        'person2_outbound_departure_utc': p2_outbound_dep_utc,
-                        'person2_outbound_departure_local_alc': p2_outbound_dep_local,
-                        'person2_outbound_arrival_utc': p2_outbound_arr_utc,
-                        'person2_outbound_arrival_local_dest': p2_outbound_arr_local,
-                        'person2_outbound_duration': p2_outbound_duration_human,
-                        'person2_outbound_stops': p2_outbound_stops_str,
-                        'person2_return_departure_utc': p2_return_dep_utc,
-                        'person2_return_departure_local_dest': p2_return_dep_local,
-                        'person2_return_arrival_utc': p2_return_arr_utc,
-                        'person2_return_arrival_local_alc': p2_return_arr_local,
-                        'person2_return_duration': p2_return_duration_human,
-                        'person2_return_stops': p2_return_stops_str,
-                        'person2_airlines': p2_info.get('airlines', '')
+                    # Person 2 - with local times (using correct airport timezones)
+                    'person2_route': f"{p2_origin} → {dest} (outbound), {p2_return_origin} → {p2_return_dest} (return)",
+                    'person2_price_eur': f"{match['person2_price']:.2f}",
+                    'person2_outbound_departure_utc': p2_outbound_dep_utc,
+                    'person2_outbound_departure_local': p2_outbound_dep_local,  # Local time at origin airport
+                    'person2_outbound_arrival_utc': p2_outbound_arr_utc,
+                    'person2_outbound_arrival_local': p2_outbound_arr_local,  # Local time at destination airport
+                    'person2_outbound_duration': p2_outbound_duration_human,
+                    'person2_outbound_stops': p2_outbound_stops_str,
+                    'person2_return_departure_utc': p2_return_dep_utc,
+                    'person2_return_departure_local': p2_return_dep_local,  # Local time at destination airport
+                    'person2_return_arrival_utc': p2_return_arr_utc,
+                    'person2_return_arrival_local': p2_return_arr_local,  # Local time at origin airport
+                    'person2_return_duration': p2_return_duration_human,
+                    'person2_return_stops': p2_return_stops_str,
+                    'person2_airlines': p2_info.get('airlines_formatted', p2_info.get('airlines', ''))
                     }
                     
                     writer.writerow(row)
