@@ -1010,6 +1010,27 @@ class OutputFormatter:
             margin-top: 5px;
             font-style: italic;
         }
+        .booking-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        .booking-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        .person-section.person2 .booking-link {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
         @media (max-width: 768px) {
             .flight-details {
                 grid-template-columns: 1fr;
@@ -1166,6 +1187,8 @@ class OutputFormatter:
                     {p1_return_stops_html}
                     
                     {f'<div class="airline-info">Airlines: {p1_airlines}</div>' if p1_airlines else ''}
+                    
+                    {f'<a href="{p1_booking_url}" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>' if p1_booking_url else ''}
                 </div>
                 
                 <div class="person-section person2">
@@ -1199,6 +1222,8 @@ class OutputFormatter:
                     {p2_return_stops_html}
                     
                     {f'<div class="airline-info">Airlines: {p2_airlines}</div>' if p2_airlines else ''}
+                    
+                    {f'<a href="{p2_booking_url}" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>' if p2_booking_url else ''}
                 </div>
             </div>
         </div>
