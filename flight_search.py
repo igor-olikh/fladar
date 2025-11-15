@@ -11,76 +11,40 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Airport code to city name mapping for logs (European cities + Tel Aviv)
-AIRPORT_NAMES = {
-    'TLV': 'Tel Aviv',
-    'ALC': 'Alicante',
-    'BCN': 'Barcelona',
-    'LON': 'London',
-    'PAR': 'Paris',
-    'MAD': 'Madrid',
-    'ROM': 'Rome',
-    'AMS': 'Amsterdam',
-    'BER': 'Berlin',
-    'VIE': 'Vienna',
-    'PRG': 'Prague',
-    'ATH': 'Athens',
-    'LIS': 'Lisbon',
-    'DUB': 'Dublin',
-    'CPH': 'Copenhagen',
-    'STO': 'Stockholm',
-    'OSL': 'Oslo',
-    'MUC': 'Munich',
-    'FCO': 'Rome',
-    'AGP': 'Malaga',
-    'SEV': 'Seville',
-    'ZUR': 'Zurich',
-    'BRU': 'Brussels',
-    'WAR': 'Warsaw',
-    'BUD': 'Budapest',
-    'ZAG': 'Zagreb',
-    'HEL': 'Helsinki',
-    'REK': 'Reykjavik',
-    'OPO': 'Porto',
-    'LHR': 'London',
-    'LGW': 'London',
-    'CDG': 'Paris',
-    'ORY': 'Paris',
-    'FRA': 'Frankfurt',
-    'MXP': 'Milan',
-    'LIN': 'Milan',
-    'VCE': 'Venice',
-    'NAP': 'Naples',
-    'PMO': 'Palermo',
-    'SPL': 'Split',
-    'DBV': 'Dubrovnik',
-    'GOT': 'Gothenburg',
-    'RIX': 'Riga',
-    'TLL': 'Tallinn',
-    'VNO': 'Vilnius',
-    'WAW': 'Warsaw',
-    'KRK': 'Krakow',
-    'GOA': 'Genoa',
-    'GLA': 'Glasgow',
-    'EDI': 'Edinburgh',
-    'CLJ': 'Cluj-Napoca',
-    'LWO': 'Lviv',
-    'MOW': 'Moscow',
-    'KIV': 'Chisinau',
-    'BOS': 'Boston',
-    'MTY': 'Monterrey',
-    'FLL': 'Fort Lauderdale',
-    'DEN': 'Denver',
-    'ACC': 'Accra',
-    'ORL': 'Orlando',
-    'TYO': 'Tokyo',
-}
+# Airport code to city name mapping - loaded from external file
+_AIRPORT_NAMES = None
+
+
+def _load_airport_names():
+    """Load airport names from external JSON file"""
+    global _AIRPORT_NAMES
+    if _AIRPORT_NAMES is not None:
+        return _AIRPORT_NAMES
+    
+    # Try to load from data/airport_names.json
+    airport_names_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'airport_names.json')
+    airport_names_file = os.path.normpath(airport_names_file)
+    
+    try:
+        if os.path.exists(airport_names_file):
+            with open(airport_names_file, 'r', encoding='utf-8') as f:
+                _AIRPORT_NAMES = json.load(f)
+                logger.debug(f"Loaded {len(_AIRPORT_NAMES)} airport names from {airport_names_file}")
+        else:
+            logger.warning(f"Airport names file not found: {airport_names_file}, using empty mapping")
+            _AIRPORT_NAMES = {}
+    except Exception as e:
+        logger.warning(f"Error loading airport names from {airport_names_file}: {e}, using empty mapping")
+        _AIRPORT_NAMES = {}
+    
+    return _AIRPORT_NAMES
 
 
 def format_airport_code(code: str) -> str:
     """Format airport code with city name in brackets if known"""
+    airport_names = _load_airport_names()
     code_upper = code.upper()
-    city_name = AIRPORT_NAMES.get(code_upper)
+    city_name = airport_names.get(code_upper)
     if city_name:
         return f"{code} ({city_name})"
     return code
