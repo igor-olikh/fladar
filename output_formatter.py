@@ -80,6 +80,61 @@ class OutputFormatter:
         return description
     
     @staticmethod
+    def create_skyscanner_url(origin: str, destination: str, departure_date_str: str, return_date_str: str, prefer_direct: bool = True) -> str:
+        """
+        Create a Skyscanner URL for a flight search
+        
+        Args:
+            origin: IATA code of origin airport (e.g., 'TLV')
+            destination: IATA code of destination airport (e.g., 'MAD')
+            departure_date_str: Departure date in ISO format (e.g., '2025-11-20T17:25:00' or '2025-11-20')
+            return_date_str: Return date in ISO format (e.g., '2025-11-25T12:15:00' or '2025-11-25')
+            prefer_direct: Whether to prefer direct flights (default: True)
+        
+        Returns:
+            Skyscanner URL string
+        """
+        try:
+            # Extract date from ISO format string (handle both with and without time)
+            if 'T' in departure_date_str:
+                dep_date = datetime.fromisoformat(departure_date_str.replace('Z', '+00:00'))
+            else:
+                dep_date = datetime.strptime(departure_date_str, "%Y-%m-%d")
+            
+            if 'T' in return_date_str:
+                ret_date = datetime.fromisoformat(return_date_str.replace('Z', '+00:00'))
+            else:
+                ret_date = datetime.strptime(return_date_str, "%Y-%m-%d")
+            
+            # Format dates as DDMMYY (e.g., 251120 for 20 Nov 2025)
+            dep_date_str = dep_date.strftime("%d%m%y")
+            ret_date_str = ret_date.strftime("%d%m%y")
+            
+            # Convert airport codes to lowercase
+            origin_lower = origin.lower()
+            dest_lower = destination.lower()
+            
+            # Build URL
+            base_url = "https://www.skyscanner.de/transport/flights"
+            url = f"{base_url}/{origin_lower}/{dest_lower}/{dep_date_str}/{ret_date_str}/"
+            
+            # Add query parameters
+            params = {
+                'adultsv2': '1',
+                'cabinclass': 'economy',
+                'rtn': '1',
+                'preferdirects': 'true' if prefer_direct else 'false'
+            }
+            
+            query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
+            url = f"{url}?{query_string}"
+            
+            return url
+        except Exception as e:
+            logger.debug(f"Error creating Skyscanner URL: {e}")
+            return ""
+    
+    @staticmethod
     def format_duration_human(duration_str: str) -> str:
         """
         Convert ISO 8601 duration string (e.g., 'PT5H30M') to human-readable format (e.g., '5h 30m')
@@ -389,6 +444,10 @@ class OutputFormatter:
                     'route',
                     # Second column: Human-readable description
                     'description',
+                    # Third column: Skyscanner URL for Person 1 flight
+                    'skyscanner_url_person1',
+                    # Fourth column: Skyscanner URL for Person 2 flight
+                    'skyscanner_url_person2',
                     'destination',
                     'total_price_eur',
                     'price_person1_eur',
@@ -492,11 +551,42 @@ class OutputFormatter:
                     # Create human-readable description
                     description = OutputFormatter.create_flight_description(match, p1_info, p2_info)
                     
+                    # Create Skyscanner URLs for both persons
+                    # Extract dates from departure times (they're in ISO format)
+                    p1_outbound_dep_iso = p1_info.get('outbound_departure', '')
+                    p1_return_dep_iso = p1_info.get('return_departure', '')
+                    p2_outbound_dep_iso = p2_info.get('outbound_departure', '')
+                    p2_return_dep_iso = p2_info.get('return_departure', '')
+                    
+                    # Determine if flights are direct (for preferdirects parameter)
+                    p1_is_direct = p1_info.get('outbound_stops', 0) == 0 and p1_info.get('return_stops', 0) == 0
+                    p2_is_direct = p2_info.get('outbound_stops', 0) == 0 and p2_info.get('return_stops', 0) == 0
+                    
+                    skyscanner_url_p1 = OutputFormatter.create_skyscanner_url(
+                        origin=p1_origin,
+                        destination=dest,
+                        departure_date_str=p1_outbound_dep_iso,
+                        return_date_str=p1_return_dep_iso,
+                        prefer_direct=p1_is_direct
+                    ) if p1_outbound_dep_iso and p1_return_dep_iso else ""
+                    
+                    skyscanner_url_p2 = OutputFormatter.create_skyscanner_url(
+                        origin=p2_origin,
+                        destination=dest,
+                        departure_date_str=p2_outbound_dep_iso,
+                        return_date_str=p2_return_dep_iso,
+                        prefer_direct=p2_is_direct
+                    ) if p2_outbound_dep_iso and p2_return_dep_iso else ""
+                    
                     row = {
                         # First column: Clear route description
                         'route': main_route,
                         # Second column: Human-readable description
                         'description': description,
+                        # Third column: Skyscanner URL for Person 1
+                        'skyscanner_url_person1': skyscanner_url_p1,
+                        # Fourth column: Skyscanner URL for Person 2
+                        'skyscanner_url_person2': skyscanner_url_p2,
                         'destination': dest,
                         'total_price_eur': f"{match['total_price']:.2f}",
                         'price_person1_eur': f"{match['person1_price']:.2f}",
