@@ -1,11 +1,84 @@
 """
 Module to find destinations where both people can meet
 """
-from typing import List, Dict
-from flight_search import FlightSearch, format_airport_code
+from typing import List, Dict, Optional, Set
+from flight_search import FlightSearch, format_airport_code, resolve_airport_code
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Load airports database for country filtering
+try:
+    import airportsdata
+    airports_db = airportsdata.load('IATA')
+except Exception as e:
+    logger.warning(f"Could not load airports database for country filtering: {e}")
+    airports_db = None
+
+
+def get_airport_country(airport_code: str) -> Optional[str]:
+    """
+    Get country code for an airport using airportsdata library
+    
+    Args:
+        airport_code: IATA airport code
+    
+    Returns:
+        ISO country code (e.g., 'ES', 'IL') or None if not found
+    """
+    if airports_db is None:
+        return None
+    
+    try:
+        airport_info = airports_db.get(airport_code.upper())
+        if airport_info and 'country' in airport_info:
+            return airport_info['country']
+    except (KeyError, AttributeError, TypeError):
+        pass
+    
+    return None
+
+
+def is_valid_airport(airport_code: str) -> bool:
+    """
+    Check if an airport code is a valid airport (not a railway station or invalid code)
+    
+    Args:
+        airport_code: IATA code to check
+    
+    Returns:
+        True if it's a valid airport, False otherwise
+    """
+    if airports_db is None:
+        # If we can't check, assume it's valid (fail open)
+        return True
+    
+    code_upper = airport_code.upper()
+    
+    # Check if it's in the airports database
+    try:
+        airport_info = airports_db.get(code_upper)
+        if airport_info:
+            # Check if it has airport type information
+            # Railway stations typically don't have proper airport data
+            airport_type = airport_info.get('type', '').lower()
+            if 'railway' in airport_type or 'station' in airport_type:
+                return False
+            return True
+    except (KeyError, AttributeError, TypeError):
+        pass
+    
+    # If not in database, check if it's in aliases (railway stations are mapped)
+    from flight_search import _load_airport_aliases
+    aliases = _load_airport_aliases()
+    if code_upper in aliases:
+        # It's a railway station/non-airport code, but we have an alias
+        # The resolved airport will be checked separately
+        return False
+    
+    # If not in database and not in aliases, it might be invalid
+    # But we'll be lenient and let it through (Flight Offers Search will validate)
+    return True
 
 
 class DestinationFinder:
@@ -56,15 +129,57 @@ class DestinationFinder:
         Returns:
             List of matching flight pairs for different destinations
         """
+        # Get origin countries for filtering
+        origin1_country = get_airport_country(origin1)
+        origin2_country = get_airport_country(origin2)
+        origin_countries = {c for c in [origin1_country, origin2_country] if c}
+        
+        if origin_countries:
+            logger.debug(f"   Origin countries: {', '.join(origin_countries)} (will filter out same-country destinations)")
+        
         # If specific destinations are provided, use only those (skip discovery)
         if destinations_to_check and len(destinations_to_check) > 0:
             # Normalize destination codes (uppercase, strip whitespace)
             destinations_to_check = [dest.upper().strip() for dest in destinations_to_check if dest.strip()]
-            logger.info(f"📋 Using specified destinations (skipping discovery)")
-            logger.info(f"   Will check only these {len(destinations_to_check)} destination(s): {', '.join([format_airport_code(d) for d in destinations_to_check])}")
-            logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
-            logger.info(f"")
-        else:
+            
+            # Filter out invalid airports and same-country destinations
+            filtered_destinations = []
+            for dest in destinations_to_check:
+                # Resolve railway stations to airports
+                dest_resolved = resolve_airport_code(dest)
+                
+                # Check if it's a valid airport
+                if not is_valid_airport(dest_resolved):
+                    logger.debug(f"   Filtering out invalid airport code: {format_airport_code(dest)}")
+                    continue
+                
+                # Check if destination is in same country as origins
+                dest_country = get_airport_country(dest_resolved)
+                if dest_country and dest_country in origin_countries:
+                    logger.debug(f"   Filtering out same-country destination: {format_airport_code(dest_resolved)} ({dest_country})")
+                    continue
+                
+                filtered_destinations.append(dest_resolved)
+            
+            if len(filtered_destinations) < len(destinations_to_check):
+                filtered_out = len(destinations_to_check) - len(filtered_destinations)
+                logger.info(f"   Filtered out {filtered_out} destination(s) (invalid airports or same-country)")
+            
+            destinations_to_check = filtered_destinations
+            
+            if destinations_to_check:
+                logger.info(f"📋 Using specified destinations (skipping discovery)")
+                logger.info(f"   Will check only these {len(destinations_to_check)} destination(s): {', '.join([format_airport_code(d) for d in destinations_to_check])}")
+                logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
+                logger.info(f"")
+            else:
+                logger.warning(f"⚠️  All specified destinations were filtered out (invalid or same-country)")
+                logger.warning(f"   Falling back to normal destination discovery")
+                # Set to empty list to trigger normal discovery
+                destinations_to_check = []
+        
+        # If destinations_to_check is empty (either not provided or all filtered out), use normal discovery
+        if not destinations_to_check:
             # Get common destinations from both origins
             # Note: Inspiration Search is optional - Flight Offers Search will validate actual availability
             # For destination discovery, use the more restrictive max_stops (if either person wants direct, search for direct)
@@ -91,17 +206,42 @@ class DestinationFinder:
                     non_stop=(max_stops_for_discovery == 0)
                 )
             
+            # Filter destinations: remove invalid airports and same-country destinations
+            filtered_destinations = []
+            filtered_count = 0
+            for dest in destinations:
+                # Resolve railway stations to airports
+                dest_resolved = resolve_airport_code(dest)
+                
+                # Check if it's a valid airport
+                if not is_valid_airport(dest_resolved):
+                    filtered_count += 1
+                    logger.debug(f"   Filtering out invalid airport code: {format_airport_code(dest)}")
+                    continue
+                
+                # Check if destination is in same country as origins
+                dest_country = get_airport_country(dest_resolved)
+                if dest_country and dest_country in origin_countries:
+                    filtered_count += 1
+                    logger.debug(f"   Filtering out same-country destination: {format_airport_code(dest_resolved)} ({dest_country})")
+                    continue
+                
+                filtered_destinations.append(dest_resolved)
+            
+            if filtered_count > 0:
+                logger.info(f"   Filtered out {filtered_count} destination(s) (invalid airports or same-country)")
+            
             # Limit destinations to check
             if max_destinations > 0:
-                destinations_to_check = destinations[:max_destinations]
+                destinations_to_check = filtered_destinations[:max_destinations]
                 logger.info(f"")
-                logger.info(f"🎯 Will search {len(destinations_to_check)} destination(s) (out of {len(destinations)} available)")
+                logger.info(f"🎯 Will search {len(destinations_to_check)} destination(s) (out of {len(filtered_destinations)} valid destinations)")
                 logger.info(f"   Limiting to {max_destinations} destinations to manage API usage")
                 logger.info(f"")
             else:
-                destinations_to_check = destinations
+                destinations_to_check = filtered_destinations
                 logger.info(f"")
-                logger.info(f"🎯 Will search all {len(destinations_to_check)} available destination(s)")
+                logger.info(f"🎯 Will search all {len(destinations_to_check)} valid destination(s)")
                 logger.info(f"   No limit set - checking all destinations (this may take longer)")
                 logger.info(f"")
         
