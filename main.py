@@ -98,6 +98,17 @@ def main():
     api_config = config['api']
     output_config = config.get('output', {})
     
+    # Delete existing CSV output file from previous run if it exists
+    output_format = output_config.get('format', 'console')
+    csv_file = output_config.get('csv_file', 'flight_results.csv')
+    if 'csv' in output_format:
+        if os.path.exists(csv_file):
+            try:
+                os.remove(csv_file)
+                logger.info(f"Deleted previous CSV output file: {csv_file}")
+            except Exception as e:
+                logger.warning(f"Could not delete previous CSV file {csv_file}: {e}")
+    
     departure_date = search_config['outbound_date']
     return_date = search_config['return_date']
     max_price = float(search_config['max_price'])
@@ -217,8 +228,6 @@ def main():
         )
     
     # Output results
-    output_format = output_config.get('format', 'console')
-    
     print()
     print("=" * 100)
     print(f"📋 RESULTS: Found {len(results)} matching flight option(s)")
@@ -228,7 +237,6 @@ def main():
         OutputFormatter.print_console(results)
     
     if 'csv' in output_format:
-        csv_file = output_config.get('csv_file', 'flight_results.csv')
         OutputFormatter.export_csv(results, csv_file)
     
     print(f"\n✨ Search completed!")
