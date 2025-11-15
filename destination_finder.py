@@ -124,14 +124,69 @@ class DestinationFinder:
                 logger.error(f"      Continuing with next destination...")
                 continue
         
+        # Deduplicate matches - same flight pair might appear multiple times
+        # Create a unique key for each flight pair based on flight details
+        seen_pairs = set()
+        deduplicated_matches = []
+        
+        for match in all_matches:
+            # Create a unique identifier for this flight pair
+            p1_flight = match.get('person1_flight', {})
+            p2_flight = match.get('person2_flight', {})
+            
+            # Extract key identifiers from flights
+            # Use first segment departure/arrival times and airlines as unique key
+            try:
+                p1_outbound = p1_flight.get('itineraries', [{}])[0]
+                p1_outbound_segments = p1_outbound.get('segments', [])
+                p1_outbound_dep = p1_outbound_segments[0].get('departure', {}).get('at', '') if p1_outbound_segments else ''
+                p1_outbound_arr = p1_outbound_segments[-1].get('arrival', {}).get('at', '') if p1_outbound_segments else ''
+                p1_airlines = ','.join(sorted(set(seg.get('carrierCode', '') for seg in p1_outbound_segments)))
+                
+                p2_outbound = p2_flight.get('itineraries', [{}])[0]
+                p2_outbound_segments = p2_outbound.get('segments', [])
+                p2_outbound_dep = p2_outbound_segments[0].get('departure', {}).get('at', '') if p2_outbound_segments else ''
+                p2_outbound_arr = p2_outbound_segments[-1].get('arrival', {}).get('at', '') if p2_outbound_segments else ''
+                p2_airlines = ','.join(sorted(set(seg.get('carrierCode', '') for seg in p2_outbound_segments)))
+                
+                # Create unique key: destination + both flights' key details
+                unique_key = (
+                    match.get('destination', ''),
+                    p1_outbound_dep,
+                    p1_outbound_arr,
+                    p1_airlines,
+                    p2_outbound_dep,
+                    p2_outbound_arr,
+                    p2_airlines,
+                    match.get('person1_price', 0),
+                    match.get('person2_price', 0)
+                )
+                
+                if unique_key not in seen_pairs:
+                    seen_pairs.add(unique_key)
+                    deduplicated_matches.append(match)
+                else:
+                    logger.debug(f"   Skipping duplicate flight pair: {match.get('destination')} - Person 1: {p1_outbound_dep}, Person 2: {p2_outbound_dep}")
+            except Exception as e:
+                # If we can't create a unique key, include the match anyway (fail open)
+                logger.debug(f"   Error creating unique key for match: {e}, including anyway")
+                deduplicated_matches.append(match)
+        
+        duplicates_removed = len(all_matches) - len(deduplicated_matches)
+        if duplicates_removed > 0:
+            logger.info(f"   Removed {duplicates_removed} duplicate flight pair(s)")
+        
         # Sort all matches by total price
-        all_matches.sort(key=lambda x: x['total_price'])
+        deduplicated_matches.sort(key=lambda x: x['total_price'])
         
         logger.info(f"")
         logger.info(f"📊 Search Summary:")
         logger.info(f"   Destinations checked: {len(destinations_to_check)}")
         logger.info(f"   Destinations with matches: {destinations_with_matches}")
         logger.info(f"   Total matching flight pairs found: {len(all_matches)}")
+        if duplicates_removed > 0:
+            logger.info(f"   Duplicates removed: {duplicates_removed}")
+        logger.info(f"   Unique flight pairs: {len(deduplicated_matches)}")
         
-        return all_matches
+        return deduplicated_matches
 
