@@ -38,6 +38,22 @@ class FlightSearch:
             client_secret=api_secret,
             hostname=hostname
         )
+        
+        # Verify credentials are set
+        if not api_key or not api_secret:
+            raise ValueError("Amadeus API key and secret must be provided")
+        
+        # Pre-authenticate by making a simple call to ensure token is obtained
+        # This ensures the client is authenticated before any API calls
+        try:
+            # Make a minimal authenticated call to trigger token acquisition
+            # We use a simple endpoint that requires authentication
+            _ = self.amadeus.reference_data.urls.checkin_links.get(airlineCode='BA')
+            logger.debug("Pre-authentication successful")
+        except Exception as e:
+            # This is expected to fail (404/400) but it will trigger authentication
+            # We ignore the error as we just want to ensure the client authenticates
+            logger.debug(f"Pre-authentication call completed (expected to fail): {type(e).__name__}")
     
     def search_flights(
         self,
@@ -295,6 +311,17 @@ class FlightSearch:
             logger.debug(f"   [DEBUG]   - Origin: {origin}")
             logger.debug(f"   [DEBUG]   - Hostname: {self.amadeus.client.hostname if hasattr(self.amadeus, 'client') else 'Unknown'}")
             
+            # Ensure client is authenticated before making the call
+            # The SDK should handle this automatically, but we verify it works
+            try:
+                # Make a simple authenticated call first to ensure token is valid
+                # This will trigger authentication if needed
+                _ = self.amadeus.client.access_token
+                logger.debug(f"   [DEBUG] Client has access token")
+            except:
+                # If access_token doesn't exist, the SDK will authenticate on first call
+                logger.debug(f"   [DEBUG] Access token will be obtained on first API call")
+            
             # Use Flight Destinations API (Flight Inspiration Search)
             # According to Swagger spec, we should provide departureDate range for better results
             # Parameters:
@@ -349,7 +376,9 @@ class FlightSearch:
             api_params['oneWay'] = False
             
             logger.debug(f"   [DEBUG] API Parameters: {api_params}")
+            logger.debug(f"   [DEBUG] Making authenticated API call...")
             
+            # Make the API call - SDK will handle authentication automatically
             response = self.amadeus.shopping.flight_destinations.get(**api_params)
             
             # DEBUG: Log response details
@@ -382,28 +411,53 @@ class FlightSearch:
                 
         except ResponseError as error:
             # Extract error details with full debug information
-            logger.error(f"   ERROR: Flight Inspiration Search API call failed")
+            status_code = 'Unknown'
+            error_code = 'Unknown'
+            error_title = 'Unknown'
+            error_detail = 'Unknown'
+            error_body = None
+            error_url = None
+            
+            if hasattr(error, 'response'):
+                status_code = error.response.status_code if hasattr(error.response, 'status_code') else 'Unknown'
+                error_body = error.response.body if hasattr(error.response, 'body') else None
+                error_url = error.response.request.url if hasattr(error.response, 'request') and hasattr(error.response.request, 'url') else None
+            
+            # Extract error information from the error object
+            error_code = error.code if hasattr(error, 'code') else 'Unknown'
+            error_title = error.title if hasattr(error, 'title') else 'Unknown'
+            error_detail = error.description() if hasattr(error, 'description') else str(error)
+            
+            logger.error(f"   ❌ Amadeus API returned an error for Flight Inspiration Search")
+            logger.error(f"   Status Code: {status_code}")
+            logger.error(f"   Error Code: {error_code}")
+            logger.error(f"   Error Title: {error_title}")
+            logger.error(f"   Error Detail: {error_detail}")
+            logger.error(f"   This is an error response from the Amadeus API service (not a connection issue)")
+            
+            # Handle 401 authentication errors specifically
+            if status_code == 401:
+                logger.error(f"   ⚠️  AUTHENTICATION ERROR: Missing or invalid Authorization header")
+                logger.error(f"   This usually means:")
+                logger.error(f"   1. API credentials are incorrect or expired")
+                logger.error(f"   2. The API key/secret don't have permission for this endpoint")
+                logger.error(f"   3. The authentication token expired and wasn't refreshed")
+                logger.error(f"   Please verify your API credentials in config.yaml")
+                logger.error(f"   Get new credentials at: https://developers.amadeus.com/self-service")
+                logger.error(f"   Make sure your API key has access to 'Flight Inspiration Search' API")
+                logger.error(f"   Check your API key permissions in the Amadeus Developer Portal")
+            
+            # If it's a 404, it might be due to limited test data
+            if status_code == 404:
+                logger.warning(f"   Note: 404 errors are common in test environment due to limited data coverage")
+                logger.warning(f"   The application will fall back to predefined destinations")
             
             # DEBUG: Log full error details
             logger.debug(f"   [DEBUG] Exception Type: ResponseError")
             logger.debug(f"   [DEBUG] Exception: {error}")
-            
-            error_code = 'Unknown'
-            error_body = None
-            error_headers = None
-            error_url = None
-            
-            if hasattr(error, 'response'):
-                error_code = error.response.status_code if hasattr(error.response, 'status_code') else 'Unknown'
-                error_body = error.response.body if hasattr(error.response, 'body') else None
-                error_headers = error.response.headers if hasattr(error.response, 'headers') else None
-                error_url = error.response.request.url if hasattr(error.response, 'request') and hasattr(error.response.request, 'url') else None
-                
-                logger.debug(f"   [DEBUG] Error Response Details:")
-                logger.debug(f"   [DEBUG]   - Status Code: {error_code}")
+            if error_url:
                 logger.debug(f"   [DEBUG]   - URL: {error_url}")
-                logger.debug(f"   [DEBUG]   - Headers: {error_headers}")
-                logger.debug(f"   [DEBUG]   - Body type: {type(error_body)}")
+            if error_body:
                 logger.debug(f"   [DEBUG]   - Body content: {error_body}")
             
             logger.error(f"   ERROR: API returned status {error_code}")
