@@ -98,7 +98,8 @@ class DestinationFinder:
                     max_stops=max_stops,
                     arrival_tolerance_hours=arrival_tolerance_hours,
                     min_departure_time_outbound=min_departure_time_outbound,
-                    min_departure_time_return=min_departure_time_return
+                    min_departure_time_return=min_departure_time_return,
+                    nearby_airports_radius_km=nearby_airports_radius_km
                 )
                 
                 if matches:
