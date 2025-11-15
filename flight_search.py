@@ -892,6 +892,30 @@ class FlightSearch:
             with open(cache_file, 'r', encoding='utf-8') as f:
                 cache_data = json.load(f)
             
+            # Verify cache parameters match (safety check - cache key should already ensure this)
+            cached_origin = cache_data.get('origin', '').upper()
+            cached_destination = cache_data.get('destination', '').upper()
+            cached_departure_date = cache_data.get('departure_date', '')
+            cached_return_date = cache_data.get('return_date')
+            cached_max_stops = cache_data.get('max_stops')
+            cached_nearby_radius = cache_data.get('nearby_airports_radius_km')
+            cached_max_duration = cache_data.get('max_duration_hours')
+            cached_flight_type = cache_data.get('flight_type', 'both')  # Default to 'both' for old cache files without flight_type
+            
+            # Verify all parameters match (cache key should already ensure this, but double-check for safety)
+            if (cached_origin != origin.upper() or 
+                cached_destination != destination.upper() or 
+                cached_departure_date != departure_date or
+                cached_return_date != return_date or
+                cached_max_stops != max_stops or
+                cached_nearby_radius != nearby_airports_radius_km or
+                cached_max_duration != max_duration_hours or
+                cached_flight_type != flight_type):
+                logger.debug(f"   Cache parameters don't match - ignoring cache")
+                logger.debug(f"     Expected: {origin.upper()}_{destination.upper()}_{departure_date}_{return_date}_{max_stops}_{nearby_airports_radius_km}_{max_duration_hours}_{flight_type}")
+                logger.debug(f"     Cached:   {cached_origin}_{cached_destination}_{cached_departure_date}_{cached_return_date}_{cached_max_stops}_{cached_nearby_radius}_{cached_max_duration}_{cached_flight_type}")
+                return None
+            
             # Check if cache is still valid (same day - flights don't change for the same date)
             cached_date_str = cache_data.get('cached_date', '')
             if cached_date_str:
@@ -903,7 +927,7 @@ class FlightSearch:
                     # Flights for a specific date don't change during the same day
                     if cached_date.date() == today.date():
                         flights = cache_data.get('flights', [])
-                        logger.info(f"   ✓ Using cached flight results for {format_airport_code(origin)} → {format_airport_code(destination)} ({departure_date} to {return_date}) - {len(flights)} flight(s)")
+                        logger.info(f"   ✓ Using cached flight results for {format_airport_code(origin)} → {format_airport_code(destination)} ({departure_date} to {return_date}, type={flight_type}) - {len(flights)} flight(s)")
                         return flights
                     else:
                         logger.debug(f"   Cache expired (cached on {cached_date.date()}, today is {today.date()})")
@@ -965,6 +989,7 @@ class FlightSearch:
                 'max_stops': max_stops,
                 'nearby_airports_radius_km': nearby_airports_radius_km,
                 'max_duration_hours': max_duration_hours,
+                'flight_type': flight_type,  # Store flight_type in metadata for verification
                 'flights': flights,
                 'cached_date': datetime.now().isoformat(),
                 'count': len(flights)
