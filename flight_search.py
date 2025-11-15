@@ -145,6 +145,84 @@ class FlightSearch:
         
         return nearby_airports
     
+    def _parse_duration_to_hours(self, duration_str: str) -> float:
+        """
+        Parse ISO 8601 duration string (e.g., 'PT19H50M') to hours as float
+        
+        Args:
+            duration_str: ISO 8601 duration string like 'PT19H50M' or 'PT2H30M'
+            
+        Returns:
+            Duration in hours as float, or 0 if parsing fails
+        """
+        if not duration_str or not isinstance(duration_str, str):
+            return 0.0
+        
+        try:
+            # Remove 'PT' prefix if present
+            duration = duration_str.replace('PT', '')
+            
+            hours = 0.0
+            minutes = 0.0
+            
+            # Extract hours
+            if 'H' in duration:
+                hours_str = duration.split('H')[0]
+                hours = float(hours_str)
+                duration = duration.split('H', 1)[1]
+            
+            # Extract minutes
+            if 'M' in duration:
+                minutes_str = duration.split('M')[0]
+                minutes = float(minutes_str)
+            
+            # Convert to total hours
+            total_hours = hours + (minutes / 60.0)
+            return total_hours
+        except Exception as e:
+            logger.debug(f"Error parsing duration '{duration_str}': {e}")
+            return 0.0
+    
+    def _filter_by_duration(self, flights: List[Dict], max_duration_hours: float) -> List[Dict]:
+        """
+        Filter flights by maximum duration (both outbound and return)
+        
+        Args:
+            flights: List of flight offers
+            max_duration_hours: Maximum duration in hours (0 = no limit)
+            
+        Returns:
+            Filtered list of flights
+        """
+        if max_duration_hours <= 0:
+            return flights
+        
+        filtered = []
+        for flight in flights:
+            try:
+                itineraries = flight.get('itineraries', [])
+                if len(itineraries) < 2:
+                    # Need both outbound and return
+                    continue
+                
+                outbound_duration_str = itineraries[0].get('duration', '')
+                return_duration_str = itineraries[1].get('duration', '')
+                
+                outbound_hours = self._parse_duration_to_hours(outbound_duration_str)
+                return_hours = self._parse_duration_to_hours(return_duration_str)
+                
+                # Check if both outbound and return are within limit
+                if outbound_hours <= max_duration_hours and return_hours <= max_duration_hours:
+                    filtered.append(flight)
+                else:
+                    logger.debug(f"  → Filtered out flight: outbound={outbound_hours:.1f}h, return={return_hours:.1f}h (max={max_duration_hours}h)")
+            except Exception as e:
+                logger.debug(f"  → Error checking duration for flight: {e}")
+                # If we can't check duration, include the flight (fail open)
+                filtered.append(flight)
+        
+        return filtered
+    
     def search_flights(
         self,
         origin: str,
@@ -154,7 +232,8 @@ class FlightSearch:
         max_stops: int = 0,
         min_departure_time_outbound: Optional[str] = None,
         min_departure_time_return: Optional[str] = None,
-        nearby_airports_radius_km: int = 0
+        nearby_airports_radius_km: int = 0,
+        max_duration_hours: float = 0
     ) -> List[Dict]:
         """
         Search for round-trip flights
@@ -242,6 +321,13 @@ class FlightSearch:
                     outbound_str = f"outbound ≥ {min_departure_time_outbound}" if min_departure_time_outbound else "outbound: no limit"
                     return_str = f"return ≥ {min_departure_time_return}" if min_departure_time_return else "return: no limit"
                     logger.debug(f"  → Filtered to {len(flights)} flight(s) with {outbound_str}, {return_str} (removed {flights_before - len(flights)})")
+            
+            # Filter by maximum flight duration
+            if max_duration_hours > 0:
+                flights_before = len(flights)
+                flights = self._filter_by_duration(flights, max_duration_hours)
+                if len(flights) < flights_before:
+                    logger.info(f"  → Filtered to {len(flights)} flight(s) with duration ≤ {max_duration_hours}h (removed {flights_before - len(flights)} flights exceeding duration limit)")
             
             logger.info(f"  → Final result: {len(flights)} flight(s) after filtering for {origin} → {destination}")
             return flights
@@ -909,7 +995,7 @@ class FlightSearch:
         flights1 = self.search_flights(
             origin1, destination, departure_date, return_date,
             max_stops, min_departure_time_outbound, min_departure_time_return,
-            nearby_airports_radius_km
+            nearby_airports_radius_km, max_duration_hours
         )
         
         # Search flights for person 2
@@ -917,7 +1003,7 @@ class FlightSearch:
         flights2 = self.search_flights(
             origin2, destination, departure_date, return_date,
             max_stops, min_departure_time_outbound, min_departure_time_return,
-            nearby_airports_radius_km
+            nearby_airports_radius_km, max_duration_hours
         )
         
         logger.info(f"   Found {len(flights1)} flight(s) for Person 1, {len(flights2)} flight(s) for Person 2")
