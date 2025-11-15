@@ -45,15 +45,24 @@ class FlightSearch:
         
         # Pre-authenticate by making a simple call to ensure token is obtained
         # This ensures the client is authenticated before any API calls
+        # The SDK handles authentication automatically, but we trigger it explicitly
         try:
             # Make a minimal authenticated call to trigger token acquisition
-            # We use a simple endpoint that requires authentication
-            _ = self.amadeus.reference_data.urls.checkin_links.get(airlineCode='BA')
-            logger.debug("Pre-authentication successful")
+            # We use flight_offers_search as it's a reliable endpoint that requires auth
+            # This ensures the access token is obtained and cached
+            _ = self.amadeus.shopping.flight_offers_search.get(
+                originLocationCode='TLV',
+                destinationLocationCode='PAR',
+                departureDate='2025-11-20',
+                adults=1,
+                max=1
+            )
+            logger.debug("Pre-authentication successful - access token obtained")
         except Exception as e:
-            # This is expected to fail (404/400) but it will trigger authentication
-            # We ignore the error as we just want to ensure the client authenticates
-            logger.debug(f"Pre-authentication call completed (expected to fail): {type(e).__name__}")
+            # Even if this fails, it should have triggered authentication
+            # The SDK will cache the token for subsequent calls
+            logger.debug(f"Pre-authentication call completed: {type(e).__name__}")
+            # Don't raise - authentication might still work for other endpoints
     
     def search_flights(
         self,
