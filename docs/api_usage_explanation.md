@@ -6,6 +6,8 @@ This application uses **three Amadeus APIs** to find meeting destinations for tw
 
 **Authentication**: The application uses pre-authentication to ensure access tokens are obtained before making API calls. This prevents most authentication errors (401) and ensures reliable API access.
 
+**Documentation Verified**: All API parameters and response structures have been verified against the official Amadeus API documentation as of the last update.
+
 ## APIs Used
 
 ### 1. Flight Offers Search API
