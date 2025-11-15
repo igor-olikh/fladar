@@ -5,6 +5,15 @@ origins:
   person1: "TLV"  # Tel Aviv
   person2: "ALC"  # Alicante
 
+# Timezone configuration for airports (optional - defaults provided for common airports)
+# Format: IATA code: timezone name (e.g., "Asia/Jerusalem", "Europe/Madrid")
+# If not specified, defaults will be used for common airports
+# These timezones are used to convert UTC flight times to local times in CSV output
+timezones:
+  TLV: "Asia/Jerusalem"  # Tel Aviv
+  ALC: "Europe/Madrid"   # Alicante
+  # Add more as needed, or rely on built-in defaults for common European airports
+
 # Search parameters
 search:
   # Date range for outbound flights (format: YYYY-MM-DD)

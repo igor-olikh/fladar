@@ -105,6 +105,12 @@ def main():
     use_dynamic_destinations = search_config.get('use_dynamic_destinations', True)
     max_flight_duration = float(search_config.get('max_flight_duration_hours', 0))
     
+    # Load timezone configuration
+    timezone_config = config.get('timezones', {})
+    if timezone_config:
+        OutputFormatter.set_custom_timezones(timezone_config)
+        logger.debug(f"Loaded {len(timezone_config)} custom timezone(s) from config")
+    
     # Initialize flight search
     try:
         environment = api_config.get('environment', 'test')

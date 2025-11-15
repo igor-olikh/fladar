@@ -1,14 +1,130 @@
 """
 Output formatting module for flight results
 """
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import datetime
 import csv
 import os
+import pytz
 
 
 class OutputFormatter:
     """Formats and outputs flight search results"""
+    
+    # Airport timezone mapping (IATA code -> timezone name)
+    # Common airports and their timezones
+    # Can be overridden by config file
+    _AIRPORT_TIMEZONES = {
+        # Person 1 origin
+        'TLV': 'Asia/Jerusalem',  # Tel Aviv
+        
+        # Person 2 origin
+        'ALC': 'Europe/Madrid',  # Alicante
+        
+        # Common European destinations
+        'PAR': 'Europe/Paris',  # Paris
+        'CDG': 'Europe/Paris',  # Paris CDG
+        'ORY': 'Europe/Paris',  # Paris Orly
+        'LON': 'Europe/London',  # London
+        'LHR': 'Europe/London',  # London Heathrow
+        'LGW': 'Europe/London',  # London Gatwick
+        'MAD': 'Europe/Madrid',  # Madrid
+        'BCN': 'Europe/Madrid',  # Barcelona
+        'ROM': 'Europe/Rome',  # Rome
+        'FCO': 'Europe/Rome',  # Rome Fiumicino
+        'AMS': 'Europe/Amsterdam',  # Amsterdam
+        'BER': 'Europe/Berlin',  # Berlin
+        'MUC': 'Europe/Berlin',  # Munich
+        'VIE': 'Europe/Vienna',  # Vienna
+        'PRG': 'Europe/Prague',  # Prague
+        'ATH': 'Europe/Athens',  # Athens
+        'LIS': 'Europe/Lisbon',  # Lisbon
+        'DUB': 'Europe/Dublin',  # Dublin
+        'CPH': 'Europe/Copenhagen',  # Copenhagen
+        'STO': 'Europe/Stockholm',  # Stockholm
+        'OSL': 'Europe/Oslo',  # Oslo
+        'MIL': 'Europe/Rome',  # Milan
+        'VEN': 'Europe/Rome',  # Venice
+        'NAP': 'Europe/Rome',  # Naples
+        'PMO': 'Europe/Rome',  # Palermo
+        'AGP': 'Europe/Madrid',  # Malaga
+        'SEV': 'Europe/Madrid',  # Seville
+        'ZUR': 'Europe/Zurich',  # Zurich
+        'BRU': 'Europe/Brussels',  # Brussels
+        'WAR': 'Europe/Warsaw',  # Warsaw
+        'BUD': 'Europe/Budapest',  # Budapest
+        'ZAG': 'Europe/Zagreb',  # Zagreb
+        'SPL': 'Europe/Zagreb',  # Split
+        'DBV': 'Europe/Zagreb',  # Dubrovnik
+        'HEL': 'Europe/Helsinki',  # Helsinki
+        'REK': 'Atlantic/Reykjavik',  # Reykjavik
+        'OPO': 'Europe/Lisbon',  # Porto
+    }
+    
+    # Class variable to store custom timezones from config
+    _custom_timezones = {}
+    
+    @classmethod
+    def set_custom_timezones(cls, timezone_config: Dict[str, str]):
+        """Set custom timezones from config file"""
+        cls._custom_timezones = timezone_config or {}
+    
+    @staticmethod
+    def get_timezone_for_airport(airport_code: str) -> Optional[pytz.BaseTzInfo]:
+        """Get timezone for an airport code"""
+        # First check custom timezones from config, then defaults
+        timezone_name = OutputFormatter._custom_timezones.get(airport_code.upper()) or \
+                       OutputFormatter._AIRPORT_TIMEZONES.get(airport_code.upper())
+        if timezone_name:
+            try:
+                return pytz.timezone(timezone_name)
+            except:
+                return None
+        return None
+    
+    @staticmethod
+    def convert_to_local_time(utc_time_str: str, airport_code: str) -> str:
+        """
+        Convert UTC time string to local time for a given airport
+        
+        Args:
+            utc_time_str: UTC time in ISO 8601 format (e.g., "2025-11-20T14:35:00")
+            airport_code: IATA airport code
+            
+        Returns:
+            Local time string in format "YYYY-MM-DD HH:MM (Timezone)" or original if conversion fails
+        """
+        if not utc_time_str or utc_time_str == 'N/A':
+            return utc_time_str
+        
+        try:
+            # Parse UTC time (Amadeus API returns times in ISO 8601 format)
+            # Handle both with and without timezone info
+            if 'T' in utc_time_str:
+                if '+' in utc_time_str or utc_time_str.endswith('Z'):
+                    # Has timezone info
+                    dt = datetime.fromisoformat(utc_time_str.replace('Z', '+00:00'))
+                else:
+                    # No timezone info, assume UTC
+                    dt = datetime.fromisoformat(utc_time_str)
+                    dt = pytz.UTC.localize(dt)
+            else:
+                return utc_time_str
+            
+            # Get timezone for airport
+            tz = OutputFormatter.get_timezone_for_airport(airport_code)
+            if tz:
+                # Convert to local time
+                local_dt = dt.astimezone(tz)
+                # Format: "2025-11-20 16:35 (Asia/Jerusalem)"
+                timezone_name = str(tz).split('/')[-1]  # Get city name from timezone
+                return f"{local_dt.strftime('%Y-%m-%d %H:%M')} ({timezone_name})"
+            else:
+                # No timezone found, return UTC time
+                return f"{dt.strftime('%Y-%m-%d %H:%M')} (UTC)"
+        except Exception as e:
+            # If conversion fails, return original
+            return utc_time_str
     
     @staticmethod
     def format_flight_info(flight: Dict) -> Dict:
@@ -123,25 +239,33 @@ class OutputFormatter:
                     'price_person2_eur',
                     'currency',
                     
-                    # Person 1 details
+                    # Person 1 details - with UTC and local times
                     'person1_route',
                     'person1_price_eur',
-                    'person1_outbound_departure',
-                    'person1_outbound_arrival',
+                    'person1_outbound_departure_utc',
+                    'person1_outbound_departure_local_tlv',
+                    'person1_outbound_arrival_utc',
+                    'person1_outbound_arrival_local_dest',
                     'person1_outbound_duration',
-                    'person1_return_departure',
-                    'person1_return_arrival',
+                    'person1_return_departure_utc',
+                    'person1_return_departure_local_dest',
+                    'person1_return_arrival_utc',
+                    'person1_return_arrival_local_tlv',
                     'person1_return_duration',
                     'person1_airlines',
                     
-                    # Person 2 details
+                    # Person 2 details - with UTC and local times
                     'person2_route',
                     'person2_price_eur',
-                    'person2_outbound_departure',
-                    'person2_outbound_arrival',
+                    'person2_outbound_departure_utc',
+                    'person2_outbound_departure_local_alc',
+                    'person2_outbound_arrival_utc',
+                    'person2_outbound_arrival_local_dest',
                     'person2_outbound_duration',
-                    'person2_return_departure',
-                    'person2_return_arrival',
+                    'person2_return_departure_utc',
+                    'person2_return_departure_local_dest',
+                    'person2_return_arrival_utc',
+                    'person2_return_arrival_local_alc',
                     'person2_return_duration',
                     'person2_airlines'
                 ]
@@ -182,6 +306,27 @@ class OutputFormatter:
                     # Main route: both people going to same destination
                     main_route = f"{p1_origin} & {p2_origin} → {dest}"
                     
+                    # Convert times to local timezones
+                    # Person 1: TLV (Tel Aviv) timezone
+                    p1_outbound_dep_utc = p1_info.get('outbound_departure', '')
+                    p1_outbound_dep_local = OutputFormatter.convert_to_local_time(p1_outbound_dep_utc, p1_origin)
+                    p1_outbound_arr_utc = p1_info.get('outbound_arrival', '')
+                    p1_outbound_arr_local = OutputFormatter.convert_to_local_time(p1_outbound_arr_utc, dest)
+                    p1_return_dep_utc = p1_info.get('return_departure', '')
+                    p1_return_dep_local = OutputFormatter.convert_to_local_time(p1_return_dep_utc, dest)
+                    p1_return_arr_utc = p1_info.get('return_arrival', '')
+                    p1_return_arr_local = OutputFormatter.convert_to_local_time(p1_return_arr_utc, p1_origin)
+                    
+                    # Person 2: ALC (Alicante) timezone
+                    p2_outbound_dep_utc = p2_info.get('outbound_departure', '')
+                    p2_outbound_dep_local = OutputFormatter.convert_to_local_time(p2_outbound_dep_utc, p2_origin)
+                    p2_outbound_arr_utc = p2_info.get('outbound_arrival', '')
+                    p2_outbound_arr_local = OutputFormatter.convert_to_local_time(p2_outbound_arr_utc, dest)
+                    p2_return_dep_utc = p2_info.get('return_departure', '')
+                    p2_return_dep_local = OutputFormatter.convert_to_local_time(p2_return_dep_utc, dest)
+                    p2_return_arr_utc = p2_info.get('return_arrival', '')
+                    p2_return_arr_local = OutputFormatter.convert_to_local_time(p2_return_arr_utc, p2_origin)
+                    
                     row = {
                         # First column: Clear route description
                         'route': main_route,
@@ -191,25 +336,33 @@ class OutputFormatter:
                         'price_person2_eur': f"{match['person2_price']:.2f}",
                         'currency': p1_info.get('currency', 'EUR'),
                         
-                        # Person 1
+                        # Person 1 - with local times
                         'person1_route': f"{p1_origin} → {dest} (outbound), {p1_return_origin} → {p1_return_dest} (return)",
                         'person1_price_eur': f"{match['person1_price']:.2f}",
-                        'person1_outbound_departure': p1_info.get('outbound_departure', ''),
-                        'person1_outbound_arrival': p1_info.get('outbound_arrival', ''),
+                        'person1_outbound_departure_utc': p1_outbound_dep_utc,
+                        'person1_outbound_departure_local_tlv': p1_outbound_dep_local,
+                        'person1_outbound_arrival_utc': p1_outbound_arr_utc,
+                        'person1_outbound_arrival_local_dest': p1_outbound_arr_local,
                         'person1_outbound_duration': p1_info.get('outbound_duration', ''),
-                        'person1_return_departure': p1_info.get('return_departure', ''),
-                        'person1_return_arrival': p1_info.get('return_arrival', ''),
+                        'person1_return_departure_utc': p1_return_dep_utc,
+                        'person1_return_departure_local_dest': p1_return_dep_local,
+                        'person1_return_arrival_utc': p1_return_arr_utc,
+                        'person1_return_arrival_local_tlv': p1_return_arr_local,
                         'person1_return_duration': p1_info.get('return_duration', ''),
                         'person1_airlines': p1_info.get('airlines', ''),
                         
-                        # Person 2
+                        # Person 2 - with local times
                         'person2_route': f"{p2_origin} → {dest} (outbound), {p2_return_origin} → {p2_return_dest} (return)",
                         'person2_price_eur': f"{match['person2_price']:.2f}",
-                        'person2_outbound_departure': p2_info.get('outbound_departure', ''),
-                        'person2_outbound_arrival': p2_info.get('outbound_arrival', ''),
+                        'person2_outbound_departure_utc': p2_outbound_dep_utc,
+                        'person2_outbound_departure_local_alc': p2_outbound_dep_local,
+                        'person2_outbound_arrival_utc': p2_outbound_arr_utc,
+                        'person2_outbound_arrival_local_dest': p2_outbound_arr_local,
                         'person2_outbound_duration': p2_info.get('outbound_duration', ''),
-                        'person2_return_departure': p2_info.get('return_departure', ''),
-                        'person2_return_arrival': p2_info.get('return_arrival', ''),
+                        'person2_return_departure_utc': p2_return_dep_utc,
+                        'person2_return_departure_local_dest': p2_return_dep_local,
+                        'person2_return_arrival_utc': p2_return_arr_utc,
+                        'person2_return_arrival_local_alc': p2_return_arr_local,
                         'person2_return_duration': p2_info.get('return_duration', ''),
                         'person2_airlines': p2_info.get('airlines', '')
                     }
