@@ -97,6 +97,7 @@ def main():
     search_config = config['search']
     api_config = config['api']
     output_config = config.get('output', {})
+    html_top_destinations = output_config.get('html_top_destinations', 3)
     
     # Delete existing CSV and HTML output files from previous run if they exist
     output_format = output_config.get('format', 'console')
@@ -264,8 +265,8 @@ def main():
     
     if 'csv' in output_format:
         OutputFormatter.export_csv(results, csv_file)
-        # Also export HTML with top 3 destinations
-        OutputFormatter.export_html(results, html_file)
+        # Also export HTML with top N destinations (configurable)
+        OutputFormatter.export_html(results, html_file, top_destinations=html_top_destinations)
     
     print(f"\n✨ Search completed!")
 

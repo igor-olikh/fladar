@@ -765,8 +765,15 @@ class OutputFormatter:
             traceback.print_exc()
     
     @staticmethod
-    def export_html(results: List[Dict], filename: str):
-        """Export top 3 destinations with best flight to beautiful HTML file"""
+    def export_html(results: List[Dict], filename: str, top_destinations: int = 3):
+        """
+        Export top destinations with best flight to beautiful HTML file
+        
+        Args:
+            results: List of flight match results
+            filename: Output HTML file path
+            top_destinations: Number of top destinations to display (default: 3)
+        """
         if not results:
             print("No results to export to HTML.")
             return
@@ -781,11 +788,11 @@ class OutputFormatter:
                 destinations_dict[dest].append(match)
             
             # Sort destinations by their cheapest flight's total price
-            # Then take top 3 destinations
+            # Then take top N destinations (configurable)
             sorted_destinations = sorted(
                 destinations_dict.items(),
                 key=lambda x: x[1][0]['total_price']  # Sort by cheapest flight in each destination
-            )[:3]
+            )[:top_destinations]
             
             if not sorted_destinations:
                 print("No destinations to export to HTML.")

@@ -98,6 +98,10 @@ output:
   csv_file: "flight_results.csv"
   
   # HTML output file path (automatically generated when CSV output is enabled)
-  # Shows top 3 destinations with best flight in a beautiful, human-readable format
+  # Shows top destinations with best flight in a beautiful, human-readable format
   html_file: "flight_results.html"
+  
+  # Number of top destinations to display in HTML output (default: 3)
+  # Set to any positive integer to show more or fewer destinations
+  html_top_destinations: 3
 

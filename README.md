@@ -6,7 +6,7 @@ A powerful Python application that helps two people find where to meet by search
 
 ## 📸 Output Preview
 
-The application generates a comprehensive HTML report displaying the top 3 meeting destinations with detailed flight information for both travelers.
+The application generates a comprehensive HTML report displaying the top meeting destinations (configurable, default: 3) with detailed flight information for both travelers.
 
 ![Flight Results HTML Output](flight_results_screenshot.png)
 
@@ -196,6 +196,7 @@ api:
 | `min_departure_time_outbound` | Minimum departure time from origin (HH:MM) | None |
 | `min_departure_time_return` | Minimum departure time from destination (HH:MM) | None |
 | `environment` | API environment: "test" or "production" | "test" |
+| `html_top_destinations` | Number of top destinations to display in HTML output | 3 |
 
 ## 📊 Output Format
 
@@ -237,6 +238,18 @@ The CSV file (`flight_results.csv` by default) includes:
 - Local times are automatically detected for each airport
 - Departure times show local time at departure airport
 - Arrival times show local time at arrival airport
+
+### HTML Output
+
+The HTML file (`flight_results.html` by default) provides a visually appealing report with:
+- **Top destinations**: Displays the top N destinations (configurable via `html_top_destinations`, default: 3)
+- **Best flight per destination**: Shows the cheapest flight option for each destination
+- **Complete flight details**: Departure/arrival times, durations, stops, and airlines
+- **Stop information**: Airport codes and layover durations for connections
+- **Booking links**: Direct links to Skyscanner for each flight
+- **Responsive design**: Works on desktop and mobile devices
+
+The number of destinations shown can be configured in `config.yaml` using the `html_top_destinations` parameter.
 
 ## 🔧 How It Works
 
