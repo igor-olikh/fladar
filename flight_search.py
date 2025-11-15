@@ -522,7 +522,7 @@ class FlightSearch:
             logger.debug(f"   [DEBUG] API Call Details:")
             logger.debug(f"   [DEBUG]   - Endpoint: shopping.flight_destinations.get")
             logger.debug(f"   [DEBUG]   - Origin: {origin}")
-            logger.debug(f"   [DEBUG]   - Hostname: {self.amadeus.client.hostname if hasattr(self.amadeus, 'client') else 'Unknown'}")
+            logger.debug(f"   [DEBUG]   - Hostname: {self.hostname}")
             
             # Ensure client is authenticated before making the call
             # The SDK should handle this automatically, but we verify it works
