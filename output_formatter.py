@@ -7,6 +7,7 @@ import csv
 import os
 import pytz
 import airportsdata
+from timezonefinder import TimezoneFinder
 import logging
 
 logger = logging.getLogger(__name__)
@@ -14,9 +15,11 @@ logger = logging.getLogger(__name__)
 # Load airport database for automatic timezone detection
 try:
     airports = airportsdata.load('IATA')  # Load IATA code database
+    tf = TimezoneFinder()  # Initialize timezone finder
 except Exception as e:
     logger.warning(f"Could not load airports database: {e}. Will use fallback timezone mapping.")
     airports = None
+    tf = None
 
 
 class OutputFormatter:
