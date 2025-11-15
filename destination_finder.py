@@ -75,11 +75,18 @@ class DestinationFinder:
             )
         
         # Limit destinations to check
-        destinations_to_check = destinations[:max_destinations]
-        logger.info(f"")
-        logger.info(f"🎯 Will search {len(destinations_to_check)} destination(s) (out of {len(destinations)} available)")
-        logger.info(f"   Limiting to {max_destinations} destinations to manage API usage")
-        logger.info(f"")
+        if max_destinations > 0:
+            destinations_to_check = destinations[:max_destinations]
+            logger.info(f"")
+            logger.info(f"🎯 Will search {len(destinations_to_check)} destination(s) (out of {len(destinations)} available)")
+            logger.info(f"   Limiting to {max_destinations} destinations to manage API usage")
+            logger.info(f"")
+        else:
+            destinations_to_check = destinations
+            logger.info(f"")
+            logger.info(f"🎯 Will search all {len(destinations_to_check)} available destination(s)")
+            logger.info(f"   No limit set - checking all destinations (this may take longer)")
+            logger.info(f"")
         
         all_matches = []
         destinations_with_matches = 0

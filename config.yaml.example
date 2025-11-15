@@ -46,6 +46,13 @@ search:
   # Set to 0 to disable caching
   destination_cache_expiration_days: 30
   
+  # Maximum number of destinations to check (limits API usage)
+  # If the API or predefined list returns 100 destinations, but you set this to 20,
+  # only the first 20 destinations will be searched for flights
+  # Set to 0 or empty to check all available destinations (not recommended for large lists)
+  # Recommended: 20-50 for testing, 50-100 for production
+  max_destinations_to_check: 50
+  
   # Optional departure time constraints (format: HH:MM, leave empty to disable)
   # These constraints apply to BOTH Person 1 and Person 2 flights
   # 
