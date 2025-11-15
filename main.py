@@ -142,7 +142,8 @@ def main():
     nearby_airports_radius_km = search_config.get('nearby_airports_radius_km', 0)
     max_destinations_to_check = search_config.get('max_destinations_to_check', 50)
     use_flight_cache = search_config.get('use_flight_cache', True)
-    destinations_to_check = search_config.get('destinations_to_check', [])  # Optional list of specific destinations
+    # Check for destinations_to_check in search section first, then root level (for backward compatibility)
+    destinations_to_check = search_config.get('destinations_to_check') or config.get('destinations_to_check', [])
     
     # Timezones are now automatically detected using airportsdata library
     # No manual configuration needed
