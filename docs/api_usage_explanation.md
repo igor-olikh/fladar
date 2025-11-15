@@ -61,7 +61,8 @@ amadeus.shopping.flight_offers_search.get(
 **When Used**: 
 - Only when `use_dynamic_destinations: true` in config
 - Called once per origin to find available destinations
-- Currently **failing in test environment** (404 errors)
+- Currently **failing in test environment** (404 errors for TLV/ALC)
+- May also return 401 errors if authentication fails
 
 **What It Returns**:
 - List of destination airport codes reachable from the origin
@@ -70,9 +71,17 @@ amadeus.shopping.flight_offers_search.get(
 **Example Call**:
 ```python
 amadeus.shopping.flight_destinations.get(
-    origin="TLV"
+    origin="TLV",
+    departureDate="2025-11-20,2025-12-20",  # Date range (optional but recommended)
+    viewBy="DESTINATION",  # Group by destination
+    oneWay=False  # Round-trip flights
 )
 ```
+
+**Authentication**:
+- The application uses pre-authentication to ensure access tokens are obtained before API calls
+- If you receive 401 errors, check your API credentials in `config.yaml`
+- Ensure your API key has permission for the Flight Inspiration Search API endpoint
 
 **Usage Statistics** (from your dashboard):
 - **Requests**: 16
@@ -82,12 +91,19 @@ amadeus.shopping.flight_destinations.get(
 **Why All Errors?**
 - Test environment doesn't have data for TLV (Tel Aviv) or ALC (Alicante)
 - API returns 404: "No response found for this query"
+- May also return 401 if authentication fails (missing/invalid credentials)
 - Application correctly falls back to predefined destination list
 
+**Error Handling**:
+- **401 Errors**: Authentication failures - check API credentials and permissions
+- **404 Errors**: No data available for the origin in test environment
+- Both errors trigger automatic fallback to predefined destination list
+
 **Current Status**: 
-- ❌ Not working in test environment
+- ❌ Not working in test environment (404 for TLV/ALC)
 - ✅ Should work in production environment
 - ✅ Fallback to predefined list works correctly
+- ✅ Improved authentication and error handling implemented
 
 ---
 
@@ -319,12 +335,19 @@ Since duration filtering isn't fully implemented, you can:
 | API | Purpose | Status | Usage | Documentation |
 |-----|---------|--------|-------|---------------|
 | **Flight Offers Search** | Get actual flights | ✅ Working | 431 requests (main API) | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-offers-search) |
-| **Flight Inspiration Search** | Find destinations | ❌ Failing (test env) | 16 requests, all errors | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-inspiration-search) |
+| **Flight Inspiration Search** | Find destinations | ⚠️ Limited (test env) | 16 requests, 404/401 errors | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-inspiration-search) |
 | **Airport Nearest Relevant** | Find nearby airports | ⚠️ Not used | 1 request (testing) | [Official Docs](https://developers.amadeus.com/self-service/category/airport/api-doc/airport-nearest-relevant) |
 
-**Destination Selection**: Currently uses predefined list (32 destinations) due to Flight Inspiration Search API failures in test environment.
+**Destination Selection**: Currently uses predefined list (32 destinations) due to Flight Inspiration Search API limitations in test environment (404 for TLV/ALC). Falls back automatically on errors.
+
+**Authentication**: Pre-authentication implemented to prevent 401 errors. Enhanced error handling provides clear guidance for authentication issues.
 
 **Max Flight Duration**: Parameter exists but needs implementation to actually filter destinations by flight duration.
+
+**Error Handling**: 
+- 401 errors: Authentication failures - check credentials and permissions
+- 404 errors: No data available - automatic fallback to predefined list
+- Both errors are handled gracefully with detailed logging
 
 ## Additional Resources
 
