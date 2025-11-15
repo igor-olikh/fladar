@@ -59,22 +59,24 @@ class OutputFormatter:
         p2_outbound_stops = p2_info.get('outbound_stops', 0)
         p2_return_stops = p2_info.get('return_stops', 0)
         
+        # Format stops as "No stops", "1 stop", "2 stops", etc.
+        def format_stops(stops: int) -> str:
+            if stops == 0:
+                return "No stops"
+            elif stops == 1:
+                return "1 stop"
+            else:
+                return f"{stops} stops"
+        
+        p1_outbound_stops_str = format_stops(p1_outbound_stops)
+        p1_return_stops_str = format_stops(p1_return_stops)
+        p2_outbound_stops_str = format_stops(p2_outbound_stops)
+        p2_return_stops_str = format_stops(p2_return_stops)
+        
         # Build description
         description = f"Both people meet in {dest}. "
-        description += f"Person 1 ({p1_origin}): {p1_outbound_duration} outbound"
-        if p1_outbound_stops > 0:
-            description += f" ({p1_outbound_stops} stop{'s' if p1_outbound_stops > 1 else ''})"
-        description += f", {p1_return_duration} return"
-        if p1_return_stops > 0:
-            description += f" ({p1_return_stops} stop{'s' if p1_return_stops > 1 else ''})"
-        description += f" - {p1_price:.2f} {currency}. "
-        description += f"Person 2 ({p2_origin}): {p2_outbound_duration} outbound"
-        if p2_outbound_stops > 0:
-            description += f" ({p2_outbound_stops} stop{'s' if p2_outbound_stops > 1 else ''})"
-        description += f", {p2_return_duration} return"
-        if p2_return_stops > 0:
-            description += f" ({p2_return_stops} stop{'s' if p2_return_stops > 1 else ''})"
-        description += f" - {p2_price:.2f} {currency}. "
+        description += f"Person 1 ({p1_origin}): {p1_outbound_duration} outbound ({p1_outbound_stops_str}), {p1_return_duration} return ({p1_return_stops_str}) - {p1_price:.2f} {currency}. "
+        description += f"Person 2 ({p2_origin}): {p2_outbound_duration} outbound ({p2_outbound_stops_str}), {p2_return_duration} return ({p2_return_stops_str}) - {p2_price:.2f} {currency}. "
         description += f"Total: {total_price:.2f} {currency}."
         
         return description
@@ -462,11 +464,13 @@ class OutputFormatter:
                     'person1_outbound_arrival_utc',
                     'person1_outbound_arrival_local_dest',
                     'person1_outbound_duration',
+                    'person1_outbound_stops',
                     'person1_return_departure_utc',
                     'person1_return_departure_local_dest',
                     'person1_return_arrival_utc',
                     'person1_return_arrival_local_tlv',
                     'person1_return_duration',
+                    'person1_return_stops',
                     'person1_airlines',
                     
                     # Person 2 details - with UTC and local times
@@ -477,11 +481,13 @@ class OutputFormatter:
                     'person2_outbound_arrival_utc',
                     'person2_outbound_arrival_local_dest',
                     'person2_outbound_duration',
+                    'person2_outbound_stops',
                     'person2_return_departure_utc',
                     'person2_return_departure_local_dest',
                     'person2_return_arrival_utc',
                     'person2_return_arrival_local_alc',
                     'person2_return_duration',
+                    'person2_return_stops',
                     'person2_airlines'
                 ]
                 
@@ -601,11 +607,13 @@ class OutputFormatter:
                         'person1_outbound_arrival_utc': p1_outbound_arr_utc,
                         'person1_outbound_arrival_local_dest': p1_outbound_arr_local,
                         'person1_outbound_duration': p1_outbound_duration_human,
+                        'person1_outbound_stops': p1_outbound_stops_str,
                         'person1_return_departure_utc': p1_return_dep_utc,
                         'person1_return_departure_local_dest': p1_return_dep_local,
                         'person1_return_arrival_utc': p1_return_arr_utc,
                         'person1_return_arrival_local_tlv': p1_return_arr_local,
                         'person1_return_duration': p1_return_duration_human,
+                        'person1_return_stops': p1_return_stops_str,
                         'person1_airlines': p1_info.get('airlines', ''),
                         
                         # Person 2 - with local times
@@ -616,11 +624,13 @@ class OutputFormatter:
                         'person2_outbound_arrival_utc': p2_outbound_arr_utc,
                         'person2_outbound_arrival_local_dest': p2_outbound_arr_local,
                         'person2_outbound_duration': p2_outbound_duration_human,
+                        'person2_outbound_stops': p2_outbound_stops_str,
                         'person2_return_departure_utc': p2_return_dep_utc,
                         'person2_return_departure_local_dest': p2_return_dep_local,
                         'person2_return_arrival_utc': p2_return_arr_utc,
                         'person2_return_arrival_local_alc': p2_return_arr_local,
                         'person2_return_duration': p2_return_duration_human,
+                        'person2_return_stops': p2_return_stops_str,
                         'person2_airlines': p2_info.get('airlines', '')
                     }
                     
