@@ -296,10 +296,61 @@ class FlightSearch:
             logger.debug(f"   [DEBUG]   - Hostname: {self.amadeus.client.hostname if hasattr(self.amadeus, 'client') else 'Unknown'}")
             
             # Use Flight Destinations API (Flight Inspiration Search)
-            # Note: This API doesn't require departureDate, it finds cheapest destinations
-            response = self.amadeus.shopping.flight_destinations.get(
-                origin=origin
-            )
+            # According to Swagger spec, we should provide departureDate range for better results
+            # Parameters:
+            # - origin: required (IATA code)
+            # - departureDate: optional but recommended (range format: "YYYY-MM-DD,YYYY-MM-DD")
+            # - viewBy: optional (DESTINATION, DATE, DURATION, WEEK, COUNTRY) - defaults to DESTINATION for round-trip
+            # - duration: optional (range of days, e.g. "1,15")
+            # - oneWay: optional (default false for round-trip)
+            # - nonStop: optional (default false)
+            # - maxPrice: optional (integer, no decimals)
+            
+            # According to Swagger spec:
+            # - departureDate is optional but recommended
+            # - Can be single date or range (format: "YYYY-MM-DD" or "YYYY-MM-DD,YYYY-MM-DD")
+            # - Cannot be more than 180 days in the future
+            # - viewBy defaults to DESTINATION for round-trip (oneWay=false)
+            # - oneWay defaults to false (round-trip)
+            
+            from datetime import datetime, timedelta
+            
+            # Build API call parameters - start with required origin
+            api_params = {
+                'origin': origin,
+            }
+            
+            # Add departureDate if provided (as single date or range)
+            # The API works better with a date range, so create one from departure_date
+            if departure_date:
+                try:
+                    dep_date = datetime.strptime(departure_date, "%Y-%m-%d")
+                    today = datetime.now()
+                    
+                    # Check if date is in the future and within 180 days
+                    days_ahead = (dep_date - today).days
+                    if 0 <= days_ahead <= 180:
+                        # Create a small range around the departure date (e.g., ±30 days)
+                        # This gives the API flexibility to find destinations
+                        range_start = max(today, dep_date - timedelta(days=30))
+                        range_end = min(dep_date + timedelta(days=180), dep_date + timedelta(days=60))
+                        api_params['departureDate'] = f"{range_start.strftime('%Y-%m-%d')},{range_end.strftime('%Y-%m-%d')}"
+                    else:
+                        # Date is too far in future or in past, use just the date
+                        api_params['departureDate'] = departure_date
+                except Exception as e:
+                    logger.debug(f"   [DEBUG] Date parsing error: {e}, using departure_date as-is")
+                    api_params['departureDate'] = departure_date
+            
+            # Explicitly set viewBy to DESTINATION to get unique destinations
+            api_params['viewBy'] = 'DESTINATION'
+            
+            # Set oneWay to false for round-trip flights
+            api_params['oneWay'] = False
+            
+            logger.debug(f"   [DEBUG] API Parameters: {api_params}")
+            
+            response = self.amadeus.shopping.flight_destinations.get(**api_params)
             
             # DEBUG: Log response details
             logger.debug(f"   [DEBUG] API Response:")
