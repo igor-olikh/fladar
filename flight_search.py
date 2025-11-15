@@ -591,6 +591,19 @@ class FlightSearch:
         """
         logger.info("🔍 Finding common destinations from both origins...")
         
+        # In test environment, if both origins are known to be unsupported, skip Inspiration Search entirely
+        TEST_ENV_UNSUPPORTED_ORIGINS = ['TLV', 'ALC']
+        if self.environment == "test" and use_dynamic:
+            origin1_unsupported = origin1.upper() in TEST_ENV_UNSUPPORTED_ORIGINS
+            origin2_unsupported = origin2.upper() in TEST_ENV_UNSUPPORTED_ORIGINS
+            
+            if origin1_unsupported and origin2_unsupported:
+                logger.warning(f"   ⚠️  Both origins ({origin1} and {origin2}) are not reliably supported in test environment")
+                logger.info(f"   Skipping Inspiration Search for both origins and using predefined list directly")
+                logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
+                predefined = self._get_predefined_destinations()
+                return predefined
+        
         # Try to get destinations from origin1
         dest1 = []
         try:
