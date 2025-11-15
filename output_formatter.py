@@ -1170,25 +1170,37 @@ class OutputFormatter:
             p1_flight_type = p1_flight.get('_flight_type', 'both')
             p2_flight_type = p2_flight.get('_flight_type', 'both')
             
+            # Get origin and destination names for display
+            p1_origin_name = format_airport_code(p1_origin)
+            p2_origin_name = format_airport_code(p2_origin)
+            dest_name_formatted = format_airport_code(dest)
+            
             # Determine labels based on flight type
+            # For one-way flights, show full route: "From [origin] to [destination]"
             if p1_flight_type == 'return':
-                p1_outbound_label = "Return flight"
+                # Return flight: from destination to origin
+                p1_outbound_label = f"From {dest_name_formatted} to {p1_origin_name}"
                 p1_return_label = None  # No return section for return-only flights
             elif p1_is_one_way:
-                p1_outbound_label = "Outbound flight"
+                # Outbound flight: from origin to destination
+                p1_outbound_label = f"From {p1_origin_name} to {dest_name_formatted}"
                 p1_return_label = None  # No return section for one-way flights
             else:
-                p1_outbound_label = "Going to"
+                # Round-trip: show "Going to" and "Returning home"
+                p1_outbound_label = f"Going to {dest_name_formatted}"
                 p1_return_label = "Returning home"
             
             if p2_flight_type == 'return':
-                p2_outbound_label = "Return flight"
+                # Return flight: from destination to origin
+                p2_outbound_label = f"From {dest_name_formatted} to {p2_origin_name}"
                 p2_return_label = None  # No return section for return-only flights
             elif p2_is_one_way:
-                p2_outbound_label = "Outbound flight"
+                # Outbound flight: from origin to destination
+                p2_outbound_label = f"From {p2_origin_name} to {dest_name_formatted}"
                 p2_return_label = None  # No return section for one-way flights
             else:
-                p2_outbound_label = "Going to"
+                # Round-trip: show "Going to" and "Returning home"
+                p2_outbound_label = f"Going to {dest_name_formatted}"
                 p2_return_label = "Returning home"
             
             # Get stop details for Person 1
@@ -1242,7 +1254,7 @@ class OutputFormatter:
             
             # Build Person 1 HTML section
             p1_outbound_section = f"""
-                    <div class="flight-route">{p1_outbound_label} {dest_name if p1_outbound_label == "Going to" else ""}</div>
+                    <div class="flight-route">{p1_outbound_label}</div>
                     <div class="flight-info">
                         <strong>Departure:</strong> {p1_outbound_dep_local}
                     </div>
@@ -1273,7 +1285,7 @@ class OutputFormatter:
             
             # Build Person 2 HTML section
             p2_outbound_section = f"""
-                    <div class="flight-route">{p2_outbound_label} {dest_name if p2_outbound_label == "Going to" else ""}</div>
+                    <div class="flight-route">{p2_outbound_label}</div>
                     <div class="flight-info">
                         <strong>Departure:</strong> {p2_outbound_dep_local}
                     </div>
