@@ -142,6 +142,7 @@ def main():
     nearby_airports_radius_km = search_config.get('nearby_airports_radius_km', 0)
     max_destinations_to_check = search_config.get('max_destinations_to_check', 50)
     use_flight_cache = search_config.get('use_flight_cache', True)
+    destinations_to_check = search_config.get('destinations_to_check', [])  # Optional list of specific destinations
     
     # Timezones are now automatically detected using airportsdata library
     # No manual configuration needed
@@ -220,10 +221,14 @@ def main():
         print(f"   Min Departure Time (Return): {min_departure_time_return}")
     if nearby_airports_radius_km > 0:
         print(f"   Nearby Airports Radius: {nearby_airports_radius_km} km")
-    if max_destinations_to_check > 0:
-        print(f"   Max Destinations to Check: {max_destinations_to_check}")
+    if destinations_to_check and len(destinations_to_check) > 0:
+        print(f"   Specific Destinations to Check: {', '.join(destinations_to_check)}")
+        print(f"   (Skipping destination discovery - using only specified destinations)")
     else:
-        print(f"   Max Destinations to Check: All available")
+        if max_destinations_to_check > 0:
+            print(f"   Max Destinations to Check: {max_destinations_to_check}")
+        else:
+            print(f"   Max Destinations to Check: All available")
     print()
     
     # Find matching destinations
@@ -238,13 +243,14 @@ def main():
         max_stops_person1=max_stops_person1,
         max_stops_person2=max_stops_person2,
         arrival_tolerance_hours=arrival_tolerance,
-            min_departure_time_outbound=min_departure_time_outbound,
-            min_departure_time_return=min_departure_time_return,
-            use_dynamic_destinations=use_dynamic_destinations,
-            max_flight_duration_hours=max_flight_duration,
-            nearby_airports_radius_km=nearby_airports_radius_km,
-            max_destinations=max_destinations_to_check
-        )
+        min_departure_time_outbound=min_departure_time_outbound,
+        min_departure_time_return=min_departure_time_return,
+        use_dynamic_destinations=use_dynamic_destinations,
+        max_flight_duration_hours=max_flight_duration,
+        nearby_airports_radius_km=nearby_airports_radius_km,
+        max_destinations=max_destinations_to_check,
+        destinations_to_check=destinations_to_check
+    )
     
     # Output results
     print()

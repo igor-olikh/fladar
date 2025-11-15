@@ -29,7 +29,8 @@ class DestinationFinder:
         max_destinations: int = 50,
         use_dynamic_destinations: bool = True,
         max_flight_duration_hours: float = 0,
-        nearby_airports_radius_km: int = 0
+        nearby_airports_radius_km: int = 0,
+        destinations_to_check: List[str] = None
     ) -> List[Dict]:
         """
         Find destinations where both people can meet with matching flights
@@ -49,49 +50,60 @@ class DestinationFinder:
             max_destinations: Maximum number of destinations to check
             use_dynamic_destinations: Use Amadeus API to discover destinations dynamically
             max_flight_duration_hours: Maximum flight duration in hours (0 = no limit)
+            nearby_airports_radius_km: Search radius for nearby airports (km)
+            destinations_to_check: Optional list of specific destinations to check (skips discovery if provided)
         
         Returns:
             List of matching flight pairs for different destinations
         """
-        # Get common destinations from both origins
-        # Note: Inspiration Search is optional - Flight Offers Search will validate actual availability
-        # For destination discovery, use the more restrictive max_stops (if either person wants direct, search for direct)
-        max_stops_for_discovery = min(max_stops_person1, max_stops_person2)
-        if use_dynamic_destinations:
-            logger.info("📋 Using dynamic destination discovery (Inspiration Search API)")
-            logger.info("   Note: Inspiration Search uses cached data and may be incomplete")
-            logger.info("   Flight Offers Search will validate which destinations are actually reachable")
-            destinations = self.flight_search.get_common_destinations(
-                origin1, origin2, departure_date, 
-                use_dynamic=True, 
-                max_duration_hours=max_flight_duration_hours,
-                non_stop=(max_stops_for_discovery == 0)
-            )
-        else:
-            # Use predefined list (more reliable, especially in test environment)
-            logger.info("📋 Using predefined destination list")
-            logger.info("   This is more reliable than Inspiration Search, especially in test environment")
-            logger.info("   Flight Offers Search will validate which destinations are actually reachable")
-            destinations = self.flight_search.get_destination_suggestions(
-                origin1, departure_date, 
-                use_dynamic=False, 
-                max_duration_hours=max_flight_duration_hours,
-                non_stop=(max_stops_for_discovery == 0)
-            )
-        
-        # Limit destinations to check
-        if max_destinations > 0:
-            destinations_to_check = destinations[:max_destinations]
-            logger.info(f"")
-            logger.info(f"🎯 Will search {len(destinations_to_check)} destination(s) (out of {len(destinations)} available)")
-            logger.info(f"   Limiting to {max_destinations} destinations to manage API usage")
+        # If specific destinations are provided, use only those (skip discovery)
+        if destinations_to_check and len(destinations_to_check) > 0:
+            # Normalize destination codes (uppercase, strip whitespace)
+            destinations_to_check = [dest.upper().strip() for dest in destinations_to_check if dest.strip()]
+            logger.info(f"📋 Using specified destinations (skipping discovery)")
+            logger.info(f"   Will check only these {len(destinations_to_check)} destination(s): {', '.join([format_airport_code(d) for d in destinations_to_check])}")
+            logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
             logger.info(f"")
         else:
-            destinations_to_check = destinations
-            logger.info(f"")
-            logger.info(f"🎯 Will search all {len(destinations_to_check)} available destination(s)")
-            logger.info(f"   No limit set - checking all destinations (this may take longer)")
-            logger.info(f"")
+            # Get common destinations from both origins
+            # Note: Inspiration Search is optional - Flight Offers Search will validate actual availability
+            # For destination discovery, use the more restrictive max_stops (if either person wants direct, search for direct)
+            max_stops_for_discovery = min(max_stops_person1, max_stops_person2)
+            if use_dynamic_destinations:
+                logger.info("📋 Using dynamic destination discovery (Inspiration Search API)")
+                logger.info("   Note: Inspiration Search uses cached data and may be incomplete")
+                logger.info("   Flight Offers Search will validate which destinations are actually reachable")
+                destinations = self.flight_search.get_common_destinations(
+                    origin1, origin2, departure_date, 
+                    use_dynamic=True, 
+                    max_duration_hours=max_flight_duration_hours,
+                    non_stop=(max_stops_for_discovery == 0)
+                )
+            else:
+                # Use predefined list (more reliable, especially in test environment)
+                logger.info("📋 Using predefined destination list")
+                logger.info("   This is more reliable than Inspiration Search, especially in test environment")
+                logger.info("   Flight Offers Search will validate which destinations are actually reachable")
+                destinations = self.flight_search.get_destination_suggestions(
+                    origin1, departure_date, 
+                    use_dynamic=False, 
+                    max_duration_hours=max_flight_duration_hours,
+                    non_stop=(max_stops_for_discovery == 0)
+                )
+            
+            # Limit destinations to check
+            if max_destinations > 0:
+                destinations_to_check = destinations[:max_destinations]
+                logger.info(f"")
+                logger.info(f"🎯 Will search {len(destinations_to_check)} destination(s) (out of {len(destinations)} available)")
+                logger.info(f"   Limiting to {max_destinations} destinations to manage API usage")
+                logger.info(f"")
+            else:
+                destinations_to_check = destinations
+                logger.info(f"")
+                logger.info(f"🎯 Will search all {len(destinations_to_check)} available destination(s)")
+                logger.info(f"   No limit set - checking all destinations (this may take longer)")
+                logger.info(f"")
         
         all_matches = []
         destinations_with_matches = 0

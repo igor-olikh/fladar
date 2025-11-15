@@ -60,6 +60,13 @@ search:
   # Recommended: 20-50 for testing, 50-100 for production
   max_destinations_to_check: 50
   
+  # Specific destinations to check (optional)
+  # If provided, ONLY these destinations will be checked (skips destination discovery API)
+  # If empty or not provided, uses normal destination discovery logic (dynamic or predefined)
+  # Format: List of IATA airport codes (e.g., ["BCN", "MAD", "PAR"])
+  # Example: destinations_to_check: ["BCN", "MAD", "PAR", "AMS"]
+  destinations_to_check: []  # Empty list = use normal discovery logic
+  
   # Optional departure time constraints (format: HH:MM, leave empty to disable)
   # These constraints apply to BOTH Person 1 and Person 2 flights
   # 
