@@ -50,14 +50,21 @@ class DestinationFinder:
             List of matching flight pairs for different destinations
         """
         # Get common destinations from both origins
+        # Note: Inspiration Search is optional - Flight Offers Search will validate actual availability
         if use_dynamic_destinations:
+            logger.info("📋 Using dynamic destination discovery (Inspiration Search API)")
+            logger.info("   Note: Inspiration Search uses cached data and may be incomplete")
+            logger.info("   Flight Offers Search will validate which destinations are actually reachable")
             destinations = self.flight_search.get_common_destinations(
                 origin1, origin2, departure_date, 
                 use_dynamic=True, 
                 max_duration_hours=max_flight_duration_hours
             )
         else:
-            # Use predefined list
+            # Use predefined list (more reliable, especially in test environment)
+            logger.info("📋 Using predefined destination list")
+            logger.info("   This is more reliable than Inspiration Search, especially in test environment")
+            logger.info("   Flight Offers Search will validate which destinations are actually reachable")
             destinations = self.flight_search.get_destination_suggestions(
                 origin1, departure_date, 
                 use_dynamic=False, 

@@ -416,10 +416,13 @@ class FlightSearch:
                 
                 logger.info(f"   ✓ Extracted {len(destinations)} destination IATA code(s)")
                 logger.info(f"   Sample destinations: {', '.join(destinations[:10])}...")
+                logger.info(f"   Note: These are from Inspiration Search cache - Flight Offers Search will validate actual availability")
             else:
-                logger.error(f"   ERROR: No destinations found from Flight Inspiration Search API")
-                logger.debug(f"   [DEBUG] Response.data is empty or None")
+                logger.warning(f"   ⚠️  No destinations found from Flight Inspiration Search API")
+                logger.warning(f"   This is expected in test environment - Inspiration Search uses cached data")
+                logger.warning(f"   Test environment may not have data for origin {origin} (especially TLV)")
                 logger.info(f"   Falling back to predefined list")
+                logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
                 return self._get_predefined_destinations()
                 
         except ResponseError as error:
@@ -462,8 +465,12 @@ class FlightSearch:
             
             # If it's a 404, it might be due to limited test data
             if status_code == 404:
-                logger.warning(f"   Note: 404 errors are common in test environment due to limited data coverage")
+                logger.warning(f"   ⚠️  404 error: No data available for origin {origin} in test environment")
+                logger.warning(f"   This is expected - Amadeus test environment has limited cached data")
+                logger.warning(f"   TLV (Tel Aviv) is not in the test cache, which is why you see this error")
                 logger.warning(f"   The application will fall back to predefined destinations")
+                logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
+                logger.info(f"   For production use, switch to 'production' environment for complete data")
             
             # DEBUG: Log full error details
             logger.debug(f"   [DEBUG] Exception Type: ResponseError")
@@ -474,6 +481,8 @@ class FlightSearch:
                 logger.debug(f"   [DEBUG]   - Body content: {error_body}")
             
             logger.error(f"   ERROR: API returned status {error_code}")
+            logger.info(f"   Falling back to predefined destination list")
+            logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
             
             if error_body:
                 import json
@@ -568,21 +577,41 @@ class FlightSearch:
         # Get destinations from origin1
         dest1 = set(self.get_destination_suggestions(origin1, departure_date, use_dynamic, max_duration_hours))
         logger.info(f"   Destinations from {origin1}: {len(dest1)}")
+        if len(dest1) == 0:
+            logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {origin1}")
+            logger.warning(f"   This is common in test environment - TLV may not be in Amadeus test cache")
         
         # Get destinations from origin2
         dest2 = set(self.get_destination_suggestions(origin2, departure_date, use_dynamic, max_duration_hours))
         logger.info(f"   Destinations from {origin2}: {len(dest2)}")
+        if len(dest2) == 0:
+            logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {origin2}")
+            logger.warning(f"   This is common in test environment - some origins may not be in Amadeus test cache")
+        
+        # If either origin returned empty, fall back to predefined list
+        # This handles the case where test environment doesn't have data for certain origins
+        if len(dest1) == 0 or len(dest2) == 0:
+            logger.warning(f"   ⚠️  One or both origins returned empty results from Inspiration Search")
+            logger.warning(f"   This is expected in test environment due to limited cached data")
+            logger.info(f"   Falling back to predefined European destinations list")
+            logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
+            predefined = set(self._get_predefined_destinations())
+            return sorted(list(predefined))
         
         # Find common destinations
         common = sorted(list(dest1.intersection(dest2)))
-        logger.info(f"   Common destinations: {len(common)}")
+        logger.info(f"   Common destinations (intersection): {len(common)}")
         
         if common:
             logger.info(f"   Common destinations: {', '.join(common[:20])}{'...' if len(common) > 20 else ''}")
+            logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
         else:
-            logger.warning(f"   No common destinations found! Using union of both lists...")
+            logger.warning(f"   ⚠️  No common destinations found in intersection!")
+            logger.warning(f"   This may indicate test environment limitations or incomplete Inspiration Search data")
+            logger.info(f"   Using union of both lists as fallback...")
             common = sorted(list(dest1.union(dest2)))
             logger.info(f"   Using all destinations from both origins: {len(common)}")
+            logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
         
         return common
     
