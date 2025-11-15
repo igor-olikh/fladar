@@ -692,11 +692,26 @@ class FlightSearch:
             if response.data:
                 logger.info(f"   ✓ Found {len(response.data)} destination(s) from Amadeus API")
                 
+                # According to official Amadeus API documentation:
+                # FlightDestination object contains: type, origin, destination, departureDate, returnDate, price, links
+                # Reference: https://developers.amadeus.com/self-service/category/flights/api-doc/flight-inspiration-search/api-reference
                 for destination_info in response.data:
+                    # Extract destination IATA code from FlightDestination object
                     destination_code = destination_info.get('destination')
+                    
                     if destination_code:
-                        # If max_duration is set, we need to check flight duration
-                        # For now, we'll get all destinations and filter later during flight search
+                        # Verify we have a valid FlightDestination object structure
+                        # Log additional info for debugging if available
+                        origin_code = destination_info.get('origin', origin)
+                        departure_date_from_api = destination_info.get('departureDate', 'N/A')
+                        return_date_from_api = destination_info.get('returnDate', 'N/A')
+                        price_info = destination_info.get('price', {})
+                        
+                        logger.debug(f"   [DEBUG] FlightDestination: origin={origin_code}, destination={destination_code}, "
+                                   f"departureDate={departure_date_from_api}, returnDate={return_date_from_api}, "
+                                   f"price={price_info.get('total', 'N/A')} {price_info.get('currency', 'N/A')}")
+                        
+                        # Add destination to list
                         destinations.append(destination_code)
                 
                 logger.info(f"   ✓ Extracted {len(destinations)} destination IATA code(s)")
