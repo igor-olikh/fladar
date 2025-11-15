@@ -3,10 +3,14 @@
 Real API Test - Test Amadeus API connection with actual credentials
 Run this to verify your API setup is working correctly
 """
+import sys
+import os
+# Add parent directory to path to import modules
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import yaml
 from flight_search import FlightSearch
 import logging
-import sys
 
 # Set up logging to see all details
 logging.basicConfig(
@@ -21,9 +25,10 @@ def main():
     print("=" * 80)
     print()
     
-    # Load config
+    # Load config from parent directory
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config.yaml')
     try:
-        with open('config.yaml', 'r') as f:
+        with open(config_path, 'r') as f:
             config = yaml.safe_load(f)
     except FileNotFoundError:
         print("❌ Error: config.yaml not found!")

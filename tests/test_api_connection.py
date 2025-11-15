@@ -2,6 +2,11 @@
 """
 Test script to check Amadeus API connection and see actual error messages
 """
+import sys
+import os
+# Add parent directory to path to import modules
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import yaml
 from flight_search import FlightSearch
 import logging
@@ -13,8 +18,9 @@ logging.basicConfig(
 
 def test_api_connection():
     """Test Amadeus API connection with real credentials"""
-    # Load config
-    with open('config.yaml', 'r') as f:
+    # Load config from parent directory
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config.yaml')
+    with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
     
     api_key = config['api']['amadeus_api_key']

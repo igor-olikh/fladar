@@ -1,9 +1,13 @@
 """
 Integration test to verify the application can find at least one result
 """
+import sys
+import os
+# Add parent directory to path to import modules
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import unittest
 import yaml
-import os
 from unittest.mock import Mock, patch, MagicMock
 
 # Try to import amadeus, if not available, we'll mock it in tests

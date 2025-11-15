@@ -277,7 +277,7 @@ poetry run python -m unittest test_flight_search test_integration -v
 Test API connection:
 
 ```bash
-poetry run python test_real_api.py
+poetry run python tests/test_real_api.py
 ```
 
 ## 📁 Project Structure
@@ -288,8 +288,15 @@ fladar/
 ├── flight_search.py        # Amadeus API integration
 ├── destination_finder.py   # Destination discovery logic
 ├── output_formatter.py     # CSV and console output
+├── run_tests.py            # Test runner script
 ├── config.yaml             # Your configuration (create from example)
 ├── config.yaml.example     # Configuration template
+├── tests/                  # Test files
+│   ├── __init__.py
+│   ├── test_flight_search.py
+│   ├── test_integration.py
+│   ├── test_api_connection.py
+│   └── test_real_api.py
 ├── data/
 │   ├── airport_names.json  # Airport code to city name mapping
 │   ├── airline_names.json  # Airline code to name mapping
@@ -299,6 +306,10 @@ fladar/
 │   ├── api_usage_explanation.md
 │   ├── amadeus_test_vs_production.md
 │   └── ...
+├── .github/                # GitHub configuration
+│   ├── QUICK_SETUP.md
+│   ├── REPOSITORY_DESCRIPTION.md
+│   └── TOPICS.md
 └── debug_logs/            # Debug log files
 ```
 
