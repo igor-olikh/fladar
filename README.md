@@ -384,14 +384,45 @@ See [docs/amadeus_test_vs_production.md](docs/amadeus_test_vs_production.md) for
 
 Contributions are welcome! If you improve this project, please consider submitting a pull request. See the [License](#-license) section for details.
 
+### Branching Strategy
+
+- **`main`**: Stable, production-ready code. Only merged from `dev` after testing.
+- **`dev`**: Development branch for ongoing work. All new features and fixes go here first.
+
 ### How to Contribute
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Commit your changes (`git commit -m 'Add some amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+1. **Fork the repository**
+2. **Clone your fork**:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/fladar.git
+   cd fladar
+   ```
+3. **Set up development branch**:
+   ```bash
+   git checkout dev
+   git pull origin dev
+   ```
+4. **Create a feature branch**:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+5. **Make your changes** and test them
+6. **Commit your changes**:
+   ```bash
+   git add .
+   git commit -m 'Add your feature description'
+   ```
+7. **Push to your fork**:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+8. **Open a Pull Request** to the `dev` branch (not `main`)
+
+### Development Workflow
+
+- All new features and bug fixes should target the `dev` branch
+- Pull requests should be made to `dev`, not `main`
+- After testing and review, changes are merged from `dev` to `main` for releases
 
 ## 🌟 Features in Detail
 
