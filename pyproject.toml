@@ -1,9 +1,13 @@
 [tool.poetry]
 name = "fladar"
-version = "0.1.0"
-description = "Flight search application to find meeting destinations for two people"
-authors = ["Your Name <your.email@example.com>"]
+version = "1.0.0"
+description = "Flight search application for finding meeting destinations for two people"
+authors = ["Igor Olikh <your.email@example.com>"]
 readme = "README.md"
+license = "GPL-3.0"
+homepage = "https://github.com/igor-olikh/fladar"
+repository = "https://github.com/igor-olikh/fladar"
+keywords = ["flight", "search", "amadeus", "api", "travel", "meeting", "destination"]
 package-mode = false
 
 [tool.poetry.dependencies]
