@@ -1128,9 +1128,10 @@ class FlightSearch:
                 logger.info(f"   Sample destinations: {', '.join(destinations[:10])}...")
                 logger.info(f"   Note: These are from Inspiration Search cache - Flight Offers Search will validate actual availability")
                 
-                # Save to cache for future use
+                # Save to cache for future use and return destinations
                 if destinations:
                     self._save_cached_destinations(origin, destinations)
+                    return destinations  # Return immediately - first API succeeded
             else:
                 logger.warning(f"   ⚠️  No destinations found from Flight Inspiration Search API")
                 logger.info(f"   Trying Airport Routes API as fallback...")
@@ -1264,6 +1265,8 @@ class FlightSearch:
             logger.info(f"   Returning empty list - caller will handle fallback to predefined list")
             return []
         
+        # This code should never be reached - all paths above return
+        # But keeping as safety fallback
         if not destinations:
             logger.warning(f"   ⚠️  No destinations extracted from API response")
             logger.info(f"   Returning empty list - caller will handle fallback to predefined list")
