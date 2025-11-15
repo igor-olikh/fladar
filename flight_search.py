@@ -527,12 +527,11 @@ class FlightSearch:
             # Ensure client is authenticated before making the call
             # The SDK should handle this automatically, but we verify it works
             try:
-                # Make a simple authenticated call first to ensure token is valid
-                # This will trigger authentication if needed
-                _ = self.amadeus.client.access_token
-                logger.debug(f"   [DEBUG] Client has access token")
+                # The SDK handles authentication automatically on first API call
+                # We don't need to check access_token directly - just log that we're making the call
+                logger.debug(f"   [DEBUG] Access token will be obtained automatically by SDK if needed")
             except:
-                # If access_token doesn't exist, the SDK will authenticate on first call
+                # SDK will handle authentication automatically
                 logger.debug(f"   [DEBUG] Access token will be obtained on first API call")
             
             # Use Flight Destinations API (Flight Inspiration Search)
