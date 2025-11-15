@@ -214,51 +214,63 @@ class OutputFormatter:
         return description
     
     @staticmethod
-    def create_skyscanner_url(origin: str, destination: str, departure_date_str: str, return_date_str: str, prefer_direct: bool = True) -> str:
+    def create_skyscanner_url(origin: str, destination: str, departure_date_str: str, return_date_str: Optional[str] = None, prefer_direct: bool = True) -> str:
         """
-        Create a Skyscanner URL for a flight search
+        Create a Skyscanner URL for a flight search (round-trip or one-way)
         
         Args:
             origin: IATA code of origin airport (e.g., 'TLV')
             destination: IATA code of destination airport (e.g., 'MAD')
             departure_date_str: Departure date in ISO format (e.g., '2025-11-20T17:25:00' or '2025-11-20')
-            return_date_str: Return date in ISO format (e.g., '2025-11-25T12:15:00' or '2025-11-25')
+            return_date_str: Return date in ISO format (optional for one-way flights)
             prefer_direct: Whether to prefer direct flights (default: True)
         
         Returns:
             Skyscanner URL string
         """
         try:
+            # Check if return_date is provided and valid
+            is_one_way = not return_date_str or return_date_str == 'N/A' or return_date_str == ''
+            
             # Extract date from ISO format string (handle both with and without time)
             if 'T' in departure_date_str:
                 dep_date = datetime.fromisoformat(departure_date_str.replace('Z', '+00:00'))
             else:
                 dep_date = datetime.strptime(departure_date_str, "%Y-%m-%d")
             
-            if 'T' in return_date_str:
-                ret_date = datetime.fromisoformat(return_date_str.replace('Z', '+00:00'))
-            else:
-                ret_date = datetime.strptime(return_date_str, "%Y-%m-%d")
-            
             # Format dates as DDMMYY (e.g., 251120 for 20 Nov 2025)
             dep_date_str = dep_date.strftime("%d%m%y")
-            ret_date_str = ret_date.strftime("%d%m%y")
             
             # Convert airport codes to lowercase
             origin_lower = origin.lower()
             dest_lower = destination.lower()
             
-            # Build URL
+            # Build URL based on flight type
             base_url = "https://www.skyscanner.de/transport/flights"
-            url = f"{base_url}/{origin_lower}/{dest_lower}/{dep_date_str}/{ret_date_str}/"
             
-            # Add query parameters
-            params = {
-                'adultsv2': '1',
-                'cabinclass': 'economy',
-                'rtn': '1',
-                'preferdirects': 'true' if prefer_direct else 'false'
-            }
+            if is_one_way:
+                # One-way flight URL format: /origin/dest/departure_date/
+                url = f"{base_url}/{origin_lower}/{dest_lower}/{dep_date_str}/"
+                params = {
+                    'adultsv2': '1',
+                    'cabinclass': 'economy',
+                    'preferdirects': 'true' if prefer_direct else 'false'
+                }
+            else:
+                # Round-trip flight URL format: /origin/dest/departure_date/return_date/
+                if 'T' in return_date_str:
+                    ret_date = datetime.fromisoformat(return_date_str.replace('Z', '+00:00'))
+                else:
+                    ret_date = datetime.strptime(return_date_str, "%Y-%m-%d")
+                
+                ret_date_str = ret_date.strftime("%d%m%y")
+                url = f"{base_url}/{origin_lower}/{dest_lower}/{dep_date_str}/{ret_date_str}/"
+                params = {
+                    'adultsv2': '1',
+                    'cabinclass': 'economy',
+                    'rtn': '1',
+                    'preferdirects': 'true' if prefer_direct else 'false'
+                }
             
             query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
             url = f"{url}?{query_string}"
@@ -453,12 +465,35 @@ class OutputFormatter:
             if tz:
                 # Convert to local time
                 local_dt = dt.astimezone(tz)
-                # Format: "2025-11-20 16:35 (Asia/Jerusalem)"
-                timezone_name = str(tz).split('/')[-1]  # Get city name from timezone
+                
+                # Try to get airport/city name from airport code first (most reliable)
+                airport_names = _load_airport_names()
+                airport_name = airport_names.get(airport_code.upper())
+                
+                if airport_name:
+                    # Use airport name if available (e.g., "Tel Aviv", "Madrid", "Jerusalem")
+                    timezone_name = airport_name
+                else:
+                    # Fallback to timezone name extraction
+                    timezone_str = str(tz)
+                    # Extract city name from timezone string (e.g., "Asia/Jerusalem" -> "Jerusalem")
+                    if '/' in timezone_str:
+                        timezone_name = timezone_str.split('/')[-1]
+                        # Replace underscores with spaces and capitalize
+                        timezone_name = timezone_name.replace('_', ' ').title()
+                    else:
+                        timezone_name = timezone_str
+                    
+                    # Final fallback to airport code
+                    if not timezone_name or timezone_name == 'UTC':
+                        timezone_name = airport_code.upper()
+                
                 return f"{local_dt.strftime('%Y-%m-%d %H:%M')} ({timezone_name})"
             else:
-                # No timezone found, return UTC time
-                return f"{dt.strftime('%Y-%m-%d %H:%M')} (UTC)"
+                # No timezone found, try to use airport name
+                airport_names = _load_airport_names()
+                airport_name = airport_names.get(airport_code.upper(), airport_code.upper())
+                return f"{dt.strftime('%Y-%m-%d %H:%M')} ({airport_name})"
         except Exception as e:
             # If conversion fails, return original
             return utc_time_str
@@ -1077,32 +1112,26 @@ class OutputFormatter:
             p1_origin = p1_info.get('origin', '')
             p2_origin = p2_info.get('origin', '')
             
-            # Format times (local)
-            p1_outbound_dep_local = OutputFormatter.convert_to_local_time(
-                p1_info.get('outbound_departure', ''), p1_origin
-            )
-            p1_outbound_arr_local = OutputFormatter.convert_to_local_time(
-                p1_info.get('outbound_arrival', ''), dest
-            )
-            p1_return_dep_local = OutputFormatter.convert_to_local_time(
-                p1_info.get('return_departure', ''), dest
-            )
-            p1_return_arr_local = OutputFormatter.convert_to_local_time(
-                p1_info.get('return_arrival', ''), p1_origin
-            )
+            # Format times (local) - only convert if not 'N/A'
+            p1_outbound_dep_utc = p1_info.get('outbound_departure', '')
+            p1_outbound_arr_utc = p1_info.get('outbound_arrival', '')
+            p1_return_dep_utc = p1_info.get('return_departure', '')
+            p1_return_arr_utc = p1_info.get('return_arrival', '')
             
-            p2_outbound_dep_local = OutputFormatter.convert_to_local_time(
-                p2_info.get('outbound_departure', ''), p2_origin
-            )
-            p2_outbound_arr_local = OutputFormatter.convert_to_local_time(
-                p2_info.get('outbound_arrival', ''), dest
-            )
-            p2_return_dep_local = OutputFormatter.convert_to_local_time(
-                p2_info.get('return_departure', ''), dest
-            )
-            p2_return_arr_local = OutputFormatter.convert_to_local_time(
-                p2_info.get('return_arrival', ''), p2_origin
-            )
+            p1_outbound_dep_local = OutputFormatter.convert_to_local_time(p1_outbound_dep_utc, p1_origin) if p1_outbound_dep_utc != 'N/A' else 'N/A'
+            p1_outbound_arr_local = OutputFormatter.convert_to_local_time(p1_outbound_arr_utc, dest) if p1_outbound_arr_utc != 'N/A' else 'N/A'
+            p1_return_dep_local = OutputFormatter.convert_to_local_time(p1_return_dep_utc, dest) if p1_return_dep_utc != 'N/A' else 'N/A'
+            p1_return_arr_local = OutputFormatter.convert_to_local_time(p1_return_arr_utc, p1_origin) if p1_return_arr_utc != 'N/A' else 'N/A'
+            
+            p2_outbound_dep_utc = p2_info.get('outbound_departure', '')
+            p2_outbound_arr_utc = p2_info.get('outbound_arrival', '')
+            p2_return_dep_utc = p2_info.get('return_departure', '')
+            p2_return_arr_utc = p2_info.get('return_arrival', '')
+            
+            p2_outbound_dep_local = OutputFormatter.convert_to_local_time(p2_outbound_dep_utc, p2_origin) if p2_outbound_dep_utc != 'N/A' else 'N/A'
+            p2_outbound_arr_local = OutputFormatter.convert_to_local_time(p2_outbound_arr_utc, dest) if p2_outbound_arr_utc != 'N/A' else 'N/A'
+            p2_return_dep_local = OutputFormatter.convert_to_local_time(p2_return_dep_utc, dest) if p2_return_dep_utc != 'N/A' else 'N/A'
+            p2_return_arr_local = OutputFormatter.convert_to_local_time(p2_return_arr_utc, p2_origin) if p2_return_arr_utc != 'N/A' else 'N/A'
             
             # Format durations
             p1_outbound_duration = OutputFormatter.format_duration_human(p1_info.get('outbound_duration', ''))
@@ -1128,15 +1157,49 @@ class OutputFormatter:
             p1_airlines = p1_info.get('airlines_formatted', p1_info.get('airlines', ''))
             p2_airlines = p2_info.get('airlines_formatted', p2_info.get('airlines', ''))
             
+            # Detect flight type (one-way or round-trip) by checking number of itineraries
+            p1_flight = best_match['person1_flight']
+            p2_flight = best_match['person2_flight']
+            p1_itineraries = p1_flight.get('itineraries', [])
+            p2_itineraries = p2_flight.get('itineraries', [])
+            
+            p1_is_one_way = len(p1_itineraries) == 1
+            p2_is_one_way = len(p2_itineraries) == 1
+            
+            # Get flight type from flight object if available (stored during search)
+            p1_flight_type = p1_flight.get('_flight_type', 'both')
+            p2_flight_type = p2_flight.get('_flight_type', 'both')
+            
+            # Determine labels based on flight type
+            if p1_flight_type == 'return':
+                p1_outbound_label = "Return flight"
+                p1_return_label = None  # No return section for return-only flights
+            elif p1_is_one_way:
+                p1_outbound_label = "Outbound flight"
+                p1_return_label = None  # No return section for one-way flights
+            else:
+                p1_outbound_label = "Going to"
+                p1_return_label = "Returning home"
+            
+            if p2_flight_type == 'return':
+                p2_outbound_label = "Return flight"
+                p2_return_label = None  # No return section for return-only flights
+            elif p2_is_one_way:
+                p2_outbound_label = "Outbound flight"
+                p2_return_label = None  # No return section for one-way flights
+            else:
+                p2_outbound_label = "Going to"
+                p2_return_label = "Returning home"
+            
             # Get stop details for Person 1
-            p1_outbound_segments = best_match['person1_flight'].get('itineraries', [{}])[0].get('segments', [])
-            p1_return_segments = best_match['person1_flight'].get('itineraries', [{}])[1].get('segments', []) if len(best_match['person1_flight'].get('itineraries', [])) > 1 else []
+            p1_outbound_segments = p1_itineraries[0].get('segments', []) if p1_itineraries else []
+            p1_return_segments = p1_itineraries[1].get('segments', []) if len(p1_itineraries) > 1 else []
             p1_outbound_stop_details = OutputFormatter._get_stop_details(p1_outbound_segments)
             p1_return_stop_details = OutputFormatter._get_stop_details(p1_return_segments)
             
             # Get stop details for Person 2
-            p2_outbound_segments = best_match['person2_flight'].get('itineraries', [{}])[0].get('segments', [])
-            p2_return_segments = best_match['person2_flight'].get('itineraries', [{}])[1].get('segments', []) if len(best_match['person2_flight'].get('itineraries', [])) > 1 else []
+            p2_outbound_segments = p2_itineraries[0].get('segments', []) if p2_itineraries else []
+            p2_return_segments = p2_itineraries[1].get('segments', []) if len(p2_itineraries) > 1 else []
             p2_outbound_stop_details = OutputFormatter._get_stop_details(p2_outbound_segments)
             p2_return_stop_details = OutputFormatter._get_stop_details(p2_return_segments)
             
@@ -1156,20 +1219,88 @@ class OutputFormatter:
             p2_return_stops_html = format_stop_details_html(p2_return_stop_details)
             
             # Create booking links for Person 1
-            p1_outbound_dep_utc = p1_info.get('outbound_departure', '')
-            p1_return_dep_utc = p1_info.get('return_departure', '')
+            # For one-way flights, prefer_direct should only check outbound stops
+            p1_prefer_direct = (p1_info.get('outbound_stops', 0) == 0)
+            if not p1_is_one_way:
+                p1_prefer_direct = p1_prefer_direct and (p1_info.get('return_stops', 0) == 0)
+            
             p1_booking_url = OutputFormatter.create_skyscanner_url(
-                p1_origin, dest, p1_outbound_dep_utc, p1_return_dep_utc, 
-                prefer_direct=(p1_info.get('outbound_stops', 0) == 0 and p1_info.get('return_stops', 0) == 0)
+                p1_origin, dest, p1_outbound_dep_utc, p1_return_dep_utc if p1_return_dep_utc != 'N/A' else None, 
+                prefer_direct=p1_prefer_direct
             )
             
             # Create booking links for Person 2
-            p2_outbound_dep_utc = p2_info.get('outbound_departure', '')
-            p2_return_dep_utc = p2_info.get('return_departure', '')
+            # For one-way flights, prefer_direct should only check outbound stops
+            p2_prefer_direct = (p2_info.get('outbound_stops', 0) == 0)
+            if not p2_is_one_way:
+                p2_prefer_direct = p2_prefer_direct and (p2_info.get('return_stops', 0) == 0)
+            
             p2_booking_url = OutputFormatter.create_skyscanner_url(
-                p2_origin, dest, p2_outbound_dep_utc, p2_return_dep_utc,
-                prefer_direct=(p2_info.get('outbound_stops', 0) == 0 and p2_info.get('return_stops', 0) == 0)
+                p2_origin, dest, p2_outbound_dep_utc, p2_return_dep_utc if p2_return_dep_utc != 'N/A' else None,
+                prefer_direct=p2_prefer_direct
             )
+            
+            # Build Person 1 HTML section
+            p1_outbound_section = f"""
+                    <div class="flight-route">{p1_outbound_label} {dest_name if p1_outbound_label == "Going to" else ""}</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> {p1_outbound_dep_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> {p1_outbound_arr_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> {p1_outbound_duration}
+                        <span class="stops-info">{p1_outbound_stops}</span>
+                    </div>
+                    {p1_outbound_stops_html}"""
+            
+            p1_return_section = ""
+            if p1_return_label:
+                p1_return_section = f"""
+                    <div class="flight-route" style="margin-top: 20px;">{p1_return_label}</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> {p1_return_dep_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> {p1_return_arr_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> {p1_return_duration}
+                        <span class="stops-info">{p1_return_stops}</span>
+                    </div>
+                    {p1_return_stops_html}"""
+            
+            # Build Person 2 HTML section
+            p2_outbound_section = f"""
+                    <div class="flight-route">{p2_outbound_label} {dest_name if p2_outbound_label == "Going to" else ""}</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> {p2_outbound_dep_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> {p2_outbound_arr_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> {p2_outbound_duration}
+                        <span class="stops-info">{p2_outbound_stops}</span>
+                    </div>
+                    {p2_outbound_stops_html}"""
+            
+            p2_return_section = ""
+            if p2_return_label:
+                p2_return_section = f"""
+                    <div class="flight-route" style="margin-top: 20px;">{p2_return_label}</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> {p2_return_dep_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> {p2_return_arr_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> {p2_return_duration}
+                        <span class="stops-info">{p2_return_stops}</span>
+                    </div>
+                    {p2_return_stops_html}"""
             
             html += f"""
         <div class="destination-card">
@@ -1182,32 +1313,8 @@ class OutputFormatter:
                 <div class="person-section person1">
                     <div class="person-label">Person 1</div>
                     <div class="price-badge">{p1_price:.2f} {currency}</div>
-                    
-                    <div class="flight-route">Going to {dest_name}</div>
-                    <div class="flight-info">
-                        <strong>Departure:</strong> {p1_outbound_dep_local}
-                    </div>
-                    <div class="flight-info">
-                        <strong>Arrival:</strong> {p1_outbound_arr_local}
-                    </div>
-                    <div class="flight-info">
-                        <strong>Duration:</strong> {p1_outbound_duration}
-                        <span class="stops-info">{p1_outbound_stops}</span>
-                    </div>
-                    {p1_outbound_stops_html}
-                    
-                    <div class="flight-route" style="margin-top: 20px;">Returning home</div>
-                    <div class="flight-info">
-                        <strong>Departure:</strong> {p1_return_dep_local}
-                    </div>
-                    <div class="flight-info">
-                        <strong>Arrival:</strong> {p1_return_arr_local}
-                    </div>
-                    <div class="flight-info">
-                        <strong>Duration:</strong> {p1_return_duration}
-                        <span class="stops-info">{p1_return_stops}</span>
-                    </div>
-                    {p1_return_stops_html}
+                    {p1_outbound_section}
+                    {p1_return_section}
                     
                     {f'<div class="airline-info">Airlines: {p1_airlines}</div>' if p1_airlines else ''}
                     
@@ -1217,32 +1324,8 @@ class OutputFormatter:
                 <div class="person-section person2">
                     <div class="person-label">Person 2</div>
                     <div class="price-badge">{p2_price:.2f} {currency}</div>
-                    
-                    <div class="flight-route">Going to {dest_name}</div>
-                    <div class="flight-info">
-                        <strong>Departure:</strong> {p2_outbound_dep_local}
-                    </div>
-                    <div class="flight-info">
-                        <strong>Arrival:</strong> {p2_outbound_arr_local}
-                    </div>
-                    <div class="flight-info">
-                        <strong>Duration:</strong> {p2_outbound_duration}
-                        <span class="stops-info">{p2_outbound_stops}</span>
-                    </div>
-                    {p2_outbound_stops_html}
-                    
-                    <div class="flight-route" style="margin-top: 20px;">Returning home</div>
-                    <div class="flight-info">
-                        <strong>Departure:</strong> {p2_return_dep_local}
-                    </div>
-                    <div class="flight-info">
-                        <strong>Arrival:</strong> {p2_return_arr_local}
-                    </div>
-                    <div class="flight-info">
-                        <strong>Duration:</strong> {p2_return_duration}
-                        <span class="stops-info">{p2_return_stops}</span>
-                    </div>
-                    {p2_return_stops_html}
+                    {p2_outbound_section}
+                    {p2_return_section}
                     
                     {f'<div class="airline-info">Airlines: {p2_airlines}</div>' if p2_airlines else ''}
                     
