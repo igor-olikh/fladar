@@ -1136,22 +1136,35 @@ class FlightSearch:
         Returns:
             List of matching flight pairs with details
         """
-        logger.info(f"🔍 Searching for matching flights to {format_airport_code(destination)}...")
-        logger.info(f"   Person 1: {format_airport_code(origin1)} → {format_airport_code(destination)}")
-        logger.info(f"   Person 2: {format_airport_code(origin2)} → {format_airport_code(destination)}")
+        # Resolve non-airport codes (like railway stations) to nearest airports
+        destination_resolved = resolve_airport_code(destination)
+        origin1_resolved = resolve_airport_code(origin1)
+        origin2_resolved = resolve_airport_code(origin2)
+        
+        # Log if resolution happened
+        if destination_resolved != destination.upper():
+            logger.info(f"  → Resolved destination {format_airport_code(destination)} to airport {format_airport_code(destination_resolved)}")
+        if origin1_resolved != origin1.upper():
+            logger.info(f"  → Resolved origin1 {format_airport_code(origin1)} to airport {format_airport_code(origin1_resolved)}")
+        if origin2_resolved != origin2.upper():
+            logger.info(f"  → Resolved origin2 {format_airport_code(origin2)} to airport {format_airport_code(origin2_resolved)}")
+        
+        logger.info(f"🔍 Searching for matching flights to {format_airport_code(destination_resolved)}...")
+        logger.info(f"   Person 1: {format_airport_code(origin1_resolved)} → {format_airport_code(destination_resolved)}")
+        logger.info(f"   Person 2: {format_airport_code(origin2_resolved)} → {format_airport_code(destination_resolved)}")
         
         # Search flights for person 1
-        logger.debug(f"   Searching flights for Person 1 ({format_airport_code(origin1)} → {format_airport_code(destination)})...")
+        logger.debug(f"   Searching flights for Person 1 ({format_airport_code(origin1_resolved)} → {format_airport_code(destination_resolved)})...")
         flights1 = self.search_flights(
-            origin1, destination, departure_date, return_date,
+            origin1_resolved, destination_resolved, departure_date, return_date,
             max_stops, min_departure_time_outbound, min_departure_time_return,
             nearby_airports_radius_km, max_duration_hours
         )
         
         # Search flights for person 2
-        logger.debug(f"   Searching flights for Person 2 ({format_airport_code(origin2)} → {format_airport_code(destination)})...")
+        logger.debug(f"   Searching flights for Person 2 ({format_airport_code(origin2_resolved)} → {format_airport_code(destination_resolved)})...")
         flights2 = self.search_flights(
-            origin2, destination, departure_date, return_date,
+            origin2_resolved, destination_resolved, departure_date, return_date,
             max_stops, min_departure_time_outbound, min_departure_time_return,
             nearby_airports_radius_km, max_duration_hours
         )
