@@ -119,7 +119,17 @@ def main():
                 logger.warning(f"Could not delete previous HTML file {html_file}: {e}")
     
     departure_date = search_config['outbound_date']
-    return_date = search_config['return_date']
+    flight_type = search_config.get('flight_type', 'both')  # Default to "both" for backward compatibility
+    
+    # Validate return_date based on flight_type
+    return_date = search_config.get('return_date')
+    if flight_type in ['both', 'return']:
+        if not return_date:
+            logger.error(f"❌ return_date is required for flight_type='{flight_type}'")
+            logger.error(f"   Please add return_date to your config.yaml")
+            sys.exit(1)
+    # For "outbound", return_date is optional (ignored)
+    
     max_price = float(search_config['max_price'])
     
     # Handle backward compatibility: check for old max_stops parameter
@@ -213,6 +223,7 @@ def main():
     print(f"   Max Price (per person): {max_price} EUR")
     print(f"   Max Stops - Person 1: {max_stops_person1}")
     print(f"   Max Stops - Person 2: {max_stops_person2}")
+    print(f"   Flight Type: {flight_type}")
     print(f"   Arrival Tolerance: ±{arrival_tolerance} hours")
     if max_flight_duration > 0:
         print(f"   Max Flight Duration: {max_flight_duration} hours")
@@ -251,7 +262,8 @@ def main():
         max_flight_duration_hours=max_flight_duration,
         nearby_airports_radius_km=nearby_airports_radius_km,
         max_destinations=max_destinations_to_check,
-        destinations_to_check=destinations_to_check
+        destinations_to_check=destinations_to_check,
+        flight_type=flight_type
     )
     
     # Output results

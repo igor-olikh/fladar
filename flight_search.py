@@ -291,13 +291,14 @@ class FlightSearch:
             logger.debug(f"Error parsing duration '{duration_str}': {e}")
             return 0.0
     
-    def _filter_by_duration(self, flights: List[Dict], max_duration_hours: float) -> List[Dict]:
+    def _filter_by_duration(self, flights: List[Dict], max_duration_hours: float, flight_type: str = "both") -> List[Dict]:
         """
-        Filter flights by maximum duration (both outbound and return)
+        Filter flights by maximum duration
         
         Args:
             flights: List of flight offers
             max_duration_hours: Maximum duration in hours (0 = no limit)
+            flight_type: "both" (round trip), "outbound" (one-way), or "return" (one-way)
             
         Returns:
             Filtered list of flights
@@ -306,24 +307,41 @@ class FlightSearch:
             return flights
         
         filtered = []
+        is_round_trip = flight_type == "both"
+        
         for flight in flights:
             try:
                 itineraries = flight.get('itineraries', [])
-                if len(itineraries) < 2:
-                    # Need both outbound and return
-                    continue
                 
-                outbound_duration_str = itineraries[0].get('duration', '')
-                return_duration_str = itineraries[1].get('duration', '')
-                
-                outbound_hours = self._parse_duration_to_hours(outbound_duration_str)
-                return_hours = self._parse_duration_to_hours(return_duration_str)
-                
-                # Check if both outbound and return are within limit
-                if outbound_hours <= max_duration_hours and return_hours <= max_duration_hours:
-                    filtered.append(flight)
+                if is_round_trip:
+                    # Round-trip: need both outbound and return
+                    if len(itineraries) < 2:
+                        continue
+                    
+                    outbound_duration_str = itineraries[0].get('duration', '')
+                    return_duration_str = itineraries[1].get('duration', '')
+                    
+                    outbound_hours = self._parse_duration_to_hours(outbound_duration_str)
+                    return_hours = self._parse_duration_to_hours(return_duration_str)
+                    
+                    # Check if both outbound and return are within limit
+                    if outbound_hours <= max_duration_hours and return_hours <= max_duration_hours:
+                        filtered.append(flight)
+                    else:
+                        logger.debug(f"  → Filtered out flight: outbound={outbound_hours:.1f}h, return={return_hours:.1f}h (max={max_duration_hours}h)")
                 else:
-                    logger.debug(f"  → Filtered out flight: outbound={outbound_hours:.1f}h, return={return_hours:.1f}h (max={max_duration_hours}h)")
+                    # One-way: only check the single itinerary
+                    if len(itineraries) < 1:
+                        continue
+                    
+                    duration_str = itineraries[0].get('duration', '')
+                    duration_hours = self._parse_duration_to_hours(duration_str)
+                    
+                    # Check if duration is within limit
+                    if duration_hours <= max_duration_hours:
+                        filtered.append(flight)
+                    else:
+                        logger.debug(f"  → Filtered out flight: duration={duration_hours:.1f}h (max={max_duration_hours}h)")
             except Exception as e:
                 logger.debug(f"  → Error checking duration for flight: {e}")
                 # If we can't check duration, include the flight (fail open)
@@ -336,26 +354,29 @@ class FlightSearch:
         origin: str,
         destination: str,
         departure_date: str,
-        return_date: str,
+        return_date: Optional[str] = None,
         max_stops: int = 0,
         min_departure_time_outbound: Optional[str] = None,
         min_departure_time_return: Optional[str] = None,
         nearby_airports_radius_km: int = 0,
-        max_duration_hours: float = 0
+        max_duration_hours: float = 0,
+        flight_type: str = "both"
     ) -> List[Dict]:
         """
-        Search for round-trip flights
+        Search for flights (round-trip or one-way)
         
         Args:
             origin: IATA code of origin airport
             destination: IATA code of destination airport
             departure_date: Departure date (YYYY-MM-DD)
-            return_date: Return date (YYYY-MM-DD)
+            return_date: Return date (YYYY-MM-DD) - Required for "both" or "return", ignored for "outbound"
             max_stops: Maximum number of stops
             min_departure_time_outbound: Minimum departure time for outbound flights (HH:MM)
             min_departure_time_return: Minimum departure time for return flights (HH:MM)
                 This checks when the return flight departs FROM the destination (not arrival at origin)
             nearby_airports_radius_km: Search radius in km for nearby airports (0 = disabled)
+            max_duration_hours: Maximum flight duration in hours (0 = no limit)
+            flight_type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination)
         
         Returns:
             List of flight offers
@@ -370,21 +391,46 @@ class FlightSearch:
         if destination_resolved != destination.upper():
             logger.info(f"  → Resolved destination {format_airport_code(destination)} to airport {format_airport_code(destination_resolved)}")
         
-        logger.debug(f"Searching flights: {format_airport_code(origin_resolved)} → {format_airport_code(destination_resolved)} ({departure_date} to {return_date})")
+        # Determine if this is a round-trip or one-way search
+        is_round_trip = flight_type == "both"
+        is_return_only = flight_type == "return"
+        
+        if is_round_trip:
+            if not return_date:
+                raise ValueError("return_date is required for round-trip flights (flight_type='both')")
+            logger.debug(f"Searching round-trip flights: {format_airport_code(origin_resolved)} → {format_airport_code(destination_resolved)} ({departure_date} to {return_date})")
+        elif is_return_only:
+            if not return_date:
+                raise ValueError("return_date is required for return flights (flight_type='return')")
+            logger.debug(f"Searching return flights: {format_airport_code(destination_resolved)} → {format_airport_code(origin_resolved)} ({return_date})")
+        else:  # outbound
+            logger.debug(f"Searching outbound flights: {format_airport_code(origin_resolved)} → {format_airport_code(destination_resolved)} ({departure_date})")
         
         # Use resolved codes for search
         origin = origin_resolved
         destination = destination_resolved
         
+        # For return flights, swap origin and destination (we're searching FROM destination TO origin)
+        if is_return_only:
+            search_origin = destination
+            search_destination = origin
+            search_date = return_date
+        else:
+            search_origin = origin
+            search_destination = destination
+            search_date = departure_date
+        
         # Check cache first (before any API calls)
+        cache_return_date = return_date if is_round_trip else None
         cached_flights = self._get_cached_flights(
-            origin=origin,
-            destination=destination,
-            departure_date=departure_date,
-            return_date=return_date,
+            origin=search_origin,
+            destination=search_destination,
+            departure_date=search_date,
+            return_date=cache_return_date,
             max_stops=max_stops,
             nearby_airports_radius_km=nearby_airports_radius_km,
-            max_duration_hours=max_duration_hours
+            max_duration_hours=max_duration_hours,
+            flight_type=flight_type
         )
         
         if cached_flights is not None:
@@ -392,45 +438,52 @@ class FlightSearch:
             return cached_flights
         
         # Get nearby airports if radius is specified
-        origins_to_search = [origin.upper()]
+        origins_to_search = [search_origin.upper()]
         if nearby_airports_radius_km > 0:
-            nearby_airports = self.get_nearby_airports(origin, nearby_airports_radius_km)
+            nearby_airports = self.get_nearby_airports(search_origin, nearby_airports_radius_km)
             origins_to_search = nearby_airports
             logger.info(f"  → Searching from {len(origins_to_search)} airport(s): {', '.join(origins_to_search)}")
         
         all_flights = []
         
-        for search_origin in origins_to_search:
+        for airport_origin in origins_to_search:
             try:
+                # Build API parameters
+                api_params = {
+                    'originLocationCode': airport_origin,
+                    'destinationLocationCode': search_destination,
+                    'departureDate': search_date,
+                    'adults': 1,
+                    'max': 250  # Maximum results
+                }
+                
+                # Only include returnDate for round-trip flights
+                if is_round_trip:
+                    api_params['returnDate'] = return_date
+                
                 # Search for flight offers
-                logger.debug(f"Calling Amadeus API for {format_airport_code(search_origin)} → {format_airport_code(destination)}")
-                response = self.amadeus.shopping.flight_offers_search.get(
-                    originLocationCode=search_origin,
-                    destinationLocationCode=destination,
-                    departureDate=departure_date,
-                    returnDate=return_date,
-                    adults=1,
-                    max=250  # Maximum results
-                )
+                logger.debug(f"Calling Amadeus API for {format_airport_code(airport_origin)} → {format_airport_code(search_destination)} (flight_type={flight_type})")
+                response = self.amadeus.shopping.flight_offers_search.get(**api_params)
             
                 flights = response.data if response.data else []
-                logger.info(f"  → Amadeus API returned {len(flights)} flight(s) for {format_airport_code(search_origin)} → {format_airport_code(destination)}")
+                logger.info(f"  → Amadeus API returned {len(flights)} flight(s) for {format_airport_code(airport_origin)} → {format_airport_code(search_destination)}")
                 
                 # Add origin information to each flight for tracking
                 for flight in flights:
-                    flight['_search_origin'] = search_origin
+                    flight['_search_origin'] = airport_origin
+                    flight['_flight_type'] = flight_type  # Store flight type for later processing
                 
                 all_flights.extend(flights)
                 
             except ResponseError as error:
-                logger.debug(f"  → API error for {format_airport_code(search_origin)} → {format_airport_code(destination)}: {error}")
+                logger.debug(f"  → API error for {format_airport_code(airport_origin)} → {format_airport_code(search_destination)}: {error}")
                 continue
             except Exception as e:
-                logger.debug(f"  → Error searching {format_airport_code(search_origin)} → {format_airport_code(destination)}: {e}")
+                logger.debug(f"  → Error searching {format_airport_code(airport_origin)} → {format_airport_code(search_destination)}: {e}")
                 continue
         
         flights = all_flights
-        logger.info(f"  → Total flights found from all airports: {len(flights)} for {format_airport_code(origin)} → {format_airport_code(destination)}")
+        logger.info(f"  → Total flights found from all airports: {len(flights)} for {format_airport_code(search_origin)} → {format_airport_code(search_destination)}")
         
         if not flights:
             # If no flights found, return empty list
@@ -452,33 +505,52 @@ class FlightSearch:
                     logger.debug(f"  → Filtered to {len(flights)} flight(s) with ≤{max_stops} stop(s) (removed {flights_before - len(flights)})")
             
             # Filter by departure time constraints (separate for outbound and return)
-            if min_departure_time_outbound or min_departure_time_return:
-                flights_before = len(flights)
-                flights = self._filter_by_departure_times(flights, min_departure_time_outbound, min_departure_time_return)
-                if len(flights) < flights_before:
-                    outbound_str = f"outbound ≥ {min_departure_time_outbound}" if min_departure_time_outbound else "outbound: no limit"
-                    return_str = f"return ≥ {min_departure_time_return}" if min_departure_time_return else "return: no limit"
-                    logger.debug(f"  → Filtered to {len(flights)} flight(s) with {outbound_str}, {return_str} (removed {flights_before - len(flights)})")
+            # For one-way flights, only apply the relevant constraint
+            if is_round_trip:
+                # Round-trip: check both constraints
+                if min_departure_time_outbound or min_departure_time_return:
+                    flights_before = len(flights)
+                    flights = self._filter_by_departure_times(flights, min_departure_time_outbound, min_departure_time_return)
+                    if len(flights) < flights_before:
+                        outbound_str = f"outbound ≥ {min_departure_time_outbound}" if min_departure_time_outbound else "outbound: no limit"
+                        return_str = f"return ≥ {min_departure_time_return}" if min_departure_time_return else "return: no limit"
+                        logger.debug(f"  → Filtered to {len(flights)} flight(s) with {outbound_str}, {return_str} (removed {flights_before - len(flights)})")
+            elif is_return_only:
+                # Return only: check return constraint (which is actually the outbound of the return flight)
+                if min_departure_time_return:
+                    flights_before = len(flights)
+                    flights = self._filter_by_departure_times(flights, min_departure_time_return, None)
+                    if len(flights) < flights_before:
+                        logger.debug(f"  → Filtered to {len(flights)} flight(s) with departure ≥ {min_departure_time_return} (removed {flights_before - len(flights)})")
+            else:  # outbound only
+                # Outbound only: check outbound constraint
+                if min_departure_time_outbound:
+                    flights_before = len(flights)
+                    flights = self._filter_by_departure_times(flights, min_departure_time_outbound, None)
+                    if len(flights) < flights_before:
+                        logger.debug(f"  → Filtered to {len(flights)} flight(s) with departure ≥ {min_departure_time_outbound} (removed {flights_before - len(flights)})")
             
             # Filter by maximum flight duration
+            # For one-way flights, only check the single itinerary
             if max_duration_hours > 0:
                 flights_before = len(flights)
-                flights = self._filter_by_duration(flights, max_duration_hours)
+                flights = self._filter_by_duration(flights, max_duration_hours, flight_type=flight_type)
                 if len(flights) < flights_before:
                     logger.info(f"  → Filtered to {len(flights)} flight(s) with duration ≤ {max_duration_hours}h (removed {flights_before - len(flights)} flights exceeding duration limit)")
             
-            logger.info(f"  → Final result: {len(flights)} flight(s) after filtering for {format_airport_code(origin)} → {format_airport_code(destination)}")
+            logger.info(f"  → Final result: {len(flights)} flight(s) after filtering for {format_airport_code(search_origin)} → {format_airport_code(search_destination)}")
             
             # Save to cache after successful search and filtering
             self._save_cached_flights(
-                origin=origin,
-                destination=destination,
-                departure_date=departure_date,
-                return_date=return_date,
+                origin=search_origin,
+                destination=search_destination,
+                departure_date=search_date,
+                return_date=cache_return_date,
                 max_stops=max_stops,
                 nearby_airports_radius_km=nearby_airports_radius_km,
                 max_duration_hours=max_duration_hours,
-                flights=flights
+                flights=flights,
+                flight_type=flight_type
             )
             
             return flights
@@ -764,10 +836,11 @@ class FlightSearch:
         origin: str,
         destination: str,
         departure_date: str,
-        return_date: str,
+        return_date: Optional[str],
         max_stops: int,
         nearby_airports_radius_km: int,
-        max_duration_hours: float
+        max_duration_hours: float,
+        flight_type: str = "both"
     ) -> Optional[List[Dict]]:
         """
         Get cached flight search results
@@ -790,7 +863,8 @@ class FlightSearch:
         
         # Create cache key from all search parameters
         # This ensures we cache correctly based on all search criteria
-        cache_key = f"{origin.upper()}_{destination.upper()}_{departure_date}_{return_date}_{max_stops}_{nearby_airports_radius_km}_{max_duration_hours}"
+        return_date_str = return_date if return_date else "none"
+        cache_key = f"{origin.upper()}_{destination.upper()}_{departure_date}_{return_date_str}_{max_stops}_{nearby_airports_radius_km}_{max_duration_hours}_{flight_type}"
         
         # Sanitize cache key for filename (replace invalid characters)
         cache_key_safe = cache_key.replace('/', '_').replace(':', '_')
@@ -836,11 +910,12 @@ class FlightSearch:
         origin: str,
         destination: str,
         departure_date: str,
-        return_date: str,
+        return_date: Optional[str],
         max_stops: int,
         nearby_airports_radius_km: int,
         max_duration_hours: float,
-        flights: List[Dict]
+        flights: List[Dict],
+        flight_type: str = "both"
     ):
         """
         Save flight search results to cache
@@ -860,7 +935,8 @@ class FlightSearch:
             return
         
         # Create cache key from all search parameters
-        cache_key = f"{origin.upper()}_{destination.upper()}_{departure_date}_{return_date}_{max_stops}_{nearby_airports_radius_km}_{max_duration_hours}"
+        return_date_str = return_date if return_date else "none"
+        cache_key = f"{origin.upper()}_{destination.upper()}_{departure_date}_{return_date_str}_{max_stops}_{nearby_airports_radius_km}_{max_duration_hours}_{flight_type}"
         
         # Sanitize cache key for filename
         cache_key_safe = cache_key.replace('/', '_').replace(':', '_')
@@ -1309,15 +1385,16 @@ class FlightSearch:
         origin2: str,
         destination: str,
         departure_date: str,
-        return_date: str,
-        max_price: float,
+        return_date: Optional[str] = None,
+        max_price: float = 600,
         max_stops_person1: int = 0,
         max_stops_person2: int = 0,
         arrival_tolerance_hours: int = 3,
         min_departure_time_outbound: Optional[str] = None,
         min_departure_time_return: Optional[str] = None,
         nearby_airports_radius_km: int = 0,
-        max_duration_hours: float = 0
+        max_duration_hours: float = 0,
+        flight_type: str = "both"
     ) -> List[Dict]:
         """
         Find matching flights for a destination - this is the source of truth for route availability
@@ -1336,15 +1413,16 @@ class FlightSearch:
             origin2: IATA code for second origin
             destination: IATA code for destination
             departure_date: Departure date (YYYY-MM-DD)
-            return_date: Return date (YYYY-MM-DD)
+            return_date: Return date (YYYY-MM-DD) - Required for "both" or "return", ignored for "outbound"
             max_price: Maximum price per person
             max_stops_person1: Maximum number of stops for Person 1 flights
             max_stops_person2: Maximum number of stops for Person 2 flights
-            arrival_tolerance_hours: Hours tolerance for arrival times
+            arrival_tolerance_hours: Hours tolerance for matching times (arrival for "outbound", departure for "return")
             min_departure_time_outbound: Minimum departure time for outbound (HH:MM)
             min_departure_time_return: Minimum departure time for return (HH:MM)
             nearby_airports_radius_km: Search radius for nearby airports (0 = disabled)
             max_duration_hours: Maximum flight duration in hours (0 = no limit)
+            flight_type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination)
         
         Returns:
             List of matching flight pairs with details
@@ -1375,7 +1453,7 @@ class FlightSearch:
             return self.search_flights(
                 origin1_resolved, destination_resolved, departure_date, return_date,
                 max_stops_person1, min_departure_time_outbound, min_departure_time_return,
-                nearby_airports_radius_km, max_duration_hours
+                nearby_airports_radius_km, max_duration_hours, flight_type
             )
         
         def search_person2():
@@ -1384,7 +1462,7 @@ class FlightSearch:
             return self.search_flights(
                 origin2_resolved, destination_resolved, departure_date, return_date,
                 max_stops_person2, min_departure_time_outbound, min_departure_time_return,
-                nearby_airports_radius_km, max_duration_hours
+                nearby_airports_radius_km, max_duration_hours, flight_type
             )
         
         # Execute both searches in parallel using ThreadPoolExecutor
@@ -1445,23 +1523,42 @@ class FlightSearch:
                 
                 total_price = price1 + price2
                 
-                # Check arrival time matching
-                if self._arrivals_match(f1, f2, arrival_tolerance_hours):
-                    matching_pairs.append({
-                        'destination': destination,
-                        'person1_flight': f1,
-                        'person2_flight': f2,
-                        'total_price': total_price,
-                        'person1_price': price1,
-                        'person2_price': price2
-                    })
+                # Check time matching based on flight type
+                # For "outbound": match arrival times (when they arrive at destination)
+                # For "return": match departure times (when they leave destination)
+                # For "both": match arrival times (when they arrive at destination)
+                if flight_type == "return":
+                    # For return flights, match departure times (when leaving destination)
+                    if self._departures_match(f1, f2, arrival_tolerance_hours):
+                        matching_pairs.append({
+                            'destination': destination,
+                            'person1_flight': f1,
+                            'person2_flight': f2,
+                            'total_price': total_price,
+                            'person1_price': price1,
+                            'person2_price': price2
+                        })
+                    else:
+                        time_filtered_count += 1
                 else:
-                    time_filtered_count += 1
+                    # For "both" or "outbound": match arrival times (when arriving at destination)
+                    if self._arrivals_match(f1, f2, arrival_tolerance_hours):
+                        matching_pairs.append({
+                            'destination': destination,
+                            'person1_flight': f1,
+                            'person2_flight': f2,
+                            'total_price': total_price,
+                            'person1_price': price1,
+                            'person2_price': price2
+                        })
+                    else:
+                        time_filtered_count += 1
         
         if price_filtered_count > 0:
             logger.debug(f"   Filtered out {price_filtered_count} combination(s) due to price constraints")
         if time_filtered_count > 0:
-            logger.debug(f"   Filtered out {time_filtered_count} combination(s) due to arrival time mismatch")
+            match_type = "departure" if flight_type == "return" else "arrival"
+            logger.debug(f"   Filtered out {time_filtered_count} combination(s) due to {match_type} time mismatch")
         
         # Sort by total price
         matching_pairs.sort(key=lambda x: x['total_price'])
@@ -1511,6 +1608,48 @@ class FlightSearch:
             if segments:
                 last_segment = segments[-1]
                 return last_segment.get('arrival', {}).get('at')
+        except Exception:
+            pass
+        return None
+    
+    def _departures_match(self, flight1: Dict, flight2: Dict, tolerance_hours: int) -> bool:
+        """Check if two flights depart within the tolerance window"""
+        try:
+            # Get departure times from first itinerary (for one-way flights, this is the only itinerary)
+            dep1 = self._get_departure_time(flight1)
+            dep2 = self._get_departure_time(flight2)
+            
+            if not dep1 or not dep2:
+                logger.debug(f"      Cannot compare departures: missing departure time data")
+                return False
+            
+            # Parse times
+            time1 = datetime.fromisoformat(dep1.replace('Z', '+00:00'))
+            time2 = datetime.fromisoformat(dep2.replace('Z', '+00:00'))
+            
+            # Check if within tolerance
+            time_diff = abs((time1 - time2).total_seconds() / 3600)
+            matches = time_diff <= tolerance_hours
+            
+            if matches:
+                logger.debug(f"      ✓ Departures match: {time_diff:.1f}h difference (within ±{tolerance_hours}h tolerance)")
+            else:
+                logger.debug(f"      ✗ Departures don't match: {time_diff:.1f}h difference (exceeds ±{tolerance_hours}h tolerance)")
+            
+            return matches
+            
+        except Exception as e:
+            logger.debug(f"      Error checking departure match: {e}")
+            return False
+    
+    def _get_departure_time(self, flight: Dict) -> Optional[str]:
+        """Get departure time from flight offer (first itinerary, first segment)"""
+        try:
+            itinerary = flight.get('itineraries', [{}])[0]
+            segments = itinerary.get('segments', [])
+            if segments:
+                first_segment = segments[0]
+                return first_segment.get('departure', {}).get('at')
         except Exception:
             pass
         return None

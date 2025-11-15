@@ -14,9 +14,18 @@ search:
   outbound_date: "2025-11-20"
   
   # Date range for return flights (format: YYYY-MM-DD)
+  # Required for flight_type: "both" or "return", ignored for "outbound"
   return_date: "2025-11-25"
   
-  # Maximum price per person for round trip (in EUR)
+  # Flight type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination)
+  # - "both": Search for round-trip flights (outbound + return) - DEFAULT
+  # - "outbound": Search only for flights going TO the destination (meeting there)
+  # - "return": Search only for flights leaving FROM the destination (meeting at origin)
+  flight_type: "both"  # Options: "both", "outbound", "return"
+  
+  # Maximum price per person (in EUR)
+  # For "both": price for round trip
+  # For "outbound" or "return": price for one-way flight
   max_price: 600
   
   # Search radius for nearby airports (in kilometers)

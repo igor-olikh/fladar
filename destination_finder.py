@@ -92,8 +92,8 @@ class DestinationFinder:
         origin1: str,
         origin2: str,
         departure_date: str,
-        return_date: str,
-        max_price: float,
+        return_date: Optional[str] = None,
+        max_price: float = 600,
         max_stops_person1: int = 0,
         max_stops_person2: int = 0,
         arrival_tolerance_hours: int = 3,
@@ -103,7 +103,8 @@ class DestinationFinder:
         use_dynamic_destinations: bool = True,
         max_flight_duration_hours: float = 0,
         nearby_airports_radius_km: int = 0,
-        destinations_to_check: List[str] = None
+        destinations_to_check: List[str] = None,
+        flight_type: str = "both"
     ) -> List[Dict]:
         """
         Find destinations where both people can meet with matching flights
@@ -125,6 +126,7 @@ class DestinationFinder:
             max_flight_duration_hours: Maximum flight duration in hours (0 = no limit)
             nearby_airports_radius_km: Search radius for nearby airports (km)
             destinations_to_check: Optional list of specific destinations to check (skips discovery if provided)
+            flight_type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination)
         
         Returns:
             List of matching flight pairs for different destinations
@@ -251,7 +253,8 @@ class DestinationFinder:
                     min_departure_time_outbound=min_departure_time_outbound,
                     min_departure_time_return=min_departure_time_return,
                     nearby_airports_radius_km=nearby_airports_radius_km,
-                    max_duration_hours=max_flight_duration_hours
+                    max_duration_hours=max_flight_duration_hours,
+                    flight_type=flight_type
                 )
                 
                 if matches:
