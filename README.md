@@ -294,10 +294,11 @@ fladar/
 
 ## 📚 Documentation
 
-- **[PROJECT_EXPLANATION.md](PROJECT_EXPLANATION.md)**: Comprehensive project overview
-- **[FLIGHT_RESULTS_EXPLANATION.md](FLIGHT_RESULTS_EXPLANATION.md)**: How to read the output
+- **[docs/PROJECT_EXPLANATION.md](docs/PROJECT_EXPLANATION.md)**: Comprehensive project overview
+- **[docs/FLIGHT_RESULTS_EXPLANATION.md](docs/FLIGHT_RESULTS_EXPLANATION.md)**: How to read the output
 - **[docs/api_usage_explanation.md](docs/api_usage_explanation.md)**: Amadeus API details
 - **[docs/amadeus_test_vs_production.md](docs/amadeus_test_vs_production.md)**: Test vs Production differences
+- **[docs/SECURITY_CHECKLIST.md](docs/SECURITY_CHECKLIST.md)**: Security checklist for pre-commit review
 
 ## ⚠️ Troubleshooting
 

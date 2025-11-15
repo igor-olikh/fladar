@@ -43,6 +43,8 @@ debug_logs/
 *.log
 
 # Cached destination data
+# Note: destinations_cache is currently tracked (contains only public destination data)
+# If you add sensitive data to cache, uncomment the line below
 # data/destinations_cache/
 data/flights_cache/
 
