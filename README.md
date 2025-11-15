@@ -4,20 +4,19 @@
 
 A powerful Python application that helps two people find where to meet by searching flights from their respective cities. Uses Amadeus Flight API to discover destinations, search for flights, match arrivals within a time window, and filter by price, stops, and departure times. Perfect for planning trips, finding meeting points, or discovering travel destinations.
 
-## 📸 Preview
+## 📸 Output Preview
 
-Here's what the beautiful HTML output looks like:
+The application generates a comprehensive HTML report displaying the top 3 meeting destinations with detailed flight information for both travelers.
 
 ![Flight Results HTML Output](flight_results_screenshot.png)
 
-The HTML output displays the top 3 destinations with:
-- ✨ Beautiful gradient design
-- 📊 Clear flight information for both persons
-- 🛫 Departure and arrival times (local timezones)
-- ⏱️ Flight durations and stops
-- 🛑 Stop details (airport and layover time)
-- 🔗 Direct booking links to Skyscanner
-- 💰 Prices and airline information
+**Output Features:**
+- **Visual Design**: Modern gradient interface with responsive layout
+- **Flight Details**: Complete itinerary information for both persons including departure and arrival times in local timezones
+- **Stop Information**: Connection details with airport codes and layover durations
+- **Booking Integration**: Direct links to Skyscanner for each flight option
+- **Pricing**: Individual and total costs with currency information
+- **Airlines**: Full airline names and codes for all flight segments
 
 **Keywords:** flight search, find flights, flight API, Amadeus API, meeting destination, flight finder, travel planner, flight matching, Python flight search, easy flight search, automatic flight search, flight discovery
 
