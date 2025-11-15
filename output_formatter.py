@@ -86,18 +86,29 @@ class OutputFormatter:
         """
         airport_code_upper = airport_code.upper()
         
-        # Try automatic detection using airportsdata library
-        if airports is not None:
+        # Try automatic detection using airportsdata library + timezonefinder
+        if airports is not None and tf is not None:
             try:
                 airport_info = airports.get(airport_code_upper)
-                if airport_info and 'timezone' in airport_info:
-                    timezone_name = airport_info['timezone']
-                    try:
-                        tz = pytz.timezone(timezone_name)
-                        logger.debug(f"Auto-detected timezone for {airport_code_upper}: {timezone_name}")
-                        return tz
-                    except pytz.exceptions.UnknownTimeZoneError:
-                        logger.debug(f"Unknown timezone '{timezone_name}' for {airport_code_upper}, trying fallback")
+                if airport_info:
+                    # Get coordinates from airport data
+                    lat = airport_info.get('lat')
+                    lon = airport_info.get('lon')
+                    
+                    if lat is not None and lon is not None:
+                        # Use timezonefinder to get timezone from coordinates
+                        timezone_name = tf.timezone_at(lat=lat, lng=lon)
+                        if timezone_name:
+                            try:
+                                tz = pytz.timezone(timezone_name)
+                                logger.debug(f"Auto-detected timezone for {airport_code_upper}: {timezone_name}")
+                                return tz
+                            except pytz.exceptions.UnknownTimeZoneError:
+                                logger.debug(f"Unknown timezone '{timezone_name}' for {airport_code_upper}, trying fallback")
+                        else:
+                            logger.debug(f"Could not determine timezone from coordinates for {airport_code_upper}")
+                    else:
+                        logger.debug(f"Airport {airport_code_upper} missing coordinates")
             except (KeyError, AttributeError, TypeError) as e:
                 logger.debug(f"Airport {airport_code_upper} not found in airports database: {e}")
         
