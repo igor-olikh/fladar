@@ -919,16 +919,6 @@ class FlightSearch:
             logger.warning(f"   This is expected in test environment - falling back to predefined list")
             dest1 = []
         
-        # If origin1 failed or returned empty, immediately use predefined list
-        # Don't even try origin2 - we know Inspiration Search isn't working
-        if len(dest1) == 0:
-            logger.warning(f"   ⚠️  Origin {origin1} returned empty results from Inspiration Search")
-            logger.warning(f"   This is expected in test environment due to limited cached data")
-            logger.info(f"   Skipping {origin2} and falling back to predefined European destinations list")
-            logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
-            predefined = self._get_predefined_destinations()
-            return predefined
-        
         # Try to get destinations from origin2
         dest2 = []
         try:
@@ -942,10 +932,20 @@ class FlightSearch:
             logger.warning(f"   This is expected in test environment - falling back to predefined list")
             dest2 = []
         
-        # If origin2 also failed or returned empty, use predefined list
-        if len(dest2) == 0:
-            logger.warning(f"   ⚠️  Origin {origin2} also returned empty results from Inspiration Search")
-            logger.warning(f"   This is expected in test environment due to limited cached data")
+        # Fallback logic: if one origin has destinations but the other doesn't, use the first one's destinations for both
+        if len(dest1) > 0 and len(dest2) == 0:
+            logger.info(f"   ⚠️  Origin {origin2} returned no destinations, but {origin1} returned {len(dest1)} destinations")
+            logger.info(f"   Using destinations from {origin1} for both origins (fallback mode)")
+            logger.info(f"   Flight Offers Search will validate which destinations are actually reachable from {origin2}")
+            return dest1
+        elif len(dest1) == 0 and len(dest2) > 0:
+            logger.info(f"   ⚠️  Origin {origin1} returned no destinations, but {origin2} returned {len(dest2)} destinations")
+            logger.info(f"   Using destinations from {origin2} for both origins (fallback mode)")
+            logger.info(f"   Flight Offers Search will validate which destinations are actually reachable from {origin1}")
+            return dest2
+        elif len(dest1) == 0 and len(dest2) == 0:
+            # If both failed, use predefined list
+            logger.warning(f"   ⚠️  Both origins returned empty results from Inspiration Search")
             logger.info(f"   Falling back to predefined European destinations list")
             logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
             predefined = self._get_predefined_destinations()
