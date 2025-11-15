@@ -198,7 +198,8 @@ def main():
         min_departure_time_outbound=min_departure_time_outbound,
         min_departure_time_return=min_departure_time_return,
         use_dynamic_destinations=use_dynamic_destinations,
-        max_flight_duration_hours=max_flight_duration
+        max_flight_duration_hours=max_flight_duration,
+        nearby_airports_radius_km=nearby_airports_radius_km
     )
     
     # Output results

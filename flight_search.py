@@ -903,14 +903,16 @@ class FlightSearch:
         logger.debug(f"   Searching flights for Person 1 ({origin1} → {destination})...")
         flights1 = self.search_flights(
             origin1, destination, departure_date, return_date,
-            max_stops, min_departure_time_outbound, min_departure_time_return
+            max_stops, min_departure_time_outbound, min_departure_time_return,
+            nearby_airports_radius_km
         )
         
         # Search flights for person 2
         logger.debug(f"   Searching flights for Person 2 ({origin2} → {destination})...")
         flights2 = self.search_flights(
             origin2, destination, departure_date, return_date,
-            max_stops, min_departure_time_outbound, min_departure_time_return
+            max_stops, min_departure_time_outbound, min_departure_time_return,
+            nearby_airports_radius_km
         )
         
         logger.info(f"   Found {len(flights1)} flight(s) for Person 1, {len(flights2)} flight(s) for Person 2")
