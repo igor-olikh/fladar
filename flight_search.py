@@ -355,7 +355,17 @@ class FlightSearch:
         Returns:
             List of flight offers
         """
-        logger.debug(f"Searching flights: {format_airport_code(origin)} → {format_airport_code(destination)} ({departure_date} to {return_date})")
+        # Resolve non-airport codes (like railway stations) to nearest airports
+        origin_resolved = resolve_airport_code(origin)
+        destination_resolved = resolve_airport_code(destination)
+        
+        # Log if resolution happened
+        if origin_resolved != origin.upper():
+            logger.info(f"  → Resolved origin {format_airport_code(origin)} to airport {format_airport_code(origin_resolved)}")
+        if destination_resolved != destination.upper():
+            logger.info(f"  → Resolved destination {format_airport_code(destination)} to airport {format_airport_code(destination_resolved)}")
+        
+        logger.debug(f"Searching flights: {format_airport_code(origin_resolved)} → {format_airport_code(destination_resolved)} ({departure_date} to {return_date})")
         
         # Use resolved codes for search
         origin = origin_resolved
