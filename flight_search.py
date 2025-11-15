@@ -574,32 +574,55 @@ class FlightSearch:
         """
         logger.info("🔍 Finding common destinations from both origins...")
         
-        # Get destinations from origin1
-        dest1 = set(self.get_destination_suggestions(origin1, departure_date, use_dynamic, max_duration_hours))
-        logger.info(f"   Destinations from {origin1}: {len(dest1)}")
+        # Try to get destinations from origin1
+        dest1 = []
+        try:
+            dest1 = self.get_destination_suggestions(origin1, departure_date, use_dynamic, max_duration_hours)
+            logger.info(f"   Destinations from {origin1}: {len(dest1)}")
+            if len(dest1) == 0:
+                logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {origin1}")
+                logger.warning(f"   This is common in test environment - TLV may not be in Amadeus test cache")
+        except Exception as e:
+            logger.warning(f"   ⚠️  Error getting destinations for {origin1}: {e}")
+            logger.warning(f"   This is expected in test environment - falling back to predefined list")
+            dest1 = []
+        
+        # If origin1 failed or returned empty, immediately use predefined list
+        # Don't even try origin2 - we know Inspiration Search isn't working
         if len(dest1) == 0:
-            logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {origin1}")
-            logger.warning(f"   This is common in test environment - TLV may not be in Amadeus test cache")
+            logger.warning(f"   ⚠️  Origin {origin1} returned empty results from Inspiration Search")
+            logger.warning(f"   This is expected in test environment due to limited cached data")
+            logger.info(f"   Skipping {origin2} and falling back to predefined European destinations list")
+            logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
+            predefined = self._get_predefined_destinations()
+            return predefined
         
-        # Get destinations from origin2
-        dest2 = set(self.get_destination_suggestions(origin2, departure_date, use_dynamic, max_duration_hours))
-        logger.info(f"   Destinations from {origin2}: {len(dest2)}")
+        # Try to get destinations from origin2
+        dest2 = []
+        try:
+            dest2 = self.get_destination_suggestions(origin2, departure_date, use_dynamic, max_duration_hours)
+            logger.info(f"   Destinations from {origin2}: {len(dest2)}")
+            if len(dest2) == 0:
+                logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {origin2}")
+                logger.warning(f"   This is common in test environment - some origins may not be in Amadeus test cache")
+        except Exception as e:
+            logger.warning(f"   ⚠️  Error getting destinations for {origin2}: {e}")
+            logger.warning(f"   This is expected in test environment - falling back to predefined list")
+            dest2 = []
+        
+        # If origin2 also failed or returned empty, use predefined list
         if len(dest2) == 0:
-            logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {origin2}")
-            logger.warning(f"   This is common in test environment - some origins may not be in Amadeus test cache")
-        
-        # If either origin returned empty, fall back to predefined list
-        # This handles the case where test environment doesn't have data for certain origins
-        if len(dest1) == 0 or len(dest2) == 0:
-            logger.warning(f"   ⚠️  One or both origins returned empty results from Inspiration Search")
+            logger.warning(f"   ⚠️  Origin {origin2} also returned empty results from Inspiration Search")
             logger.warning(f"   This is expected in test environment due to limited cached data")
             logger.info(f"   Falling back to predefined European destinations list")
             logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
-            predefined = set(self._get_predefined_destinations())
-            return sorted(list(predefined))
+            predefined = self._get_predefined_destinations()
+            return predefined
         
-        # Find common destinations
-        common = sorted(list(dest1.intersection(dest2)))
+        # Both origins returned results - find intersection
+        dest1_set = set(dest1)
+        dest2_set = set(dest2)
+        common = sorted(list(dest1_set.intersection(dest2_set)))
         logger.info(f"   Common destinations (intersection): {len(common)}")
         
         if common:
@@ -609,7 +632,7 @@ class FlightSearch:
             logger.warning(f"   ⚠️  No common destinations found in intersection!")
             logger.warning(f"   This may indicate test environment limitations or incomplete Inspiration Search data")
             logger.info(f"   Using union of both lists as fallback...")
-            common = sorted(list(dest1.union(dest2)))
+            common = sorted(list(dest1_set.union(dest2_set)))
             logger.info(f"   Using all destinations from both origins: {len(common)}")
             logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
         
