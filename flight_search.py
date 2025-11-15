@@ -629,7 +629,28 @@ class FlightSearch:
         min_departure_time_return: Optional[str] = None
     ) -> List[Dict]:
         """
-        Find flights from two origins to the same destination where arrivals are within tolerance
+        Find matching flights for a destination - this is the source of truth for route availability
+        
+        This method uses Flight Offers Search API to validate that:
+        - The destination is actually reachable from both origins
+        - Flights exist on the specified dates
+        - Flights meet the specified criteria (price, stops, times)
+        
+        Note: This is more reliable than Inspiration Search, which uses cached data.
+        Flight Offers Search uses live inventory and will return empty if no flights exist.
+        This makes it the authoritative source for determining if a route is actually available.
+        
+        Args:
+            origin1: IATA code for first origin
+            origin2: IATA code for second origin
+            destination: IATA code for destination
+            departure_date: Departure date (YYYY-MM-DD)
+            return_date: Return date (YYYY-MM-DD)
+            max_price: Maximum price per person
+            max_stops: Maximum number of stops
+            arrival_tolerance_hours: Hours tolerance for arrival times
+            min_departure_time_outbound: Minimum departure time for outbound (HH:MM)
+            min_departure_time_return: Minimum departure time for return (HH:MM)
         
         Returns:
             List of matching flight pairs with details
