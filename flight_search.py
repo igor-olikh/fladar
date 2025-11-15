@@ -11,6 +11,80 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Airport code to city name mapping for logs (European cities + Tel Aviv)
+AIRPORT_NAMES = {
+    'TLV': 'Tel Aviv',
+    'ALC': 'Alicante',
+    'BCN': 'Barcelona',
+    'LON': 'London',
+    'PAR': 'Paris',
+    'MAD': 'Madrid',
+    'ROM': 'Rome',
+    'AMS': 'Amsterdam',
+    'BER': 'Berlin',
+    'VIE': 'Vienna',
+    'PRG': 'Prague',
+    'ATH': 'Athens',
+    'LIS': 'Lisbon',
+    'DUB': 'Dublin',
+    'CPH': 'Copenhagen',
+    'STO': 'Stockholm',
+    'OSL': 'Oslo',
+    'MUC': 'Munich',
+    'FCO': 'Rome',
+    'AGP': 'Malaga',
+    'SEV': 'Seville',
+    'ZUR': 'Zurich',
+    'BRU': 'Brussels',
+    'WAR': 'Warsaw',
+    'BUD': 'Budapest',
+    'ZAG': 'Zagreb',
+    'HEL': 'Helsinki',
+    'REK': 'Reykjavik',
+    'OPO': 'Porto',
+    'LHR': 'London',
+    'LGW': 'London',
+    'CDG': 'Paris',
+    'ORY': 'Paris',
+    'FRA': 'Frankfurt',
+    'MXP': 'Milan',
+    'LIN': 'Milan',
+    'VCE': 'Venice',
+    'NAP': 'Naples',
+    'PMO': 'Palermo',
+    'SPL': 'Split',
+    'DBV': 'Dubrovnik',
+    'GOT': 'Gothenburg',
+    'RIX': 'Riga',
+    'TLL': 'Tallinn',
+    'VNO': 'Vilnius',
+    'WAW': 'Warsaw',
+    'KRK': 'Krakow',
+    'GOA': 'Genoa',
+    'GLA': 'Glasgow',
+    'EDI': 'Edinburgh',
+    'CLJ': 'Cluj-Napoca',
+    'LWO': 'Lviv',
+    'MOW': 'Moscow',
+    'KIV': 'Chisinau',
+    'BOS': 'Boston',
+    'MTY': 'Monterrey',
+    'FLL': 'Fort Lauderdale',
+    'DEN': 'Denver',
+    'ACC': 'Accra',
+    'ORL': 'Orlando',
+    'TYO': 'Tokyo',
+}
+
+
+def format_airport_code(code: str) -> str:
+    """Format airport code with city name in brackets if known"""
+    code_upper = code.upper()
+    city_name = AIRPORT_NAMES.get(code_upper)
+    if city_name:
+        return f"{code} ({city_name})"
+    return code
+
 
 class FlightSearch:
     """Handles flight searches using Amadeus API"""
@@ -115,7 +189,7 @@ class FlightSearch:
                     lat = airport_info['lat']
                     lon = airport_info['lon']
                     
-                    logger.debug(f"Found coordinates for {airport_code}: {lat}, {lon}")
+                    logger.debug(f"Found coordinates for {format_airport_code(airport_code)}: {lat}, {lon}")
                     
                     # Now use Amadeus API to find nearby airports
                     response = self.amadeus.reference_data.locations.airports.get(
@@ -130,18 +204,18 @@ class FlightSearch:
                             if iata_code and iata_code.upper() != airport_code.upper():
                                 nearby_airports.append(iata_code.upper())
                         
-                        logger.info(f"  → Found {len(nearby_airports)} airport(s) within {radius_km} km of {airport_code}: {', '.join(nearby_airports)}")
+                        logger.info(f"  → Found {len(nearby_airports)} airport(s) within {radius_km} km of {format_airport_code(airport_code)}: {', '.join([format_airport_code(ap) for ap in nearby_airports])}")
                     else:
-                        logger.debug(f"  → No nearby airports found via API, using only {airport_code}")
+                        logger.debug(f"  → No nearby airports found via API, using only {format_airport_code(airport_code)}")
                 else:
-                    logger.debug(f"  → Could not get coordinates for {airport_code}, using only specified airport")
+                    logger.debug(f"  → Could not get coordinates for {format_airport_code(airport_code)}, using only specified airport")
             except Exception as e:
-                logger.debug(f"  → Error getting coordinates: {e}, using only {airport_code}")
+                logger.debug(f"  → Error getting coordinates: {e}, using only {format_airport_code(airport_code)}")
                 
         except ResponseError as error:
-            logger.debug(f"  → Airport Nearest Relevant API error: {error}, using only {airport_code}")
+            logger.debug(f"  → Airport Nearest Relevant API error: {error}, using only {format_airport_code(airport_code)}")
         except Exception as e:
-            logger.debug(f"  → Error finding nearby airports: {e}, using only {airport_code}")
+            logger.debug(f"  → Error finding nearby airports: {e}, using only {format_airport_code(airport_code)}")
         
         return nearby_airports
     
@@ -251,7 +325,7 @@ class FlightSearch:
         Returns:
             List of flight offers
         """
-        logger.debug(f"Searching flights: {origin} → {destination} ({departure_date} to {return_date})")
+        logger.debug(f"Searching flights: {format_airport_code(origin)} → {format_airport_code(destination)} ({departure_date} to {return_date})")
         
         # Get nearby airports if radius is specified
         origins_to_search = [origin.upper()]
@@ -265,7 +339,7 @@ class FlightSearch:
         for search_origin in origins_to_search:
             try:
                 # Search for flight offers
-                logger.debug(f"Calling Amadeus API for {search_origin} → {destination}")
+                logger.debug(f"Calling Amadeus API for {format_airport_code(search_origin)} → {format_airport_code(destination)}")
                 response = self.amadeus.shopping.flight_offers_search.get(
                     originLocationCode=search_origin,
                     destinationLocationCode=destination,
@@ -276,7 +350,7 @@ class FlightSearch:
                 )
             
                 flights = response.data if response.data else []
-                logger.info(f"  → Amadeus API returned {len(flights)} flight(s) for {search_origin} → {destination}")
+                logger.info(f"  → Amadeus API returned {len(flights)} flight(s) for {format_airport_code(search_origin)} → {format_airport_code(destination)}")
                 
                 # Add origin information to each flight for tracking
                 for flight in flights:
@@ -285,14 +359,14 @@ class FlightSearch:
                 all_flights.extend(flights)
                 
             except ResponseError as error:
-                logger.debug(f"  → API error for {search_origin} → {destination}: {error}")
+                logger.debug(f"  → API error for {format_airport_code(search_origin)} → {format_airport_code(destination)}: {error}")
                 continue
             except Exception as e:
-                logger.debug(f"  → Error searching {search_origin} → {destination}: {e}")
+                logger.debug(f"  → Error searching {format_airport_code(search_origin)} → {format_airport_code(destination)}: {e}")
                 continue
         
         flights = all_flights
-        logger.info(f"  → Total flights found from all airports: {len(flights)} for {origin} → {destination}")
+        logger.info(f"  → Total flights found from all airports: {len(flights)} for {format_airport_code(origin)} → {format_airport_code(destination)}")
         
         if not flights:
             # If no flights found, return empty list
@@ -329,7 +403,7 @@ class FlightSearch:
                 if len(flights) < flights_before:
                     logger.info(f"  → Filtered to {len(flights)} flight(s) with duration ≤ {max_duration_hours}h (removed {flights_before - len(flights)} flights exceeding duration limit)")
             
-            logger.info(f"  → Final result: {len(flights)} flight(s) after filtering for {origin} → {destination}")
+            logger.info(f"  → Final result: {len(flights)} flight(s) after filtering for {format_airport_code(origin)} → {format_airport_code(destination)}")
             return flights
             
         except ResponseError as error:
@@ -338,7 +412,7 @@ class FlightSearch:
             error_description = error.description() if hasattr(error, 'description') and callable(error.description) else (error.description if hasattr(error, 'description') else str(error))
             error_body = error.response.body if hasattr(error, 'response') and hasattr(error.response, 'body') else None
             
-            logger.error(f"  ❌ Amadeus API returned an error for {origin} → {destination}")
+            logger.error(f"  ❌ Amadeus API returned an error for {format_airport_code(origin)} → {format_airport_code(destination)}")
             logger.error(f"     Status Code: {error_code}")
             logger.error(f"     Error: {error_description}")
             if error_body:
@@ -359,7 +433,7 @@ class FlightSearch:
             logger.error(f"     This is an error response from the Amadeus API service (not a connection issue)")
             return []
         except Exception as e:
-            logger.error(f"  ❌ Unexpected error while searching flights {origin} → {destination}: {e}")
+            logger.error(f"  ❌ Unexpected error while searching flights {format_airport_code(origin)} → {format_airport_code(destination)}: {e}")
             logger.error(f"     This is a local error (not from Amadeus API)")
             return []
     
@@ -503,7 +577,7 @@ class FlightSearch:
         # Check if we're in test environment and origin is known to not work
         # Skip Inspiration Search for known unsupported origins in test environment
         if self.environment == "test" and origin.upper() in TEST_ENV_UNSUPPORTED_ORIGINS:
-            logger.warning(f"   ⚠️  Origin {origin} is not reliably supported in test environment (not in Amadeus test cache)")
+            logger.warning(f"   ⚠️  Origin {format_airport_code(origin)} is not reliably supported in test environment (not in Amadeus test cache)")
             logger.info(f"   Skipping Inspiration Search and using predefined list directly")
             logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
             return self._get_predefined_destinations()
@@ -548,13 +622,13 @@ class FlightSearch:
                 return None
             
             if days_old < self.cache_expiration_days:
-                logger.info(f"   ✓ Using cached destinations for {origin} (cached {days_old} day(s) ago)")
+                logger.info(f"   ✓ Using cached destinations for {format_airport_code(origin)} (cached {days_old} day(s) ago)")
                 return cache_data.get('destinations', [])
             else:
-                logger.debug(f"   Cache for {origin} is expired ({days_old} days old), will refresh")
+                logger.debug(f"   Cache for {format_airport_code(origin)} is expired ({days_old} days old), will refresh")
                 return None
         except Exception as e:
-            logger.debug(f"   Error reading cache for {origin}: {e}")
+            logger.debug(f"   Error reading cache for {format_airport_code(origin)}: {e}")
             return None
     
     def _save_cached_destinations(self, origin: str, destinations: List[str]):
@@ -581,9 +655,9 @@ class FlightSearch:
             with open(cache_file, 'w', encoding='utf-8') as f:
                 json.dump(cache_data, f, indent=2, ensure_ascii=False)
             
-            logger.debug(f"   Cached {len(destinations)} destinations for {origin} to {cache_file}")
+            logger.debug(f"   Cached {len(destinations)} destinations for {format_airport_code(origin)} to {cache_file}")
         except Exception as e:
-            logger.debug(f"   Error saving cache for {origin}: {e}")
+            logger.debug(f"   Error saving cache for {format_airport_code(origin)}: {e}")
     
     def _get_destinations_from_inspiration_search(
         self, 
@@ -604,12 +678,12 @@ class FlightSearch:
         destinations = []
         
         try:
-            logger.info(f"   Searching for destinations from {origin} using Flight Inspiration Search API...")
+            logger.info(f"   Searching for destinations from {format_airport_code(origin)} using Flight Inspiration Search API...")
             
             # DEBUG: Log exact API call details
             logger.debug(f"   [DEBUG] API Call Details:")
             logger.debug(f"   [DEBUG]   - Endpoint: shopping.flight_destinations.get")
-            logger.debug(f"   [DEBUG]   - Origin: {origin}")
+            logger.debug(f"   [DEBUG]   - Origin: {format_airport_code(origin)}")
             logger.debug(f"   [DEBUG]   - Hostname: {self.hostname}")
             
             # Ensure client is authenticated before making the call
@@ -736,7 +810,7 @@ class FlightSearch:
             else:
                 logger.warning(f"   ⚠️  No destinations found from Flight Inspiration Search API")
                 logger.warning(f"   This is expected in test environment - Inspiration Search uses cached data")
-                logger.warning(f"   Test environment may not have data for origin {origin} (especially TLV)")
+                logger.warning(f"   Test environment may not have data for origin {format_airport_code(origin)} (especially TLV (Tel Aviv))")
                 logger.info(f"   Returning empty list - caller will handle fallback to predefined list")
                 return []  # Return empty so caller can detect failure and use predefined list
                 
@@ -781,14 +855,14 @@ class FlightSearch:
             # If it's a 404, it might be due to limited test data or no data available
             if status_code == 404:
                 if self.environment == "test":
-                    logger.warning(f"   ⚠️  404 error: No data available for origin {origin} in test environment")
+                    logger.warning(f"   ⚠️  404 error: No data available for origin {format_airport_code(origin)} in test environment")
                     logger.warning(f"   This is expected - Amadeus test environment has limited cached data")
                     logger.warning(f"   TLV (Tel Aviv) is not in the test cache, which is why you see this error")
                     logger.info(f"   Returning empty list - caller will use fallback logic (other origin's destinations or predefined list)")
                     logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
                     logger.info(f"   For production use, switch to 'production' environment for complete data")
                 else:
-                    logger.warning(f"   ⚠️  404 error: No data available for origin {origin}")
+                    logger.warning(f"   ⚠️  404 error: No data available for origin {format_airport_code(origin)}")
                     logger.warning(f"   This may indicate that the Flight Inspiration Search API has no cached data for this origin")
                     logger.info(f"   Returning empty list - caller will use fallback logic (other origin's destinations or predefined list)")
                     logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
@@ -904,7 +978,7 @@ class FlightSearch:
             origin2_unsupported = origin2.upper() in TEST_ENV_UNSUPPORTED_ORIGINS
             
             if origin1_unsupported and origin2_unsupported:
-                logger.warning(f"   ⚠️  Both origins ({origin1} and {origin2}) are not reliably supported in test environment")
+                logger.warning(f"   ⚠️  Both origins ({format_airport_code(origin1)} and {format_airport_code(origin2)}) are not reliably supported in test environment")
                 logger.info(f"   Skipping Inspiration Search for both origins and using predefined list directly")
                 logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
                 predefined = self._get_predefined_destinations()
@@ -914,12 +988,12 @@ class FlightSearch:
         dest1 = []
         try:
             dest1 = self.get_destination_suggestions(origin1, departure_date, use_dynamic, max_duration_hours, non_stop)
-            logger.info(f"   Destinations from {origin1}: {len(dest1)}")
+            logger.info(f"   Destinations from {format_airport_code(origin1)}: {len(dest1)}")
             if len(dest1) == 0:
-                logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {origin1}")
+                logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {format_airport_code(origin1)}")
                 logger.warning(f"   This is common in test environment - TLV may not be in Amadeus test cache")
         except Exception as e:
-            logger.warning(f"   ⚠️  Error getting destinations for {origin1}: {e}")
+            logger.warning(f"   ⚠️  Error getting destinations for {format_airport_code(origin1)}: {e}")
             logger.warning(f"   This is expected in test environment - falling back to predefined list")
             dest1 = []
         
@@ -927,25 +1001,25 @@ class FlightSearch:
         dest2 = []
         try:
             dest2 = self.get_destination_suggestions(origin2, departure_date, use_dynamic, max_duration_hours, non_stop)
-            logger.info(f"   Destinations from {origin2}: {len(dest2)}")
+            logger.info(f"   Destinations from {format_airport_code(origin2)}: {len(dest2)}")
             if len(dest2) == 0:
-                logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {origin2}")
+                logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {format_airport_code(origin2)}")
                 logger.warning(f"   This is common in test environment - some origins may not be in Amadeus test cache")
         except Exception as e:
-            logger.warning(f"   ⚠️  Error getting destinations for {origin2}: {e}")
+            logger.warning(f"   ⚠️  Error getting destinations for {format_airport_code(origin2)}: {e}")
             logger.warning(f"   This is expected in test environment - falling back to predefined list")
             dest2 = []
         
         # Fallback logic: if one origin has destinations but the other doesn't, use the first one's destinations for both
         if len(dest1) > 0 and len(dest2) == 0:
-            logger.info(f"   ⚠️  Origin {origin2} returned no destinations, but {origin1} returned {len(dest1)} destinations")
-            logger.info(f"   Using destinations from {origin1} for both origins (fallback mode)")
-            logger.info(f"   Flight Offers Search will validate which destinations are actually reachable from {origin2}")
+            logger.info(f"   ⚠️  Origin {format_airport_code(origin2)} returned no destinations, but {format_airport_code(origin1)} returned {len(dest1)} destinations")
+            logger.info(f"   Using destinations from {format_airport_code(origin1)} for both origins (fallback mode)")
+            logger.info(f"   Flight Offers Search will validate which destinations are actually reachable from {format_airport_code(origin2)}")
             return dest1
         elif len(dest1) == 0 and len(dest2) > 0:
-            logger.info(f"   ⚠️  Origin {origin1} returned no destinations, but {origin2} returned {len(dest2)} destinations")
-            logger.info(f"   Using destinations from {origin2} for both origins (fallback mode)")
-            logger.info(f"   Flight Offers Search will validate which destinations are actually reachable from {origin1}")
+            logger.info(f"   ⚠️  Origin {format_airport_code(origin1)} returned no destinations, but {format_airport_code(origin2)} returned {len(dest2)} destinations")
+            logger.info(f"   Using destinations from {format_airport_code(origin2)} for both origins (fallback mode)")
+            logger.info(f"   Flight Offers Search will validate which destinations are actually reachable from {format_airport_code(origin1)}")
             return dest2
         elif len(dest1) == 0 and len(dest2) == 0:
             # If both failed, use predefined list
@@ -1018,12 +1092,12 @@ class FlightSearch:
         Returns:
             List of matching flight pairs with details
         """
-        logger.info(f"🔍 Searching for matching flights to {destination}...")
-        logger.info(f"   Person 1: {origin1} → {destination}")
-        logger.info(f"   Person 2: {origin2} → {destination}")
+        logger.info(f"🔍 Searching for matching flights to {format_airport_code(destination)}...")
+        logger.info(f"   Person 1: {format_airport_code(origin1)} → {format_airport_code(destination)}")
+        logger.info(f"   Person 2: {format_airport_code(origin2)} → {format_airport_code(destination)}")
         
         # Search flights for person 1
-        logger.debug(f"   Searching flights for Person 1 ({origin1} → {destination})...")
+        logger.debug(f"   Searching flights for Person 1 ({format_airport_code(origin1)} → {format_airport_code(destination)})...")
         flights1 = self.search_flights(
             origin1, destination, departure_date, return_date,
             max_stops, min_departure_time_outbound, min_departure_time_return,
@@ -1031,7 +1105,7 @@ class FlightSearch:
         )
         
         # Search flights for person 2
-        logger.debug(f"   Searching flights for Person 2 ({origin2} → {destination})...")
+        logger.debug(f"   Searching flights for Person 2 ({format_airport_code(origin2)} → {format_airport_code(destination)})...")
         flights2 = self.search_flights(
             origin2, destination, departure_date, return_date,
             max_stops, min_departure_time_outbound, min_departure_time_return,
@@ -1094,9 +1168,9 @@ class FlightSearch:
         matching_pairs.sort(key=lambda x: x['total_price'])
         
         if matching_pairs:
-            logger.info(f"   ✓ Found {len(matching_pairs)} matching flight pair(s) for {destination}")
+            logger.info(f"   ✓ Found {len(matching_pairs)} matching flight pair(s) for {format_airport_code(destination)}")
         else:
-            logger.info(f"   ✗ No matching flight pairs found for {destination}")
+            logger.info(f"   ✗ No matching flight pairs found for {format_airport_code(destination)}")
         
         return matching_pairs
     

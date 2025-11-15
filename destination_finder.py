@@ -2,7 +2,7 @@
 Module to find destinations where both people can meet
 """
 from typing import List, Dict
-from flight_search import FlightSearch
+from flight_search import FlightSearch, format_airport_code
 import logging
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ class DestinationFinder:
         
         for i, destination in enumerate(destinations_to_check, 1):
             logger.info(f"")
-            logger.info(f"[{i}/{len(destinations_to_check)}] Processing destination: {destination}")
+            logger.info(f"[{i}/{len(destinations_to_check)}] Processing destination: {format_airport_code(destination)}")
             logger.info(f"{'='*80}")
             
             try:
@@ -114,13 +114,13 @@ class DestinationFinder:
                 
                 if matches:
                     destinations_with_matches += 1
-                    logger.info(f"   ✓ {destination}: Found {len(matches)} matching flight pair(s)")
+                    logger.info(f"   ✓ {format_airport_code(destination)}: Found {len(matches)} matching flight pair(s)")
                     all_matches.extend(matches)
                 else:
-                    logger.info(f"   ✗ {destination}: No matching flights found")
+                    logger.info(f"   ✗ {format_airport_code(destination)}: No matching flights found")
                     
             except Exception as e:
-                logger.error(f"   ❌ Error while searching destination {destination}: {e}")
+                logger.error(f"   ❌ Error while searching destination {format_airport_code(destination)}: {e}")
                 logger.error(f"      Continuing with next destination...")
                 continue
         
