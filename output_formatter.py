@@ -25,6 +25,9 @@ except Exception as e:
 # Airline code to name mapping - loaded from external file
 _AIRLINE_NAMES = None
 
+# Airport code to name mapping - loaded from external file
+_AIRPORT_NAMES = None
+
 
 def _load_airline_names():
     """Load airline names from external JSON file"""
@@ -56,6 +59,48 @@ def _load_airline_names():
         _AIRLINE_NAMES = {}
     
     return _AIRLINE_NAMES
+
+
+def _load_airport_names():
+    """Load airport names from external JSON file"""
+    global _AIRPORT_NAMES
+    if _AIRPORT_NAMES is not None:
+        return _AIRPORT_NAMES
+    
+    # Try to load from data/airport_names.json
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    airport_names_file = os.path.join(current_dir, 'data', 'airport_names.json')
+    
+    # If not found, try relative to project root
+    if not os.path.exists(airport_names_file):
+        airport_names_file = os.path.join(current_dir, '..', 'data', 'airport_names.json')
+        airport_names_file = os.path.normpath(airport_names_file)
+    
+    try:
+        if os.path.exists(airport_names_file):
+            with open(airport_names_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Remove comment keys
+                _AIRPORT_NAMES = {k: v for k, v in data.items() if not k.startswith('_')}
+                logger.debug(f"Loaded {len(_AIRPORT_NAMES)} airport names from {airport_names_file}")
+        else:
+            logger.warning(f"Airport names file not found: {airport_names_file}, using empty mapping")
+            _AIRPORT_NAMES = {}
+    except Exception as e:
+        logger.warning(f"Error loading airport names from {airport_names_file}: {e}, using empty mapping")
+        _AIRPORT_NAMES = {}
+    
+    return _AIRPORT_NAMES
+
+
+def format_airport_code(code: str) -> str:
+    """Format airport code with city name in brackets if known"""
+    airport_names = _load_airport_names()
+    code_upper = code.upper()
+    city_name = airport_names.get(code_upper)
+    if city_name:
+        return f"{code} ({city_name})"
+    return code
 
 
 def format_airline_codes(codes_str: str) -> str:
@@ -718,4 +763,351 @@ class OutputFormatter:
             print(f"❌ Error exporting to CSV: {e}")
             import traceback
             traceback.print_exc()
+    
+    @staticmethod
+    def export_html(results: List[Dict], filename: str):
+        """Export top 3 destinations with best flight to beautiful HTML file"""
+        if not results:
+            print("No results to export to HTML.")
+            return
+        
+        try:
+            # Group results by destination and get top 1 flight per destination
+            destinations_dict = {}
+            for match in results:
+                dest = match['destination']
+                if dest not in destinations_dict:
+                    destinations_dict[dest] = []
+                destinations_dict[dest].append(match)
+            
+            # Sort destinations by their cheapest flight's total price
+            # Then take top 3 destinations
+            sorted_destinations = sorted(
+                destinations_dict.items(),
+                key=lambda x: x[1][0]['total_price']  # Sort by cheapest flight in each destination
+            )[:3]
+            
+            if not sorted_destinations:
+                print("No destinations to export to HTML.")
+                return
+            
+            # Generate HTML
+            html_content = OutputFormatter._generate_html_content(sorted_destinations)
+            
+            # Write to file
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            
+            print(f"\n✅ Top {len(sorted_destinations)} destination(s) exported to {filename}")
+            
+        except Exception as e:
+            print(f"❌ Error exporting to HTML: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    @staticmethod
+    def _generate_html_content(sorted_destinations: List[tuple]) -> str:
+        """Generate HTML content for top destinations"""
+        html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Flight Destinations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+        }
+        .destination-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .destination-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        .destination-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .destination-name {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .total-price {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .currency {
+            font-size: 0.6em;
+            color: #666;
+            font-weight: normal;
+        }
+        .flight-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .person-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+        .person-section.person2 {
+            border-left-color: #764ba2;
+        }
+        .person-label {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .price-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .person-section.person2 .price-badge {
+            background: #764ba2;
+        }
+        .flight-info {
+            margin: 12px 0;
+            font-size: 1em;
+            color: #555;
+        }
+        .flight-info strong {
+            color: #333;
+            display: inline-block;
+            min-width: 120px;
+        }
+        .flight-route {
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .stops-info {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+        .airline-info {
+            color: #666;
+            font-style: italic;
+            margin-top: 10px;
+        }
+        @media (max-width: 768px) {
+            .flight-details {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            .destination-name {
+                font-size: 1.5em;
+            }
+            .total-price {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✈️ Top Flight Destinations</h1>
+        <p class="subtitle">Best options for meeting up</p>
+"""
+        
+        for idx, (dest, matches) in enumerate(sorted_destinations, 1):
+            # Get the top (cheapest) flight for this destination
+            best_match = matches[0]
+            
+            p1_info = OutputFormatter.format_flight_info(best_match['person1_flight'])
+            p2_info = OutputFormatter.format_flight_info(best_match['person2_flight'])
+            
+            dest_name = format_airport_code(dest)
+            total_price = best_match['total_price']
+            currency = p1_info.get('currency', 'EUR')
+            p1_price = best_match['person1_price']
+            p2_price = best_match['person2_price']
+            
+            # Get origin codes
+            p1_origin = p1_info.get('origin', '')
+            p2_origin = p2_info.get('origin', '')
+            
+            # Format times (local)
+            p1_outbound_dep_local = OutputFormatter.convert_to_local_time(
+                p1_info.get('outbound_departure', ''), p1_origin
+            )
+            p1_outbound_arr_local = OutputFormatter.convert_to_local_time(
+                p1_info.get('outbound_arrival', ''), dest
+            )
+            p1_return_dep_local = OutputFormatter.convert_to_local_time(
+                p1_info.get('return_departure', ''), dest
+            )
+            p1_return_arr_local = OutputFormatter.convert_to_local_time(
+                p1_info.get('return_arrival', ''), p1_origin
+            )
+            
+            p2_outbound_dep_local = OutputFormatter.convert_to_local_time(
+                p2_info.get('outbound_departure', ''), p2_origin
+            )
+            p2_outbound_arr_local = OutputFormatter.convert_to_local_time(
+                p2_info.get('outbound_arrival', ''), dest
+            )
+            p2_return_dep_local = OutputFormatter.convert_to_local_time(
+                p2_info.get('return_departure', ''), dest
+            )
+            p2_return_arr_local = OutputFormatter.convert_to_local_time(
+                p2_info.get('return_arrival', ''), p2_origin
+            )
+            
+            # Format durations
+            p1_outbound_duration = OutputFormatter.format_duration_human(p1_info.get('outbound_duration', ''))
+            p1_return_duration = OutputFormatter.format_duration_human(p1_info.get('return_duration', ''))
+            p2_outbound_duration = OutputFormatter.format_duration_human(p2_info.get('outbound_duration', ''))
+            p2_return_duration = OutputFormatter.format_duration_human(p2_info.get('return_duration', ''))
+            
+            # Format stops
+            def format_stops(stops: int) -> str:
+                if stops == 0:
+                    return "No stops"
+                elif stops == 1:
+                    return "1 stop"
+                else:
+                    return f"{stops} stops"
+            
+            p1_outbound_stops = format_stops(p1_info.get('outbound_stops', 0))
+            p1_return_stops = format_stops(p1_info.get('return_stops', 0))
+            p2_outbound_stops = format_stops(p2_info.get('outbound_stops', 0))
+            p2_return_stops = format_stops(p2_info.get('return_stops', 0))
+            
+            # Format airlines
+            p1_airlines = p1_info.get('airlines_formatted', p1_info.get('airlines', ''))
+            p2_airlines = p2_info.get('airlines_formatted', p2_info.get('airlines', ''))
+            
+            html += f"""
+        <div class="destination-card">
+            <div class="destination-header">
+                <div class="destination-name">#{idx} {dest_name}</div>
+                <div class="total-price">{total_price:.2f} <span class="currency">{currency}</span></div>
+            </div>
+            
+            <div class="flight-details">
+                <div class="person-section person1">
+                    <div class="person-label">Person 1</div>
+                    <div class="price-badge">{p1_price:.2f} {currency}</div>
+                    
+                    <div class="flight-route">Going to {dest_name}</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> {p1_outbound_dep_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> {p1_outbound_arr_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> {p1_outbound_duration}
+                        <span class="stops-info">{p1_outbound_stops}</span>
+                    </div>
+                    
+                    <div class="flight-route" style="margin-top: 20px;">Returning home</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> {p1_return_dep_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> {p1_return_arr_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> {p1_return_duration}
+                        <span class="stops-info">{p1_return_stops}</span>
+                    </div>
+                    
+                    {f'<div class="airline-info">Airlines: {p1_airlines}</div>' if p1_airlines else ''}
+                </div>
+                
+                <div class="person-section person2">
+                    <div class="person-label">Person 2</div>
+                    <div class="price-badge">{p2_price:.2f} {currency}</div>
+                    
+                    <div class="flight-route">Going to {dest_name}</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> {p2_outbound_dep_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> {p2_outbound_arr_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> {p2_outbound_duration}
+                        <span class="stops-info">{p2_outbound_stops}</span>
+                    </div>
+                    
+                    <div class="flight-route" style="margin-top: 20px;">Returning home</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> {p2_return_dep_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> {p2_return_arr_local}
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> {p2_return_duration}
+                        <span class="stops-info">{p2_return_stops}</span>
+                    </div>
+                    
+                    {f'<div class="airline-info">Airlines: {p2_airlines}</div>' if p2_airlines else ''}
+                </div>
+            </div>
+        </div>
+"""
+        
+        html += """
+    </div>
+</body>
+</html>"""
+        
+        return html
 

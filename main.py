@@ -98,9 +98,10 @@ def main():
     api_config = config['api']
     output_config = config.get('output', {})
     
-    # Delete existing CSV output file from previous run if it exists
+    # Delete existing CSV and HTML output files from previous run if they exist
     output_format = output_config.get('format', 'console')
     csv_file = output_config.get('csv_file', 'flight_results.csv')
+    html_file = output_config.get('html_file', 'flight_results.html')
     if 'csv' in output_format:
         if os.path.exists(csv_file):
             try:
@@ -108,6 +109,13 @@ def main():
                 logger.info(f"Deleted previous CSV output file: {csv_file}")
             except Exception as e:
                 logger.warning(f"Could not delete previous CSV file {csv_file}: {e}")
+        # Also delete HTML file if it exists
+        if os.path.exists(html_file):
+            try:
+                os.remove(html_file)
+                logger.info(f"Deleted previous HTML output file: {html_file}")
+            except Exception as e:
+                logger.warning(f"Could not delete previous HTML file {html_file}: {e}")
     
     departure_date = search_config['outbound_date']
     return_date = search_config['return_date']
@@ -249,6 +257,8 @@ def main():
     
     if 'csv' in output_format:
         OutputFormatter.export_csv(results, csv_file)
+        # Also export HTML with top 3 destinations
+        OutputFormatter.export_html(results, html_file)
     
     print(f"\n✨ Search completed!")
 
