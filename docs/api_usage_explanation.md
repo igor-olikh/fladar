@@ -31,14 +31,17 @@ This application uses **three Amadeus APIs** to find meeting destinations for tw
 **Example Call**:
 ```python
 amadeus.shopping.flight_offers_search.get(
-    originLocationCode="TLV",
-    destinationLocationCode="PAR",
-    departureDate="2025-11-20",
-    returnDate="2025-11-25",
-    adults=1,
-    max=250
+    originLocationCode="TLV",      # Required: IATA code of origin airport
+    destinationLocationCode="PAR",  # Required: IATA code of destination airport
+    departureDate="2025-11-20",     # Required: Departure date (YYYY-MM-DD)
+    returnDate="2025-11-25",        # Required for round-trip: Return date (YYYY-MM-DD)
+    adults=1,                        # Required: Number of adult passengers
+    max=250                          # Optional: Maximum number of results (default: 250)
 )
 ```
+
+**Official Documentation**: 
+- [Flight Offers Search API Reference](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-offers-search/api-reference)
 
 **Usage Statistics** (from your dashboard):
 - **Requests**: 431 (most used API)
@@ -110,25 +113,34 @@ amadeus.shopping.flight_destinations.get(
 ---
 
 ### 3. Airport Nearest Relevant API
-**Purpose**: Find nearby airports (not currently used in this application)
+**Purpose**: Find nearby airports within a specified radius
 
 **Official Documentation**: 
 - [Airport Nearest Relevant API - Amadeus for Developers](https://developers.amadeus.com/self-service/category/airport/api-doc/airport-nearest-relevant)
 - [Airport & City Search APIs](https://developers.amadeus.com/self-service/category/airport)
 
 **When Used**: 
-- **NOT USED** in the current implementation
-- May have been called during testing or exploration
+- **NOW USED** when `nearby_airports_radius_km > 0` in config
+- Called to find alternative airports within a radius of the origin
+- Helps find more flight options for major cities like Tel Aviv
 
-**Usage Statistics** (from your dashboard):
-- **Requests**: 1
-- **Errors**: 1
-- **Avg Response Time**: 75ms
+**Example Call**:
+```python
+amadeus.reference_data.locations.airports.get(
+    latitude=32.0114,    # Required: Latitude of origin location
+    longitude=34.8867,   # Required: Longitude of origin location
+    radius=200           # Required: Search radius in kilometers
+)
+```
 
-**Why Not Used?**
-- Our application uses specific origin airports (TLV and ALC)
-- We don't need to find alternative nearby airports
-- This API would be useful if we wanted to expand search to nearby airports
+**What It Returns**:
+- List of airports within the specified radius
+- Each airport includes IATA code, name, and distance
+
+**Why We Use It**:
+- Major cities like Tel Aviv may have multiple airports serving the area
+- Expands search to nearby airports to find more flight options
+- Configurable via `nearby_airports_radius_km` parameter (default: 0 = disabled)
 
 ---
 
@@ -199,10 +211,11 @@ The goal is to find destinations where **both people can meet** with reasonable 
 
 5. **Filter by Max Flight Duration** (if configured):
    - **Parameter**: `max_flight_duration_hours` in config.yaml
-   - **Current Status**: ⚠️ **Parameter exists but NOT fully implemented**
-   - The parameter is passed through the code but not actively filtering destinations
-   - **Needs Implementation**: Should filter destinations based on actual flight duration
-   - **Example**: If `max_flight_duration_hours: 5`, we should exclude destinations where flights take longer than 5 hours
+   - **Current Status**: ✅ **FULLY IMPLEMENTED**
+   - Filters flights where both outbound and return durations exceed the limit
+   - Duration is parsed from ISO 8601 format (e.g., "PT19H50M" = 19.83 hours)
+   - **Example**: If `max_flight_duration_hours: 6`, flights with duration > 6 hours are excluded
+   - Applied during flight search, not during destination discovery
 
 6. **Limit Destinations**:
    - Only checks first `max_destinations` (default: 50) destinations
@@ -259,10 +272,10 @@ For each destination in filtered list:
 
 ### Current Limitations
 
-⚠️ **Max Flight Duration Filtering Not Implemented**:
-- The `max_flight_duration_hours` parameter exists but doesn't actively filter
-- Currently, we might check destinations like Bangkok or New York even if they're too far
-- **Solution needed**: Implement duration checking before searching flights
+✅ **Max Flight Duration Filtering**: Now fully implemented
+- Flights exceeding `max_flight_duration_hours` are filtered out
+- Both outbound and return flight durations are checked
+- Applied during flight search phase
 
 ---
 
@@ -272,32 +285,27 @@ For each destination in filtered list:
 
 **Parameter Exists**: ✅ Yes
 - Config: `max_flight_duration_hours: 0` (0 = no limit)
-- Example: `max_flight_duration_hours: 5` (only destinations within 5 hours)
+- Example: `max_flight_duration_hours: 6` (only flights within 6 hours)
 
-**Implementation Status**: ⚠️ **Partially Implemented**
+**Implementation Status**: ✅ **FULLY IMPLEMENTED**
 - Parameter is passed through all functions
-- But **not actively filtering** destinations by flight duration
-- The Flight Inspiration Search API doesn't support duration filtering directly
-- We would need to:
-  1. Get destinations from API
-  2. For each destination, check flight duration using Flight Offers Search
-  3. Filter out destinations with flights longer than max duration
+- **Actively filters flights** by duration during search
+- Both outbound and return flight durations are checked
+- Flights exceeding the limit are excluded from results
 
-### How It Should Work
+### How It Works
 
 1. **Get list of destinations** (from API or predefined list)
-2. **For each destination**:
-   - Make a test Flight Offers Search call
-   - Check the flight duration
-   - If duration > `max_flight_duration_hours`, skip this destination
-3. **Only search destinations** that meet the duration requirement
+2. **For each destination**, search flights using Flight Offers Search API
+3. **Parse flight duration** from ISO 8601 format (e.g., "PT19H50M")
+4. **Filter flights** where either outbound or return duration > `max_flight_duration_hours`
+5. **Only include flights** that meet the duration requirement
 
-### Current Workaround
+### Duration Parsing
 
-Since duration filtering isn't fully implemented, you can:
-- Use predefined destinations that are known to be close (e.g., European cities)
-- Manually review results and filter by duration in the output
-- Set `use_dynamic_destinations: false` to use the curated predefined list
+- ISO 8601 format: `PT19H50M` = 19 hours, 50 minutes = 19.83 hours
+- Both outbound and return durations must be ≤ `max_flight_duration_hours`
+- If either leg exceeds the limit, the entire flight is filtered out
 
 ---
 
@@ -338,13 +346,13 @@ Since duration filtering isn't fully implemented, you can:
 |-----|---------|--------|-------|---------------|
 | **Flight Offers Search** | Get actual flights | ✅ Working | 431 requests (main API) | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-offers-search) |
 | **Flight Inspiration Search** | Find destinations | ⚠️ Limited (test env) | 16 requests, 404/401 errors | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-inspiration-search) |
-| **Airport Nearest Relevant** | Find nearby airports | ⚠️ Not used | 1 request (testing) | [Official Docs](https://developers.amadeus.com/self-service/category/airport/api-doc/airport-nearest-relevant) |
+| **Airport Nearest Relevant** | Find nearby airports | ✅ Used when radius > 0 | Used for nearby airport search | [Official Docs](https://developers.amadeus.com/self-service/category/airport/api-doc/airport-nearest-relevant) |
 
 **Destination Selection**: Currently uses predefined list (32 destinations) due to Flight Inspiration Search API limitations in test environment (404 for TLV/ALC). Falls back automatically on errors.
 
 **Authentication**: Pre-authentication implemented to prevent 401 errors. Enhanced error handling provides clear guidance for authentication issues.
 
-**Max Flight Duration**: Parameter exists but needs implementation to actually filter destinations by flight duration.
+**Max Flight Duration**: ✅ Fully implemented - filters flights by duration during search phase.
 
 **Error Handling**: 
 - 401 errors: Authentication failures - check credentials and permissions
