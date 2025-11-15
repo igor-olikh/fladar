@@ -48,6 +48,7 @@ class FlightSearch:
         # Store environment for later checks
         self.environment = environment
         self.hostname = hostname
+        self.cache_expiration_days = cache_expiration_days
         
         # Verify credentials are set
         if not api_key or not api_secret:

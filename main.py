@@ -104,6 +104,7 @@ def main():
     min_departure_time_return = search_config.get('min_departure_time_return') or None
     use_dynamic_destinations = search_config.get('use_dynamic_destinations', True)
     max_flight_duration = float(search_config.get('max_flight_duration_hours', 0))
+    cache_expiration_days = search_config.get('destination_cache_expiration_days', 30)
     
     # Load timezone configuration
     timezone_config = config.get('timezones', {})
@@ -117,7 +118,8 @@ def main():
         flight_search = FlightSearch(
             api_key=api_config['amadeus_api_key'],
             api_secret=api_config['amadeus_api_secret'],
-            environment=environment
+            environment=environment,
+            cache_expiration_days=cache_expiration_days
         )
     except Exception as e:
         logger.error(f"Failed to initialize flight search: {e}")

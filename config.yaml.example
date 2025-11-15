@@ -40,6 +40,11 @@ search:
   # false = use predefined list of popular destinations
   use_dynamic_destinations: true
   
+  # Cache expiration for destination data (in days)
+  # Cached destination data will be refreshed after this many days
+  # Set to 0 to disable caching
+  destination_cache_expiration_days: 30
+  
   # Optional departure time constraints (format: HH:MM, leave empty to disable)
   # These constraints apply to BOTH Person 1 and Person 2 flights
   # 
