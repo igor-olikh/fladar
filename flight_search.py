@@ -649,6 +649,7 @@ class FlightSearch:
             
             # Add departureDate if provided (as single date or range)
             # The API works better with a date range, so create one from departure_date
+            # Use the actual departure date from config as the start, not today's date
             if departure_date:
                 try:
                     dep_date = datetime.strptime(departure_date, "%Y-%m-%d")
@@ -656,15 +657,17 @@ class FlightSearch:
                     
                     # Check if date is in the future and within 180 days
                     days_ahead = (dep_date - today).days
-                    if 0 <= days_ahead <= 180:
-                        # Create a small range around the departure date (e.g., ±30 days)
-                        # This gives the API flexibility to find destinations
-                        range_start = max(today, dep_date - timedelta(days=30))
-                        range_end = min(dep_date + timedelta(days=180), dep_date + timedelta(days=60))
+                    if days_ahead >= 0:
+                        # Create a range starting from the departure date (or a few days before for flexibility)
+                        # Use the actual departure date from config, not today's date
+                        range_start = max(dep_date - timedelta(days=7), dep_date)  # Start from departure date (or 7 days before max)
+                        range_end = dep_date + timedelta(days=60)  # End 60 days after departure date
                         api_params['departureDate'] = f"{range_start.strftime('%Y-%m-%d')},{range_end.strftime('%Y-%m-%d')}"
+                        logger.debug(f"   [DEBUG] Using departure date range: {range_start.strftime('%Y-%m-%d')} to {range_end.strftime('%Y-%m-%d')} (based on config date: {departure_date})")
                     else:
-                        # Date is too far in future or in past, use just the date
+                        # Date is in the past, use just the date (API may still work)
                         api_params['departureDate'] = departure_date
+                        logger.debug(f"   [DEBUG] Departure date is in the past, using single date: {departure_date}")
                 except Exception as e:
                     logger.debug(f"   [DEBUG] Date parsing error: {e}, using departure_date as-is")
                     api_params['departureDate'] = departure_date
