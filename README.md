@@ -6,6 +6,8 @@ A powerful Python application that helps two people find where to meet by search
 
 **Keywords:** flight search, find flights, flight API, Amadeus API, meeting destination, flight finder, travel planner, flight matching, Python flight search, easy flight search, automatic flight search, flight discovery
 
+> 💡 **Tip:** Add GitHub Topics to your repository for better discoverability! See [.github/QUICK_SETUP.md](.github/QUICK_SETUP.md) for instructions.
+
 ## 🎯 What It Does
 
 The application helps two people find a meeting destination by:
