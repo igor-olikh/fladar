@@ -506,21 +506,22 @@ class FlightSearch:
                     logger.debug(f"   [DEBUG] Failed to parse error body: {parse_error}")
                     logger.debug(f"   [DEBUG] Raw error body: {error_body}")
             
-            logger.info(f"   Falling back to predefined list")
-            return self._get_predefined_destinations()
+            # Return empty list so caller can detect failure and use predefined list
+            logger.info(f"   Returning empty list - caller will handle fallback to predefined list")
+            return []
         except Exception as e:
             logger.error(f"   ERROR: Unexpected error using Flight Inspiration Search API: {type(e).__name__}")
             logger.error(f"   ERROR: {str(e)}")
             logger.debug(f"   [DEBUG] Full exception: {e}")
             import traceback
             logger.debug(f"   [DEBUG] Traceback:\n{traceback.format_exc()}")
-            logger.info(f"   Falling back to predefined list")
-            return self._get_predefined_destinations()
+            logger.info(f"   Returning empty list - caller will handle fallback to predefined list")
+            return []
         
         if not destinations:
-            logger.error(f"   ERROR: No destinations extracted from API response")
-            logger.info(f"   Falling back to predefined list")
-            return self._get_predefined_destinations()
+            logger.warning(f"   ⚠️  No destinations extracted from API response")
+            logger.info(f"   Returning empty list - caller will handle fallback to predefined list")
+            return []
         
         logger.info(f"   Total destinations discovered: {len(destinations)}")
         logger.info(f"   Destination selection: Dynamically discovered from Amadeus API")
