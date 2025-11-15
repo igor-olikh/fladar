@@ -55,10 +55,11 @@ api:
   amadeus_api_key: "YOUR_API_KEY_HERE"
   amadeus_api_secret: "YOUR_API_SECRET_HERE"
   
-  # Environment: "test" or "production"
+  # Environment: "test", "production", or "live"
   # - test: Uses test.api.amadeus.com (for testing with limited data)
   # - production: Uses api.amadeus.com (for real-time data, requires production credentials)
-  environment: "test"  # Change to "production" when ready for live data
+  # - live: Same as "production" - uses api.amadeus.com (alias for production)
+  environment: "test"  # Change to "production" or "live" when ready for live data
 
 # Output settings
 output:

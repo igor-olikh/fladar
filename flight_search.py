@@ -23,12 +23,16 @@ class FlightSearch:
             environment: "test" or "production" - determines which API host to use
         """
         # Set hostname based on environment (SDK accepts "test" or "production")
+        # Handle "live" as an alias for "production"
         if environment == "test":
             hostname = "test"
             logger.info(f"Using Amadeus TEST environment (test.api.amadeus.com)")
-        elif environment == "production":
+        elif environment in ["production", "live"]:
+            # Both "production" and "live" use the production API
             hostname = "production"
             logger.info(f"Using Amadeus PRODUCTION environment (api.amadeus.com)")
+            if environment == "live":
+                logger.info(f"Note: 'live' is treated as 'production' environment")
         else:
             logger.warning(f"Unknown environment '{environment}', defaulting to test")
             hostname = "test"
