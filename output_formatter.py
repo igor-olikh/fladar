@@ -554,6 +554,25 @@ class OutputFormatter:
                     p2_outbound_duration_human = OutputFormatter.format_duration_human(p2_info.get('outbound_duration', ''))
                     p2_return_duration_human = OutputFormatter.format_duration_human(p2_info.get('return_duration', ''))
                     
+                    # Format stops as "No stops", "1 stop", "2 stops", etc.
+                    def format_stops(stops: int) -> str:
+                        if stops == 0:
+                            return "No stops"
+                        elif stops == 1:
+                            return "1 stop"
+                        else:
+                            return f"{stops} stops"
+                    
+                    p1_outbound_stops = p1_info.get('outbound_stops', 0)
+                    p1_return_stops = p1_info.get('return_stops', 0)
+                    p2_outbound_stops = p2_info.get('outbound_stops', 0)
+                    p2_return_stops = p2_info.get('return_stops', 0)
+                    
+                    p1_outbound_stops_str = format_stops(p1_outbound_stops)
+                    p1_return_stops_str = format_stops(p1_return_stops)
+                    p2_outbound_stops_str = format_stops(p2_outbound_stops)
+                    p2_return_stops_str = format_stops(p2_return_stops)
+                    
                     # Create human-readable description
                     description = OutputFormatter.create_flight_description(match, p1_info, p2_info)
                     
