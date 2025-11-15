@@ -7,6 +7,7 @@ from amadeus import Client, ResponseError
 import logging
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -1215,31 +1216,54 @@ class FlightSearch:
                 predefined = self._get_predefined_destinations()
                 return predefined
         
-        # Try to get destinations from origin1
+        # Try to get destinations from both origins in parallel
         dest1 = []
-        try:
-            dest1 = self.get_destination_suggestions(origin1, departure_date, use_dynamic, max_duration_hours, non_stop)
-            logger.info(f"   Destinations from {format_airport_code(origin1)}: {len(dest1)}")
-            if len(dest1) == 0:
-                logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {format_airport_code(origin1)}")
-                logger.warning(f"   This is common in test environment - TLV may not be in Amadeus test cache")
-        except Exception as e:
-            logger.warning(f"   ⚠️  Error getting destinations for {format_airport_code(origin1)}: {e}")
-            logger.warning(f"   This is expected in test environment - falling back to predefined list")
-            dest1 = []
-        
-        # Try to get destinations from origin2
         dest2 = []
-        try:
-            dest2 = self.get_destination_suggestions(origin2, departure_date, use_dynamic, max_duration_hours, non_stop)
-            logger.info(f"   Destinations from {format_airport_code(origin2)}: {len(dest2)}")
-            if len(dest2) == 0:
-                logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {format_airport_code(origin2)}")
-                logger.warning(f"   This is common in test environment - some origins may not be in Amadeus test cache")
-        except Exception as e:
-            logger.warning(f"   ⚠️  Error getting destinations for {format_airport_code(origin2)}: {e}")
-            logger.warning(f"   This is expected in test environment - falling back to predefined list")
-            dest2 = []
+        
+        def get_destinations_origin1():
+            """Get destinations from origin1"""
+            try:
+                result = self.get_destination_suggestions(origin1, departure_date, use_dynamic, max_duration_hours, non_stop)
+                logger.info(f"   Destinations from {format_airport_code(origin1)}: {len(result)}")
+                if len(result) == 0:
+                    logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {format_airport_code(origin1)}")
+                    logger.warning(f"   This is common in test environment - TLV may not be in Amadeus test cache")
+                return result
+            except Exception as e:
+                logger.warning(f"   ⚠️  Error getting destinations for {format_airport_code(origin1)}: {e}")
+                logger.warning(f"   This is expected in test environment - falling back to predefined list")
+                return []
+        
+        def get_destinations_origin2():
+            """Get destinations from origin2"""
+            try:
+                result = self.get_destination_suggestions(origin2, departure_date, use_dynamic, max_duration_hours, non_stop)
+                logger.info(f"   Destinations from {format_airport_code(origin2)}: {len(result)}")
+                if len(result) == 0:
+                    logger.warning(f"   ⚠️  Inspiration search returned 0 destinations for origin {format_airport_code(origin2)}")
+                    logger.warning(f"   This is common in test environment - some origins may not be in Amadeus test cache")
+                return result
+            except Exception as e:
+                logger.warning(f"   ⚠️  Error getting destinations for {format_airport_code(origin2)}: {e}")
+                logger.warning(f"   This is expected in test environment - falling back to predefined list")
+                return []
+        
+        # Execute both destination searches in parallel
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            future1 = executor.submit(get_destinations_origin1)
+            future2 = executor.submit(get_destinations_origin2)
+            
+            try:
+                dest1 = future1.result()
+            except Exception as e:
+                logger.error(f"   ❌ Error in parallel destination search for {format_airport_code(origin1)}: {e}")
+                dest1 = []
+            
+            try:
+                dest2 = future2.result()
+            except Exception as e:
+                logger.error(f"   ❌ Error in parallel destination search for {format_airport_code(origin2)}: {e}")
+                dest2 = []
         
         # Fallback logic: if one origin has destinations but the other doesn't, use the first one's destinations for both
         if len(dest1) > 0 and len(dest2) == 0:
@@ -1342,21 +1366,50 @@ class FlightSearch:
         logger.info(f"   Person 1: {format_airport_code(origin1_resolved)} → {format_airport_code(destination_resolved)}")
         logger.info(f"   Person 2: {format_airport_code(origin2_resolved)} → {format_airport_code(destination_resolved)}")
         
-        # Search flights for person 1
-        logger.debug(f"   Searching flights for Person 1 ({format_airport_code(origin1_resolved)} → {format_airport_code(destination_resolved)})...")
-        flights1 = self.search_flights(
-            origin1_resolved, destination_resolved, departure_date, return_date,
-            max_stops_person1, min_departure_time_outbound, min_departure_time_return,
-            nearby_airports_radius_km, max_duration_hours
-        )
+        # Search flights for both persons in parallel
+        logger.debug(f"   Searching flights for Person 1 and Person 2 in parallel...")
         
-        # Search flights for person 2
-        logger.debug(f"   Searching flights for Person 2 ({format_airport_code(origin2_resolved)} → {format_airport_code(destination_resolved)})...")
-        flights2 = self.search_flights(
-            origin2_resolved, destination_resolved, departure_date, return_date,
-            max_stops_person2, min_departure_time_outbound, min_departure_time_return,
-            nearby_airports_radius_km, max_duration_hours
-        )
+        def search_person1():
+            """Search flights for person 1"""
+            logger.debug(f"   [Thread] Searching flights for Person 1 ({format_airport_code(origin1_resolved)} → {format_airport_code(destination_resolved)})...")
+            return self.search_flights(
+                origin1_resolved, destination_resolved, departure_date, return_date,
+                max_stops_person1, min_departure_time_outbound, min_departure_time_return,
+                nearby_airports_radius_km, max_duration_hours
+            )
+        
+        def search_person2():
+            """Search flights for person 2"""
+            logger.debug(f"   [Thread] Searching flights for Person 2 ({format_airport_code(origin2_resolved)} → {format_airport_code(destination_resolved)})...")
+            return self.search_flights(
+                origin2_resolved, destination_resolved, departure_date, return_date,
+                max_stops_person2, min_departure_time_outbound, min_departure_time_return,
+                nearby_airports_radius_km, max_duration_hours
+            )
+        
+        # Execute both searches in parallel using ThreadPoolExecutor
+        flights1 = []
+        flights2 = []
+        
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            # Submit both tasks
+            future1 = executor.submit(search_person1)
+            future2 = executor.submit(search_person2)
+            
+            # Wait for both to complete and collect results
+            try:
+                flights1 = future1.result()
+                logger.debug(f"   [Thread] Person 1 search completed: {len(flights1)} flight(s)")
+            except Exception as e:
+                logger.error(f"   ❌ Error searching flights for Person 1: {e}")
+                flights1 = []
+            
+            try:
+                flights2 = future2.result()
+                logger.debug(f"   [Thread] Person 2 search completed: {len(flights2)} flight(s)")
+            except Exception as e:
+                logger.error(f"   ❌ Error searching flights for Person 2: {e}")
+                flights2 = []
         
         logger.info(f"   Found {len(flights1)} flight(s) for Person 1, {len(flights2)} flight(s) for Person 2")
         
