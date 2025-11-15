@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class FlightSearch:
     """Handles flight searches using Amadeus API"""
     
-    def __init__(self, api_key: str, api_secret: str, environment: str = "test"):
+    def __init__(self, api_key: str, api_secret: str, environment: str = "test", cache_expiration_days: int = 30):
         """
         Initialize Amadeus client
         
@@ -346,12 +346,17 @@ class FlightSearch:
             with open(cache_file, 'r', encoding='utf-8') as f:
                 cache_data = json.load(f)
             
-            # Check if cache is still valid (e.g., less than 7 days old)
+            # Check if cache is still valid
             cached_date = datetime.fromisoformat(cache_data.get('cached_date', ''))
             days_old = (datetime.now() - cached_date).days
             
-            # Cache is valid for 7 days (Inspiration Search data doesn't change frequently)
-            if days_old < 7:
+            # Cache is valid for the configured number of days (default 30)
+            # If cache_expiration_days is 0, caching is disabled
+            if self.cache_expiration_days == 0:
+                logger.debug(f"   Caching is disabled (cache_expiration_days=0)")
+                return None
+            
+            if days_old < self.cache_expiration_days:
                 logger.info(f"   ✓ Using cached destinations for {origin} (cached {days_old} day(s) ago)")
                 return cache_data.get('destinations', [])
             else:
