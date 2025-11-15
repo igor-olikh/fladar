@@ -780,13 +780,13 @@ class FlightSearch:
                     logger.warning(f"   ⚠️  404 error: No data available for origin {origin} in test environment")
                     logger.warning(f"   This is expected - Amadeus test environment has limited cached data")
                     logger.warning(f"   TLV (Tel Aviv) is not in the test cache, which is why you see this error")
-                    logger.warning(f"   The application will fall back to predefined destinations")
+                    logger.info(f"   Returning empty list - caller will use fallback logic (other origin's destinations or predefined list)")
                     logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
                     logger.info(f"   For production use, switch to 'production' environment for complete data")
                 else:
                     logger.warning(f"   ⚠️  404 error: No data available for origin {origin}")
                     logger.warning(f"   This may indicate that the Flight Inspiration Search API has no cached data for this origin")
-                    logger.warning(f"   The application will fall back to predefined destinations")
+                    logger.info(f"   Returning empty list - caller will use fallback logic (other origin's destinations or predefined list)")
                     logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
             
             # DEBUG: Log full error details
