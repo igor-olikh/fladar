@@ -34,6 +34,8 @@ The application helps two people find a meeting destination by:
 
 > **⚠️ Security First:** Before you start, please read the **[Security Checklist](docs/SECURITY_CHECKLIST.md)** to understand how to protect your API credentials and avoid committing sensitive information to the repository.
 
+> **📋 Upgrading from v1.0.0?** If you're upgrading from version 1.0.0, please see the **[Migration Guide](docs/MIGRATION_GUIDE.md)** for important configuration changes.
+
 ### 1. Prerequisites
 
 - Python 3.11+

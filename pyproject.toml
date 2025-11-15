@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fladar"
-version = "1.0.0"
+version = "1.1.0"
 description = "Flight search application for finding meeting destinations for two people"
 authors = ["Igor Olikh <your.email@example.com>"]
 readme = "README.md"

@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-11-27
+
+### ✨ Added
+- **Separate Max Stops Configuration**: Added `max_stops_person1` and `max_stops_person2` parameters to allow different stop preferences for each person
+- **Automatic CSV Cleanup**: CSV output file is now automatically deleted at startup to prevent confusion from old results
+- **Migration Guide**: Added `docs/MIGRATION_GUIDE.md` to help users upgrade from v1.0.0
+
+### 🔄 Changed
+- **Breaking Change**: Replaced single `max_stops` parameter with `max_stops_person1` and `max_stops_person2` in configuration
+  - Old config files using `max_stops` will need to be updated
+  - See `docs/MIGRATION_GUIDE.md` for migration instructions
+
+### 📚 Documentation
+- Updated all documentation to reflect new parameter structure
+- Added comprehensive migration guide for upgrading from v1.0.0
+- Updated README.md, PROJECT_EXPLANATION.md, and all API documentation
+
+### 🐛 Fixed
+- CSV output files from previous runs are now automatically cleaned up at startup
+
+---
+
 ## [1.0.0] - 2025-11-15
 
 ### 🎉 Initial Release
@@ -95,7 +117,9 @@ First stable release of Fladar - Flight Meeting Destination Finder.
 
 ## Version History
 
+- **1.1.0** (2025-11-27): Added separate max_stops configuration per person, automatic CSV cleanup
 - **1.0.0** (2025-11-15): Initial stable release
 
+[1.1.0]: https://github.com/igor-olikh/fladar/releases/tag/v1.1.0
 [1.0.0]: https://github.com/igor-olikh/fladar/releases/tag/v1.0.0
 

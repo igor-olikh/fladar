@@ -3,9 +3,9 @@
 Flight Search Application
 Finds destinations where two people can meet with matching flight arrivals
 
-Version: 1.0.0
+Version: 1.1.0
 """
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 import yaml
 import os
 import sys
@@ -112,8 +112,19 @@ def main():
     departure_date = search_config['outbound_date']
     return_date = search_config['return_date']
     max_price = float(search_config['max_price'])
-    max_stops_person1 = search_config.get('max_stops_person1', 0)
-    max_stops_person2 = search_config.get('max_stops_person2', 0)
+    
+    # Handle backward compatibility: check for old max_stops parameter
+    if 'max_stops' in search_config and 'max_stops_person1' not in search_config:
+        old_max_stops = search_config.get('max_stops', 0)
+        logger.warning(f"⚠️  DEPRECATED: Old 'max_stops' parameter detected (value: {old_max_stops})")
+        logger.warning(f"   Please update your config.yaml to use 'max_stops_person1' and 'max_stops_person2'")
+        logger.warning(f"   See docs/MIGRATION_GUIDE.md for migration instructions")
+        logger.warning(f"   Using {old_max_stops} for both persons as fallback")
+        max_stops_person1 = old_max_stops
+        max_stops_person2 = old_max_stops
+    else:
+        max_stops_person1 = search_config.get('max_stops_person1', 0)
+        max_stops_person2 = search_config.get('max_stops_person2', 0)
     arrival_tolerance = search_config.get('arrival_tolerance_hours', 3)
     min_departure_time_outbound = search_config.get('min_departure_time_outbound') or None
     min_departure_time_return = search_config.get('min_departure_time_return') or None
