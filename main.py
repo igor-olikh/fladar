@@ -104,24 +104,24 @@ def main():
     min_departure_time_return = search_config.get('min_departure_time_return') or None
     use_dynamic_destinations = search_config.get('use_dynamic_destinations', True)
     max_flight_duration = float(search_config.get('max_flight_duration_hours', 0))
-           cache_expiration_days = search_config.get('destination_cache_expiration_days', 30)
-           nearby_airports_radius_km = search_config.get('nearby_airports_radius_km', 0)
-           max_destinations_to_check = search_config.get('max_destinations_to_check', 50)
-           use_flight_cache = search_config.get('use_flight_cache', True)
+    cache_expiration_days = search_config.get('destination_cache_expiration_days', 30)
+    nearby_airports_radius_km = search_config.get('nearby_airports_radius_km', 0)
+    max_destinations_to_check = search_config.get('max_destinations_to_check', 50)
+    use_flight_cache = search_config.get('use_flight_cache', True)
     
     # Timezones are now automatically detected using airportsdata library
     # No manual configuration needed
     
-           # Initialize flight search
-           try:
-               environment = api_config.get('environment', 'test')
-               flight_search = FlightSearch(
-                   api_key=api_config['amadeus_api_key'],
-                   api_secret=api_config['amadeus_api_secret'],
-                   environment=environment,
-                   cache_expiration_days=cache_expiration_days,
-                   use_flight_cache=use_flight_cache
-               )
+    # Initialize flight search
+    try:
+        environment = api_config.get('environment', 'test')
+        flight_search = FlightSearch(
+            api_key=api_config['amadeus_api_key'],
+            api_secret=api_config['amadeus_api_secret'],
+            environment=environment,
+            cache_expiration_days=cache_expiration_days,
+            use_flight_cache=use_flight_cache
+        )
     except Exception as e:
         logger.error(f"Failed to initialize flight search: {e}")
         sys.exit(1)
