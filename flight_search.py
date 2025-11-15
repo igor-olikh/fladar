@@ -43,6 +43,10 @@ class FlightSearch:
             hostname=hostname
         )
         
+        # Store environment for later checks
+        self.environment = environment
+        self.hostname = hostname
+        
         # Verify credentials are set
         if not api_key or not api_secret:
             raise ValueError("Amadeus API key and secret must be provided")
@@ -296,6 +300,20 @@ class FlightSearch:
             List of destination IATA codes
         """
         logger.info("📋 Determining which destinations to search...")
+        
+        # Known origins that don't work in test environment
+        # TLV (Tel Aviv) and ALC (Alicante) are not reliably in Amadeus test cache
+        # According to Amadeus docs, test environment only covers USA, Spain, UK, Germany, India
+        # But even Spain (ALC) may not have complete Inspiration Search data
+        TEST_ENV_UNSUPPORTED_ORIGINS = ['TLV', 'ALC']
+        
+        # Check if we're in test environment and origin is known to not work
+        # Skip Inspiration Search for known unsupported origins in test environment
+        if self.environment == "test" and origin.upper() in TEST_ENV_UNSUPPORTED_ORIGINS:
+            logger.warning(f"   ⚠️  Origin {origin} is not reliably supported in test environment (not in Amadeus test cache)")
+            logger.info(f"   Skipping Inspiration Search and using predefined list directly")
+            logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
+            return self._get_predefined_destinations()
         
         if use_dynamic:
             logger.info("   Using Amadeus Flight Inspiration Search API to discover destinations dynamically")
