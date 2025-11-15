@@ -806,6 +806,69 @@ class OutputFormatter:
             traceback.print_exc()
     
     @staticmethod
+    def _get_stop_details(segments: List[Dict]) -> List[Dict]:
+        """
+        Extract stop details from flight segments
+        
+        Args:
+            segments: List of flight segments
+        
+        Returns:
+            List of stop details with airport code and layover duration
+        """
+        stop_details = []
+        
+        if len(segments) <= 1:
+            return stop_details  # No stops for direct flights
+        
+        for i in range(len(segments) - 1):
+            # Current segment arrives at stop airport
+            current_segment = segments[i]
+            next_segment = segments[i + 1]
+            
+            arrival = current_segment.get('arrival', {})
+            departure = next_segment.get('departure', {})
+            
+            stop_airport = arrival.get('iataCode', '')
+            arrival_time_str = arrival.get('at', '')
+            departure_time_str = departure.get('at', '')
+            
+            if stop_airport and arrival_time_str and departure_time_str:
+                try:
+                    # Parse times and calculate layover
+                    arrival_time = datetime.fromisoformat(arrival_time_str.replace('Z', '+00:00'))
+                    departure_time = datetime.fromisoformat(departure_time_str.replace('Z', '+00:00'))
+                    layover_duration = departure_time - arrival_time
+                    
+                    # Format layover duration
+                    total_seconds = int(layover_duration.total_seconds())
+                    hours = total_seconds // 3600
+                    minutes = (total_seconds % 3600) // 60
+                    
+                    if hours > 0 and minutes > 0:
+                        layover_str = f"{hours}h {minutes}m"
+                    elif hours > 0:
+                        layover_str = f"{hours}h"
+                    elif minutes > 0:
+                        layover_str = f"{minutes}m"
+                    else:
+                        layover_str = "< 1m"
+                    
+                    stop_details.append({
+                        'airport': stop_airport,
+                        'layover': layover_str
+                    })
+                except Exception as e:
+                    logger.debug(f"Error parsing stop times: {e}")
+                    # If we can't parse, still show the airport
+                    stop_details.append({
+                        'airport': stop_airport,
+                        'layover': 'N/A'
+                    })
+        
+        return stop_details
+    
+    @staticmethod
     def _generate_html_content(sorted_destinations: List[tuple]) -> str:
         """Generate HTML content for top destinations"""
         html = """<!DOCTYPE html>
@@ -941,6 +1004,12 @@ class OutputFormatter:
             font-style: italic;
             margin-top: 10px;
         }
+        .stop-details {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 5px;
+            font-style: italic;
+        }
         @media (max-width: 768px) {
             .flight-details {
                 grid-template-columns: 1fr;
@@ -1031,6 +1100,33 @@ class OutputFormatter:
             p1_airlines = p1_info.get('airlines_formatted', p1_info.get('airlines', ''))
             p2_airlines = p2_info.get('airlines_formatted', p2_info.get('airlines', ''))
             
+            # Get stop details for Person 1
+            p1_outbound_segments = best_match['person1_flight'].get('itineraries', [{}])[0].get('segments', [])
+            p1_return_segments = best_match['person1_flight'].get('itineraries', [{}])[1].get('segments', []) if len(best_match['person1_flight'].get('itineraries', [])) > 1 else []
+            p1_outbound_stop_details = OutputFormatter._get_stop_details(p1_outbound_segments)
+            p1_return_stop_details = OutputFormatter._get_stop_details(p1_return_segments)
+            
+            # Get stop details for Person 2
+            p2_outbound_segments = best_match['person2_flight'].get('itineraries', [{}])[0].get('segments', [])
+            p2_return_segments = best_match['person2_flight'].get('itineraries', [{}])[1].get('segments', []) if len(best_match['person2_flight'].get('itineraries', [])) > 1 else []
+            p2_outbound_stop_details = OutputFormatter._get_stop_details(p2_outbound_segments)
+            p2_return_stop_details = OutputFormatter._get_stop_details(p2_return_segments)
+            
+            # Format stop details HTML
+            def format_stop_details_html(stop_details: List[Dict]) -> str:
+                if not stop_details:
+                    return ""
+                stop_info = []
+                for stop in stop_details:
+                    airport_name = format_airport_code(stop['airport'])
+                    stop_info.append(f"{airport_name} ({stop['layover']})")
+                return f'<div class="stop-details">Stop{"s" if len(stop_info) > 1 else ""}: {", ".join(stop_info)}</div>'
+            
+            p1_outbound_stops_html = format_stop_details_html(p1_outbound_stop_details)
+            p1_return_stops_html = format_stop_details_html(p1_return_stop_details)
+            p2_outbound_stops_html = format_stop_details_html(p2_outbound_stop_details)
+            p2_return_stops_html = format_stop_details_html(p2_return_stop_details)
+            
             html += f"""
         <div class="destination-card">
             <div class="destination-header">
@@ -1054,6 +1150,7 @@ class OutputFormatter:
                         <strong>Duration:</strong> {p1_outbound_duration}
                         <span class="stops-info">{p1_outbound_stops}</span>
                     </div>
+                    {p1_outbound_stops_html}
                     
                     <div class="flight-route" style="margin-top: 20px;">Returning home</div>
                     <div class="flight-info">
@@ -1066,6 +1163,7 @@ class OutputFormatter:
                         <strong>Duration:</strong> {p1_return_duration}
                         <span class="stops-info">{p1_return_stops}</span>
                     </div>
+                    {p1_return_stops_html}
                     
                     {f'<div class="airline-info">Airlines: {p1_airlines}</div>' if p1_airlines else ''}
                 </div>
@@ -1085,6 +1183,7 @@ class OutputFormatter:
                         <strong>Duration:</strong> {p2_outbound_duration}
                         <span class="stops-info">{p2_outbound_stops}</span>
                     </div>
+                    {p2_outbound_stops_html}
                     
                     <div class="flight-route" style="margin-top: 20px;">Returning home</div>
                     <div class="flight-info">
@@ -1097,6 +1196,7 @@ class OutputFormatter:
                         <strong>Duration:</strong> {p2_return_duration}
                         <span class="stops-info">{p2_return_stops}</span>
                     </div>
+                    {p2_return_stops_html}
                     
                     {f'<div class="airline-info">Airlines: {p2_airlines}</div>' if p2_airlines else ''}
                 </div>
