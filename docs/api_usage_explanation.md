@@ -82,12 +82,12 @@ amadeus.shopping.flight_destinations.get(
     departureDate="2025-11-20,2025-12-20",  # Date range (optional but recommended)
     viewBy="DESTINATION",  # Group by destination
     oneWay=False,  # Round-trip flights
-    nonStop=True  # Optional: Only destinations with direct flights (when max_stops=0)
+    nonStop=True  # Optional: Only destinations with direct flights (when both max_stops_person1=0 and max_stops_person2=0)
 )
 ```
 
 **Non-Stop Parameter**:
-- When `max_stops: 0` in config, the application automatically sets `nonStop=True` in the API call
+- When both `max_stops_person1: 0` and `max_stops_person2: 0` in config, the application automatically sets `nonStop=True` in the API call
 - This filters destinations to only those with direct flights available
 - More efficient: avoids searching destinations that only have connecting flights
 - Improves search performance when user wants direct flights only
@@ -196,7 +196,7 @@ The goal is to find destinations where **both people can meet** with reasonable 
 2. **Dynamic Discovery** (when enabled):
    - Call Flight Inspiration Search API for TLV → Get list of destinations from Tel Aviv
    - Call Flight Inspiration Search API for ALC → Get list of destinations from Alicante
-   - If `max_stops=0`, automatically sets `nonStop=True` to only get destinations with direct flights
+   - If both `max_stops_person1=0` and `max_stops_person2=0`, automatically sets `nonStop=True` to only get destinations with direct flights
    - Find **common destinations** (destinations reachable from both origins)
    - **Currently fails** → Falls back to predefined list
 
@@ -356,7 +356,7 @@ For each destination in filtered list:
 |-----|---------|--------|-------|---------------|
 | **Flight Offers Search** | Get actual flights | ✅ Working | 431 requests (main API) | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-offers-search) |
 | **Flight Inspiration Search** | Find destinations | ⚠️ Limited (test env) | 16 requests, 404/401 errors | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-inspiration-search) |
-| **nonStop Parameter** | Filter direct flights | ✅ Implemented | Used when max_stops=0 | Automatically set based on config |
+| **nonStop Parameter** | Filter direct flights | ✅ Implemented | Used when both max_stops_person1=0 and max_stops_person2=0 | Automatically set based on config |
 | **Airport Nearest Relevant** | Find nearby airports | ✅ Used when radius > 0 | Used for nearby airport search | [Official Docs](https://developers.amadeus.com/self-service/category/airport/api-doc/airport-nearest-relevant) |
 
 **Destination Selection**: Currently uses predefined list (32 destinations) due to Flight Inspiration Search API limitations in test environment (404 for TLV/ALC). Falls back automatically on errors.

@@ -163,7 +163,7 @@ Always check the **local times** when planning:
 1. **Best Value:** Flight #1 (€502.48) - Lowest total price
 2. **Best Arrival Times:** Check which flights have arrivals closest together
 3. **Shortest Duration:** Look for flights with shorter duration (PT values)
-4. **Direct Flights:** If `max_stops: 0` in config, all flights are direct (no connections)
+4. **Direct Flights:** If `max_stops_person1: 0` and `max_stops_person2: 0` in config, all flights are direct (no connections). Each person can have different stop preferences.
 5. **Return Convenience:** Consider when you want to return - earlier flights may be cheaper but longer
 
 ---

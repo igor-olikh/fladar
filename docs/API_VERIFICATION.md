@@ -60,11 +60,11 @@ response = self.amadeus.shopping.flight_offers_search.get(
 | Parameter | Our Usage | Status |
 |-----------|-----------|--------|
 | `duration` | Not used | Available but not needed |
-| `nonStop` | ✅ **NOW USED** | Set to `True` when `max_stops=0` in config |
+| `nonStop` | ✅ **NOW USED** | Set to `True` when both `max_stops_person1=0` and `max_stops_person2=0` in config |
 | `maxPrice` | Not used | Available but not needed |
 
 **Non-Stop Parameter Implementation**:
-- When `max_stops: 0` in config, we automatically set `nonStop=True`
+- When both `max_stops_person1: 0` and `max_stops_person2: 0` in config, we automatically set `nonStop=True`
 - This filters destinations to only those with direct flights available
 - More efficient: avoids searching destinations that only have connecting flights
 
@@ -77,7 +77,7 @@ api_params = {
     'oneWay': False                       # ✅ Optional, correct
 }
 
-# If max_stops=0, add nonStop parameter to filter for direct flights only
+# If both max_stops_person1=0 and max_stops_person2=0, add nonStop parameter to filter for direct flights only
 if non_stop:
     api_params['nonStop'] = True          # ✅ Optional, correct (now used)
 

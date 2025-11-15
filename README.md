@@ -129,7 +129,8 @@ search:
   outbound_date: "2025-11-20"      # Departure date (YYYY-MM-DD)
   return_date: "2025-11-25"        # Return date (YYYY-MM-DD)
   max_price: 600                   # Maximum price per person (EUR)
-  max_stops: 0                     # 0 = direct flights only
+  max_stops_person1: 0             # Maximum stops for Person 1 (0 = direct only)
+  max_stops_person2: 0             # Maximum stops for Person 2 (0 = direct only)
   arrival_tolerance_hours: 6       # ±6 hours for arrival matching
 ```
 
@@ -167,7 +168,8 @@ api:
 | `outbound_date` | Departure date (YYYY-MM-DD) | Required |
 | `return_date` | Return date (YYYY-MM-DD) | Required |
 | `max_price` | Maximum round-trip price per person (EUR) | Required |
-| `max_stops` | Maximum number of stops (0 = direct only) | 0 |
+| `max_stops_person1` | Maximum number of stops for Person 1 (0 = direct only) | 0 |
+| `max_stops_person2` | Maximum number of stops for Person 2 (0 = direct only) | 0 |
 | `arrival_tolerance_hours` | Hours tolerance for arrival matching | 3 |
 | `nearby_airports_radius_km` | Search radius for nearby airports (0 = disabled) | 0 |
 | `max_flight_duration_hours` | Maximum flight duration (0 = no limit) | 0 |
@@ -330,7 +332,7 @@ fladar/
 ### "No matching flights found"
 - Try increasing `max_price`
 - Try increasing `arrival_tolerance_hours`
-- Try allowing stops by setting `max_stops` to 1 or 2
+- Try allowing stops by setting `max_stops_person1` and/or `max_stops_person2` to 1 or 2
 - Check that your dates are valid and in the future
 - Try using `use_dynamic_destinations: false` to use predefined list
 

@@ -86,8 +86,9 @@ The application applies multiple filters:
 - Example: If Person 1 arrives at 14:00, Person 2 must arrive between 11:00-17:00 (if tolerance is 3 hours)
 
 #### Stops Filtering
-- Can filter for direct flights only (`max_stops: 0`)
-- Or allow connections (`max_stops: 1, 2, etc.`)
+- Can filter for direct flights only (`max_stops_person1: 0`, `max_stops_person2: 0`)
+- Or allow connections (`max_stops_person1: 1, 2, etc.`, `max_stops_person2: 1, 2, etc.`)
+- Each person can have different stop preferences (e.g., Person 1: direct only, Person 2: up to 2 stops)
 
 ### Step 4: Output Formatting
 
@@ -237,7 +238,8 @@ search:
   outbound_date: "2025-11-20"  # When to fly out
   return_date: "2025-11-25"    # When to return
   max_price: 400               # Maximum price per person (EUR)
-  max_stops: 0                 # 0 = direct flights only
+  max_stops_person1: 0         # Maximum stops for Person 1 (0 = direct flights only)
+  max_stops_person2: 0         # Maximum stops for Person 2 (0 = direct flights only)
   arrival_tolerance_hours: 6   # How close arrivals should be
   min_departure_time_outbound: "14:00"  # Don't fly earlier than this
   min_departure_time_return: "14:00"    # Don't fly earlier than this
@@ -404,7 +406,7 @@ poetry run python main.py
    - Check if dates are in the future
    - Relax price constraints
    - Increase arrival tolerance
-   - Allow connections (increase `max_stops`)
+   - Allow connections (increase `max_stops_person1` and/or `max_stops_person2`)
 
 4. **Timezone Issues**:
    - Verify timezone configuration in `config.yaml`
