@@ -834,7 +834,7 @@ class OutputFormatter:
             return
         
         try:
-            # Group results by destination and get top 1 flight per destination
+            # Group results by destination and get top 3 flights per destination
             destinations_dict = {}
             for match in results:
                 dest = match['destination']
@@ -842,11 +842,19 @@ class OutputFormatter:
                     destinations_dict[dest] = []
                 destinations_dict[dest].append(match)
             
+            # Sort matches within each destination by total price (cheapest first)
+            # Then take top 3 matches for each destination
+            for dest in destinations_dict:
+                destinations_dict[dest] = sorted(
+                    destinations_dict[dest],
+                    key=lambda x: x['total_price']
+                )[:3]  # Top 3 flights per destination
+            
             # Sort destinations by their cheapest flight's total price
             # Then take top N destinations (configurable)
             sorted_destinations = sorted(
                 destinations_dict.items(),
-                key=lambda x: x[1][0]['total_price']  # Sort by cheapest flight in each destination
+                key=lambda x: x[1][0]['total_price'] if x[1] else float('inf')  # Sort by cheapest flight in each destination
             )[:top_destinations]
             
             if not sorted_destinations:
@@ -1093,6 +1101,26 @@ class OutputFormatter:
         .person-section.person2 .booking-link {
             background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
         }
+        .flight-option {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 2px solid #e9ecef;
+        }
+        .flight-option:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+        .flight-option-header {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
         @media (max-width: 768px) {
             .flight-details {
                 grid-template-columns: 1fr;
@@ -1116,214 +1144,251 @@ class OutputFormatter:
 """
         
         for idx, (dest, matches) in enumerate(sorted_destinations, 1):
-            # Get the top (cheapest) flight for this destination
-            best_match = matches[0]
+            # Get the cheapest flight for this destination (for header display)
+            best_match = matches[0] if matches else None
+            if not best_match:
+                continue
             
-            p1_info = OutputFormatter.format_flight_info(best_match['person1_flight'])
-            p2_info = OutputFormatter.format_flight_info(best_match['person2_flight'])
+            # Get top 3 flights for this destination (already sorted by price)
+            top_flights = matches[:3]
             
+            # Get destination name and cheapest price for header
             dest_name = format_airport_code(dest)
-            total_price = best_match['total_price']
-            currency = p1_info.get('currency', 'EUR')
-            p1_price = best_match['person1_price']
-            p2_price = best_match['person2_price']
+            cheapest_total_price = best_match['total_price']
+            cheapest_p1_info = OutputFormatter.format_flight_info(best_match['person1_flight'])
+            currency = cheapest_p1_info.get('currency', 'EUR')
             
-            # Get origin codes from flight info
-            # Note: For return flights, 'origin' in flight_info is the departure airport (destination),
-            # and 'destination' in flight_info is the arrival airport (person's actual origin)
-            p1_origin = p1_info.get('origin', '')
-            p2_origin = p2_info.get('origin', '')
-            p1_destination = p1_info.get('destination', '')
-            p2_destination = p2_info.get('destination', '')
+            # Start destination card with header
+            html += f"""
+        <div class="destination-card">
+            <div class="destination-header">
+                <div class="destination-name">#{idx} {dest_name}</div>
+                <div class="total-price">From {cheapest_total_price:.2f} <span class="currency">{currency}</span></div>
+            </div>"""
             
-            # Format times (local) - only convert if not 'N/A'
-            p1_outbound_dep_utc = p1_info.get('outbound_departure', '')
-            p1_outbound_arr_utc = p1_info.get('outbound_arrival', '')
-            p1_return_dep_utc = p1_info.get('return_departure', '')
-            p1_return_arr_utc = p1_info.get('return_arrival', '')
+            # Generate HTML for each of the top 3 flights
+            for flight_idx, match in enumerate(top_flights, 1):
+                html += OutputFormatter._generate_single_flight_html(match, dest, flight_idx, len(top_flights))
             
-            # Get flight type early to determine correct airports for time conversion
-            p1_flight_temp = best_match['person1_flight']
-            p2_flight_temp = best_match['person2_flight']
-            p1_flight_type_temp = p1_flight_temp.get('_flight_type', 'both')
-            p2_flight_type_temp = p2_flight_temp.get('_flight_type', 'both')
-            
-            # For return flights: departure is at dest (MAD), arrival is at person's origin (TLV = p1_destination)
-            # For outbound/round-trip: departure is at origin, arrival is at dest
-            if p1_flight_type_temp == 'return':
-                p1_dep_airport = dest  # Departure from destination (MAD)
-                p1_arr_airport = p1_destination  # Arrival at person's origin (TLV)
+            # Close destination card
+            html += """
+        </div>"""
+        
+        html += """
+    </div>
+</body>
+</html>"""
+        
+        return html
+    
+    @staticmethod
+    def _generate_single_flight_html(match: Dict, dest: str, flight_idx: int, total_flights: int) -> str:
+        """Generate HTML for a single flight option within a destination"""
+        
+        p1_info = OutputFormatter.format_flight_info(match['person1_flight'])
+        p2_info = OutputFormatter.format_flight_info(match['person2_flight'])
+        
+        total_price = match['total_price']
+        currency = p1_info.get('currency', 'EUR')
+        p1_price = match['person1_price']
+        p2_price = match['person2_price']
+        
+        # Get origin codes from flight info
+        # Note: For return flights, 'origin' in flight_info is the departure airport (destination),
+        # and 'destination' in flight_info is the arrival airport (person's actual origin)
+        p1_origin = p1_info.get('origin', '')
+        p2_origin = p2_info.get('origin', '')
+        p1_destination = p1_info.get('destination', '')
+        p2_destination = p2_info.get('destination', '')
+        
+        # Format times (local) - only convert if not 'N/A'
+        p1_outbound_dep_utc = p1_info.get('outbound_departure', '')
+        p1_outbound_arr_utc = p1_info.get('outbound_arrival', '')
+        p1_return_dep_utc = p1_info.get('return_departure', '')
+        p1_return_arr_utc = p1_info.get('return_arrival', '')
+        
+        # Get flight type early to determine correct airports for time conversion
+        p1_flight_temp = match['person1_flight']
+        p2_flight_temp = match['person2_flight']
+        p1_flight_type_temp = p1_flight_temp.get('_flight_type', 'both')
+        p2_flight_type_temp = p2_flight_temp.get('_flight_type', 'both')
+        
+        # For return flights: departure is at dest (MAD), arrival is at person's origin (TLV = p1_destination)
+        # For outbound/round-trip: departure is at origin, arrival is at dest
+        if p1_flight_type_temp == 'return':
+            p1_dep_airport = dest  # Departure from destination (MAD)
+            p1_arr_airport = p1_destination  # Arrival at person's origin (TLV)
+        else:
+            p1_dep_airport = p1_origin
+            p1_arr_airport = dest
+        
+        if p2_flight_type_temp == 'return':
+            p2_dep_airport = dest  # Departure from destination (MAD)
+            p2_arr_airport = p2_destination  # Arrival at person's origin (TLV)
+        else:
+            p2_dep_airport = p2_origin
+            p2_arr_airport = dest
+        
+        p1_outbound_dep_local = OutputFormatter.convert_to_local_time(p1_outbound_dep_utc, p1_dep_airport) if p1_outbound_dep_utc != 'N/A' else 'N/A'
+        p1_outbound_arr_local = OutputFormatter.convert_to_local_time(p1_outbound_arr_utc, p1_arr_airport) if p1_outbound_arr_utc != 'N/A' else 'N/A'
+        p1_return_dep_local = OutputFormatter.convert_to_local_time(p1_return_dep_utc, dest) if p1_return_dep_utc != 'N/A' else 'N/A'
+        p1_return_arr_local = OutputFormatter.convert_to_local_time(p1_return_arr_utc, p1_origin) if p1_return_arr_utc != 'N/A' else 'N/A'
+        
+        p2_outbound_dep_utc = p2_info.get('outbound_departure', '')
+        p2_outbound_arr_utc = p2_info.get('outbound_arrival', '')
+        p2_return_dep_utc = p2_info.get('return_departure', '')
+        p2_return_arr_utc = p2_info.get('return_arrival', '')
+        
+        p2_outbound_dep_local = OutputFormatter.convert_to_local_time(p2_outbound_dep_utc, p2_dep_airport) if p2_outbound_dep_utc != 'N/A' else 'N/A'
+        p2_outbound_arr_local = OutputFormatter.convert_to_local_time(p2_outbound_arr_utc, p2_arr_airport) if p2_outbound_arr_utc != 'N/A' else 'N/A'
+        p2_return_dep_local = OutputFormatter.convert_to_local_time(p2_return_dep_utc, dest) if p2_return_dep_utc != 'N/A' else 'N/A'
+        p2_return_arr_local = OutputFormatter.convert_to_local_time(p2_return_arr_utc, p2_origin) if p2_return_arr_utc != 'N/A' else 'N/A'
+        
+        # Format durations
+        p1_outbound_duration = OutputFormatter.format_duration_human(p1_info.get('outbound_duration', ''))
+        p1_return_duration = OutputFormatter.format_duration_human(p1_info.get('return_duration', ''))
+        p2_outbound_duration = OutputFormatter.format_duration_human(p2_info.get('outbound_duration', ''))
+        p2_return_duration = OutputFormatter.format_duration_human(p2_info.get('return_duration', ''))
+        
+        # Format stops
+        def format_stops(stops: int) -> str:
+            if stops == 0:
+                return "No stops"
+            elif stops == 1:
+                return "1 stop"
             else:
-                p1_dep_airport = p1_origin
-                p1_arr_airport = dest
-            
-            if p2_flight_type_temp == 'return':
-                p2_dep_airport = dest  # Departure from destination (MAD)
-                p2_arr_airport = p2_destination  # Arrival at person's origin (TLV)
-            else:
-                p2_dep_airport = p2_origin
-                p2_arr_airport = dest
-            
-            p1_outbound_dep_local = OutputFormatter.convert_to_local_time(p1_outbound_dep_utc, p1_dep_airport) if p1_outbound_dep_utc != 'N/A' else 'N/A'
-            p1_outbound_arr_local = OutputFormatter.convert_to_local_time(p1_outbound_arr_utc, p1_arr_airport) if p1_outbound_arr_utc != 'N/A' else 'N/A'
-            p1_return_dep_local = OutputFormatter.convert_to_local_time(p1_return_dep_utc, dest) if p1_return_dep_utc != 'N/A' else 'N/A'
-            p1_return_arr_local = OutputFormatter.convert_to_local_time(p1_return_arr_utc, p1_origin) if p1_return_arr_utc != 'N/A' else 'N/A'
-            
-            p2_outbound_dep_utc = p2_info.get('outbound_departure', '')
-            p2_outbound_arr_utc = p2_info.get('outbound_arrival', '')
-            p2_return_dep_utc = p2_info.get('return_departure', '')
-            p2_return_arr_utc = p2_info.get('return_arrival', '')
-            
-            p2_outbound_dep_local = OutputFormatter.convert_to_local_time(p2_outbound_dep_utc, p2_dep_airport) if p2_outbound_dep_utc != 'N/A' else 'N/A'
-            p2_outbound_arr_local = OutputFormatter.convert_to_local_time(p2_outbound_arr_utc, p2_arr_airport) if p2_outbound_arr_utc != 'N/A' else 'N/A'
-            p2_return_dep_local = OutputFormatter.convert_to_local_time(p2_return_dep_utc, dest) if p2_return_dep_utc != 'N/A' else 'N/A'
-            p2_return_arr_local = OutputFormatter.convert_to_local_time(p2_return_arr_utc, p2_origin) if p2_return_arr_utc != 'N/A' else 'N/A'
-            
-            # Format durations
-            p1_outbound_duration = OutputFormatter.format_duration_human(p1_info.get('outbound_duration', ''))
-            p1_return_duration = OutputFormatter.format_duration_human(p1_info.get('return_duration', ''))
-            p2_outbound_duration = OutputFormatter.format_duration_human(p2_info.get('outbound_duration', ''))
-            p2_return_duration = OutputFormatter.format_duration_human(p2_info.get('return_duration', ''))
-            
-            # Format stops
-            def format_stops(stops: int) -> str:
-                if stops == 0:
-                    return "No stops"
-                elif stops == 1:
-                    return "1 stop"
-                else:
-                    return f"{stops} stops"
-            
-            p1_outbound_stops = format_stops(p1_info.get('outbound_stops', 0))
-            p1_return_stops = format_stops(p1_info.get('return_stops', 0))
-            p2_outbound_stops = format_stops(p2_info.get('outbound_stops', 0))
-            p2_return_stops = format_stops(p2_info.get('return_stops', 0))
-            
-            # Format airlines
-            p1_airlines = p1_info.get('airlines_formatted', p1_info.get('airlines', ''))
-            p2_airlines = p2_info.get('airlines_formatted', p2_info.get('airlines', ''))
-            
-            # Detect flight type (one-way or round-trip) by checking number of itineraries
-            p1_flight = best_match['person1_flight']
-            p2_flight = best_match['person2_flight']
-            p1_itineraries = p1_flight.get('itineraries', [])
-            p2_itineraries = p2_flight.get('itineraries', [])
-            
-            p1_is_one_way = len(p1_itineraries) == 1
-            p2_is_one_way = len(p2_itineraries) == 1
-            
-            # Get flight type from flight object if available (stored during search)
-            # Reuse the flight types we already determined for time conversion
-            p1_flight_type = p1_flight_type_temp
-            p2_flight_type = p2_flight_type_temp
-            
-            # Get origin and destination names for display
-            # For return flights, p1_origin is the departure airport (destination) and p1_destination is the person's actual origin
-            p1_origin_name = format_airport_code(p1_origin)
-            p2_origin_name = format_airport_code(p2_origin)
-            p1_destination_name = format_airport_code(p1_destination)
-            p2_destination_name = format_airport_code(p2_destination)
-            dest_name_formatted = format_airport_code(dest)
-            
-            # Determine labels based on flight type
-            # For one-way flights, show full route: "From [origin] to [destination]"
-            if p1_flight_type == 'return':
-                # Return flight: from destination (MAD) to person's actual origin (TLV)
-                # p1_origin is MAD (departure), p1_destination is TLV (arrival/person's origin)
-                p1_outbound_label = f"From {dest_name_formatted} to {p1_destination_name}"
-                p1_return_label = None  # No return section for return-only flights
-            elif p1_is_one_way:
-                # Outbound flight: from origin to destination
-                p1_outbound_label = f"From {p1_origin_name} to {dest_name_formatted}"
-                p1_return_label = None  # No return section for one-way flights
-            else:
-                # Round-trip: show "Going to" and "Returning home"
-                p1_outbound_label = f"Going to {dest_name_formatted}"
-                p1_return_label = "Returning home"
-            
-            if p2_flight_type == 'return':
-                # Return flight: from destination (MAD) to person's actual origin (TLV)
-                # p2_origin is MAD (departure), p2_destination is TLV (arrival/person's origin)
-                p2_outbound_label = f"From {dest_name_formatted} to {p2_destination_name}"
-                p2_return_label = None  # No return section for return-only flights
-            elif p2_is_one_way:
-                # Outbound flight: from origin to destination
-                p2_outbound_label = f"From {p2_origin_name} to {dest_name_formatted}"
-                p2_return_label = None  # No return section for one-way flights
-            else:
-                # Round-trip: show "Going to" and "Returning home"
-                p2_outbound_label = f"Going to {dest_name_formatted}"
-                p2_return_label = "Returning home"
-            
-            # Get stop details for Person 1
-            p1_outbound_segments = p1_itineraries[0].get('segments', []) if p1_itineraries else []
-            p1_return_segments = p1_itineraries[1].get('segments', []) if len(p1_itineraries) > 1 else []
-            p1_outbound_stop_details = OutputFormatter._get_stop_details(p1_outbound_segments)
-            p1_return_stop_details = OutputFormatter._get_stop_details(p1_return_segments)
-            
-            # Get stop details for Person 2
-            p2_outbound_segments = p2_itineraries[0].get('segments', []) if p2_itineraries else []
-            p2_return_segments = p2_itineraries[1].get('segments', []) if len(p2_itineraries) > 1 else []
-            p2_outbound_stop_details = OutputFormatter._get_stop_details(p2_outbound_segments)
-            p2_return_stop_details = OutputFormatter._get_stop_details(p2_return_segments)
-            
-            # Format stop details HTML
-            def format_stop_details_html(stop_details: List[Dict]) -> str:
-                if not stop_details:
-                    return ""
-                stop_info = []
-                for stop in stop_details:
-                    airport_name = format_airport_code(stop['airport'])
-                    stop_info.append(f"{airport_name} ({stop['layover']})")
-                return f'<div class="stop-details">Stop{"s" if len(stop_info) > 1 else ""}: {", ".join(stop_info)}</div>'
-            
-            p1_outbound_stops_html = format_stop_details_html(p1_outbound_stop_details)
-            p1_return_stops_html = format_stop_details_html(p1_return_stop_details)
-            p2_outbound_stops_html = format_stop_details_html(p2_outbound_stop_details)
-            p2_return_stops_html = format_stop_details_html(p2_return_stop_details)
-            
-            # Create booking links for Person 1
-            # For one-way flights, prefer_direct should only check outbound stops
-            p1_prefer_direct = (p1_info.get('outbound_stops', 0) == 0)
-            if not p1_is_one_way:
-                p1_prefer_direct = p1_prefer_direct and (p1_info.get('return_stops', 0) == 0)
-            
-            # For return flights, swap origin and destination for Skyscanner URL
+                return f"{stops} stops"
+        
+        p1_outbound_stops = format_stops(p1_info.get('outbound_stops', 0))
+        p1_return_stops = format_stops(p1_info.get('return_stops', 0))
+        p2_outbound_stops = format_stops(p2_info.get('outbound_stops', 0))
+        p2_return_stops = format_stops(p2_info.get('return_stops', 0))
+        
+        # Format airlines
+        p1_airlines = p1_info.get('airlines_formatted', p1_info.get('airlines', ''))
+        p2_airlines = p2_info.get('airlines_formatted', p2_info.get('airlines', ''))
+        
+        # Detect flight type (one-way or round-trip) by checking number of itineraries
+        p1_flight = match['person1_flight']
+        p2_flight = match['person2_flight']
+        p1_itineraries = p1_flight.get('itineraries', [])
+        p2_itineraries = p2_flight.get('itineraries', [])
+        
+        p1_is_one_way = len(p1_itineraries) == 1
+        p2_is_one_way = len(p2_itineraries) == 1
+        
+        # Get flight type from flight object if available (stored during search)
+        # Reuse the flight types we already determined for time conversion
+        p1_flight_type = p1_flight_type_temp
+        p2_flight_type = p2_flight_type_temp
+        
+        # Get origin and destination names for display
+        # For return flights, p1_origin is the departure airport (destination) and p1_destination is the person's actual origin
+        p1_origin_name = format_airport_code(p1_origin)
+        p2_origin_name = format_airport_code(p2_origin)
+        p1_destination_name = format_airport_code(p1_destination)
+        p2_destination_name = format_airport_code(p2_destination)
+        dest_name_formatted = format_airport_code(dest)
+        
+        # Determine labels based on flight type
+        # For one-way flights, show full route: "From [origin] to [destination]"
+        if p1_flight_type == 'return':
             # Return flight: from destination (MAD) to person's actual origin (TLV)
-            if p1_flight_type == 'return':
-                p1_booking_origin = dest  # MAD (destination we're returning from)
-                p1_booking_destination = p1_destination  # TLV (person's actual origin)
-            else:
-                p1_booking_origin = p1_origin
-                p1_booking_destination = dest
-            
-            p1_booking_url = OutputFormatter.create_skyscanner_url(
-                p1_booking_origin, p1_booking_destination, p1_outbound_dep_utc, p1_return_dep_utc if p1_return_dep_utc != 'N/A' else None, 
-                prefer_direct=p1_prefer_direct
-            )
-            
-            # Create booking links for Person 2
-            # For one-way flights, prefer_direct should only check outbound stops
-            p2_prefer_direct = (p2_info.get('outbound_stops', 0) == 0)
-            if not p2_is_one_way:
-                p2_prefer_direct = p2_prefer_direct and (p2_info.get('return_stops', 0) == 0)
-            
-            # For return flights, swap origin and destination for Skyscanner URL
+            # p1_origin is MAD (departure), p1_destination is TLV (arrival/person's origin)
+            p1_outbound_label = f"From {dest_name_formatted} to {p1_destination_name}"
+            p1_return_label = None  # No return section for return-only flights
+        elif p1_is_one_way:
+            # Outbound flight: from origin to destination
+            p1_outbound_label = f"From {p1_origin_name} to {dest_name_formatted}"
+            p1_return_label = None  # No return section for one-way flights
+        else:
+            # Round-trip: show "Going to" and "Returning home"
+            p1_outbound_label = f"Going to {dest_name_formatted}"
+            p1_return_label = "Returning home"
+        
+        if p2_flight_type == 'return':
             # Return flight: from destination (MAD) to person's actual origin (TLV)
-            if p2_flight_type == 'return':
-                p2_booking_origin = dest  # MAD (destination we're returning from)
-                p2_booking_destination = p2_destination  # TLV (person's actual origin)
-            else:
-                p2_booking_origin = p2_origin
-                p2_booking_destination = dest
-            
-            p2_booking_url = OutputFormatter.create_skyscanner_url(
-                p2_booking_origin, p2_booking_destination, p2_outbound_dep_utc, p2_return_dep_utc if p2_return_dep_utc != 'N/A' else None,
-                prefer_direct=p2_prefer_direct
-            )
-            
-            # Build Person 1 HTML section
-            p1_outbound_section = f"""
+            # p2_origin is MAD (departure), p2_destination is TLV (arrival/person's origin)
+            p2_outbound_label = f"From {dest_name_formatted} to {p2_destination_name}"
+            p2_return_label = None  # No return section for return-only flights
+        elif p2_is_one_way:
+            # Outbound flight: from origin to destination
+            p2_outbound_label = f"From {p2_origin_name} to {dest_name_formatted}"
+            p2_return_label = None  # No return section for one-way flights
+        else:
+            # Round-trip: show "Going to" and "Returning home"
+            p2_outbound_label = f"Going to {dest_name_formatted}"
+            p2_return_label = "Returning home"
+        
+        # Get stop details for Person 1
+        p1_outbound_segments = p1_itineraries[0].get('segments', []) if p1_itineraries else []
+        p1_return_segments = p1_itineraries[1].get('segments', []) if len(p1_itineraries) > 1 else []
+        p1_outbound_stop_details = OutputFormatter._get_stop_details(p1_outbound_segments)
+        p1_return_stop_details = OutputFormatter._get_stop_details(p1_return_segments)
+        
+        # Get stop details for Person 2
+        p2_outbound_segments = p2_itineraries[0].get('segments', []) if p2_itineraries else []
+        p2_return_segments = p2_itineraries[1].get('segments', []) if len(p2_itineraries) > 1 else []
+        p2_outbound_stop_details = OutputFormatter._get_stop_details(p2_outbound_segments)
+        p2_return_stop_details = OutputFormatter._get_stop_details(p2_return_segments)
+        
+        # Format stop details HTML
+        def format_stop_details_html(stop_details: List[Dict]) -> str:
+            if not stop_details:
+                return ""
+            stop_info = []
+            for stop in stop_details:
+                airport_name = format_airport_code(stop['airport'])
+                stop_info.append(f"{airport_name} ({stop['layover']})")
+            return f'<div class="stop-details">Stop{"s" if len(stop_info) > 1 else ""}: {", ".join(stop_info)}</div>'
+        
+        p1_outbound_stops_html = format_stop_details_html(p1_outbound_stop_details)
+        p1_return_stops_html = format_stop_details_html(p1_return_stop_details)
+        p2_outbound_stops_html = format_stop_details_html(p2_outbound_stop_details)
+        p2_return_stops_html = format_stop_details_html(p2_return_stop_details)
+        
+        # Create booking links for Person 1
+        # For one-way flights, prefer_direct should only check outbound stops
+        p1_prefer_direct = (p1_info.get('outbound_stops', 0) == 0)
+        if not p1_is_one_way:
+            p1_prefer_direct = p1_prefer_direct and (p1_info.get('return_stops', 0) == 0)
+        
+        # For return flights, swap origin and destination for Skyscanner URL
+        # Return flight: from destination (MAD) to person's actual origin (TLV)
+        if p1_flight_type == 'return':
+            p1_booking_origin = dest  # MAD (destination we're returning from)
+            p1_booking_destination = p1_destination  # TLV (person's actual origin)
+        else:
+            p1_booking_origin = p1_origin
+            p1_booking_destination = dest
+        
+        p1_booking_url = OutputFormatter.create_skyscanner_url(
+            p1_booking_origin, p1_booking_destination, p1_outbound_dep_utc, p1_return_dep_utc if p1_return_dep_utc != 'N/A' else None, 
+            prefer_direct=p1_prefer_direct
+        )
+        
+        # Create booking links for Person 2
+        # For one-way flights, prefer_direct should only check outbound stops
+        p2_prefer_direct = (p2_info.get('outbound_stops', 0) == 0)
+        if not p2_is_one_way:
+            p2_prefer_direct = p2_prefer_direct and (p2_info.get('return_stops', 0) == 0)
+        
+        # For return flights, swap origin and destination for Skyscanner URL
+        # Return flight: from destination (MAD) to person's actual origin (TLV)
+        if p2_flight_type == 'return':
+            p2_booking_origin = dest  # MAD (destination we're returning from)
+            p2_booking_destination = p2_destination  # TLV (person's actual origin)
+        else:
+            p2_booking_origin = p2_origin
+            p2_booking_destination = dest
+        
+        p2_booking_url = OutputFormatter.create_skyscanner_url(
+            p2_booking_origin, p2_booking_destination, p2_outbound_dep_utc, p2_return_dep_utc if p2_return_dep_utc != 'N/A' else None,
+            prefer_direct=p2_prefer_direct
+        )
+        
+        # Build Person 1 HTML section
+        p1_outbound_section = f"""
                     <div class="flight-route">{p1_outbound_label}</div>
                     <div class="flight-info">
                         <strong>Departure:</strong> {p1_outbound_dep_local}
@@ -1336,10 +1401,10 @@ class OutputFormatter:
                         <span class="stops-info">{p1_outbound_stops}</span>
                     </div>
                     {p1_outbound_stops_html}"""
-            
-            p1_return_section = ""
-            if p1_return_label:
-                p1_return_section = f"""
+        
+        p1_return_section = ""
+        if p1_return_label:
+            p1_return_section = f"""
                     <div class="flight-route" style="margin-top: 20px;">{p1_return_label}</div>
                     <div class="flight-info">
                         <strong>Departure:</strong> {p1_return_dep_local}
@@ -1352,9 +1417,9 @@ class OutputFormatter:
                         <span class="stops-info">{p1_return_stops}</span>
                     </div>
                     {p1_return_stops_html}"""
-            
-            # Build Person 2 HTML section
-            p2_outbound_section = f"""
+        
+        # Build Person 2 HTML section
+        p2_outbound_section = f"""
                     <div class="flight-route">{p2_outbound_label}</div>
                     <div class="flight-info">
                         <strong>Departure:</strong> {p2_outbound_dep_local}
@@ -1367,10 +1432,10 @@ class OutputFormatter:
                         <span class="stops-info">{p2_outbound_stops}</span>
                     </div>
                     {p2_outbound_stops_html}"""
-            
-            p2_return_section = ""
-            if p2_return_label:
-                p2_return_section = f"""
+        
+        p2_return_section = ""
+        if p2_return_label:
+            p2_return_section = f"""
                     <div class="flight-route" style="margin-top: 20px;">{p2_return_label}</div>
                     <div class="flight-info">
                         <strong>Departure:</strong> {p2_return_dep_local}
@@ -1384,43 +1449,36 @@ class OutputFormatter:
                     </div>
                     {p2_return_stops_html}"""
             
-            html += f"""
-        <div class="destination-card">
-            <div class="destination-header">
-                <div class="destination-name">#{idx} {dest_name}</div>
-                <div class="total-price">{total_price:.2f} <span class="currency">{currency}</span></div>
-            </div>
-            
-            <div class="flight-details">
-                <div class="person-section person1">
-                    <div class="person-label">Person 1</div>
-                    <div class="price-badge">{p1_price:.2f} {currency}</div>
-                    {p1_outbound_section}
-                    {p1_return_section}
-                    
-                    {f'<div class="airline-info">Airlines: {p1_airlines}</div>' if p1_airlines else ''}
-                    
-                    {f'<a href="{p1_booking_url}" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>' if p1_booking_url else ''}
-                </div>
-                
-                <div class="person-section person2">
-                    <div class="person-label">Person 2</div>
-                    <div class="price-badge">{p2_price:.2f} {currency}</div>
-                    {p2_outbound_section}
-                    {p2_return_section}
-                    
-                    {f'<div class="airline-info">Airlines: {p2_airlines}</div>' if p2_airlines else ''}
-                    
-                    {f'<a href="{p2_booking_url}" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>' if p2_booking_url else ''}
-                </div>
-            </div>
-        </div>
-"""
+        # Add flight option header if multiple flights
+        flight_header = ""
+        if total_flights > 1:
+            flight_header = f'<div class="flight-option-header">Option {flight_idx} - Total: {total_price:.2f} {currency}</div>'
         
-        html += """
-    </div>
-</body>
-</html>"""
-        
-        return html
+        return f"""
+            <div class="flight-option">
+                {flight_header}
+                <div class="flight-details">
+                    <div class="person-section person1">
+                        <div class="person-label">Person 1</div>
+                        <div class="price-badge">{p1_price:.2f} {currency}</div>
+                        {p1_outbound_section}
+                        {p1_return_section}
+                        
+                        {f'<div class="airline-info">Airlines: {p1_airlines}</div>' if p1_airlines else ''}
+                        
+                        {f'<a href="{p1_booking_url}" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>' if p1_booking_url else ''}
+                    </div>
+                    
+                    <div class="person-section person2">
+                        <div class="person-label">Person 2</div>
+                        <div class="price-badge">{p2_price:.2f} {currency}</div>
+                        {p2_outbound_section}
+                        {p2_return_section}
+                        
+                        {f'<div class="airline-info">Airlines: {p2_airlines}</div>' if p2_airlines else ''}
+                        
+                        {f'<a href="{p2_booking_url}" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>' if p2_booking_url else ''}
+                    </div>
+                </div>
+            </div>"""
 
