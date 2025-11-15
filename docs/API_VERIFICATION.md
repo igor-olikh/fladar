@@ -55,10 +55,18 @@ response = self.amadeus.shopping.flight_offers_search.get(
 | View By | `viewBy='DESTINATION'` | `viewBy` | ✅ Correct |
 | One Way | `oneWay=False` | `oneWay` | ✅ Correct |
 
-### Optional Parameters Available (Not Currently Used)
-- `duration`: Trip duration in days (range format, e.g., "1,15")
-- `nonStop`: Boolean for direct flights only
-- `maxPrice`: Maximum price limit (integer)
+### Optional Parameters Available
+
+| Parameter | Our Usage | Status |
+|-----------|-----------|--------|
+| `duration` | Not used | Available but not needed |
+| `nonStop` | ✅ **NOW USED** | Set to `True` when `max_stops=0` in config |
+| `maxPrice` | Not used | Available but not needed |
+
+**Non-Stop Parameter Implementation**:
+- When `max_stops: 0` in config, we automatically set `nonStop=True`
+- This filters destinations to only those with direct flights available
+- More efficient: avoids searching destinations that only have connecting flights
 
 ### Implementation
 ```python
@@ -68,6 +76,11 @@ api_params = {
     'viewBy': 'DESTINATION',              # ✅ Optional, correct enum value
     'oneWay': False                       # ✅ Optional, correct
 }
+
+# If max_stops=0, add nonStop parameter to filter for direct flights only
+if non_stop:
+    api_params['nonStop'] = True          # ✅ Optional, correct (now used)
+
 response = self.amadeus.shopping.flight_destinations.get(**api_params)
 ```
 

@@ -81,9 +81,16 @@ amadeus.shopping.flight_destinations.get(
     origin="TLV",
     departureDate="2025-11-20,2025-12-20",  # Date range (optional but recommended)
     viewBy="DESTINATION",  # Group by destination
-    oneWay=False  # Round-trip flights
+    oneWay=False,  # Round-trip flights
+    nonStop=True  # Optional: Only destinations with direct flights (when max_stops=0)
 )
 ```
+
+**Non-Stop Parameter**:
+- When `max_stops: 0` in config, the application automatically sets `nonStop=True` in the API call
+- This filters destinations to only those with direct flights available
+- More efficient: avoids searching destinations that only have connecting flights
+- Improves search performance when user wants direct flights only
 
 **Authentication**:
 - The application uses pre-authentication to ensure access tokens are obtained before API calls
@@ -189,6 +196,7 @@ The goal is to find destinations where **both people can meet** with reasonable 
 2. **Dynamic Discovery** (when enabled):
    - Call Flight Inspiration Search API for TLV → Get list of destinations from Tel Aviv
    - Call Flight Inspiration Search API for ALC → Get list of destinations from Alicante
+   - If `max_stops=0`, automatically sets `nonStop=True` to only get destinations with direct flights
    - Find **common destinations** (destinations reachable from both origins)
    - **Currently fails** → Falls back to predefined list
 
