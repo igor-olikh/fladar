@@ -183,6 +183,10 @@ def main():
         print(f"   Min Departure Time (Return): {min_departure_time_return}")
     if nearby_airports_radius_km > 0:
         print(f"   Nearby Airports Radius: {nearby_airports_radius_km} km")
+    if max_destinations_to_check > 0:
+        print(f"   Max Destinations to Check: {max_destinations_to_check}")
+    else:
+        print(f"   Max Destinations to Check: All available")
     print()
     
     # Find matching destinations
