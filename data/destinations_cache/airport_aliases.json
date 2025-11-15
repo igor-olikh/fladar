@@ -1,0 +1,5 @@
+{
+  "XTI": "MAD",
+  "_comment": "This file maps non-airport codes (like railway stations) to their nearest airport codes. Format: \"non_airport_code\": \"airport_code\""
+}
+

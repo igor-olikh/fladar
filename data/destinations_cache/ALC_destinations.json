@@ -1,0 +1,25 @@
+{
+  "origin": "ALC",
+  "destinations": [
+    "XTI",
+    "PMI",
+    "ARN",
+    "PMI",
+    "CPH",
+    "MAD",
+    "LGW",
+    "MAD",
+    "OSL",
+    "MAD",
+    "MAD",
+    "CPH",
+    "MAD",
+    "MAD",
+    "AMS",
+    "AMS",
+    "MAD",
+    "AMS"
+  ],
+  "cached_date": "2025-11-15T03:26:20.471647",
+  "count": 18
+}
