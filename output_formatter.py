@@ -447,24 +447,44 @@ class OutputFormatter:
             return utc_time_str
         
         try:
-            # Parse UTC time (Amadeus API returns times in ISO 8601 format)
+            # Parse time (Amadeus API returns times in ISO 8601 format)
             # Handle both with and without timezone info
+            # Get timezone for airport first (needed for both paths)
+            tz = OutputFormatter.get_timezone_for_airport(airport_code)
+            airport_names = _load_airport_names()
+            airport_name = airport_names.get(airport_code.upper()) if airport_names else None
+            
             if 'T' in utc_time_str:
-                if '+' in utc_time_str or utc_time_str.endswith('Z'):
-                    # Has timezone info
+                # Check if time has timezone info
+                has_timezone = (utc_time_str.endswith('Z') or 
+                               '+' in utc_time_str or 
+                               (len(utc_time_str) > 10 and utc_time_str[-6] in ['+', '-']))
+                
+                if has_timezone:
+                    # Has timezone info (UTC or offset) - treat as UTC and convert to local
                     dt = datetime.fromisoformat(utc_time_str.replace('Z', '+00:00'))
+                    if tz:
+                        # Convert UTC to local time
+                        local_dt = dt.astimezone(tz)
+                    else:
+                        # No timezone found, return as-is
+                        airport_name = airport_name or airport_code.upper()
+                        return f"{dt.strftime('%Y-%m-%d %H:%M')} ({airport_name})"
                 else:
-                    # No timezone info, assume UTC
+                    # No timezone info - Amadeus API returns these as local time for the airport
+                    # Parse as naive datetime and treat as local time (don't convert)
                     dt = datetime.fromisoformat(utc_time_str)
-                    dt = pytz.UTC.localize(dt)
+                    if tz:
+                        # Localize the naive datetime to the airport's timezone
+                        local_dt = tz.localize(dt)
+                    else:
+                        # No timezone found, return as-is
+                        airport_name = airport_name or airport_code.upper()
+                        return f"{dt.strftime('%Y-%m-%d %H:%M')} ({airport_name})"
             else:
                 return utc_time_str
             
-            # Get timezone for airport
-            tz = OutputFormatter.get_timezone_for_airport(airport_code)
             if tz:
-                # Convert to local time
-                local_dt = dt.astimezone(tz)
                 
                 # Try to get airport/city name from airport code first (most reliable)
                 airport_names = _load_airport_names()
@@ -1108,9 +1128,13 @@ class OutputFormatter:
             p1_price = best_match['person1_price']
             p2_price = best_match['person2_price']
             
-            # Get origin codes
+            # Get origin codes from flight info
+            # Note: For return flights, 'origin' in flight_info is the departure airport (destination),
+            # and 'destination' in flight_info is the arrival airport (person's actual origin)
             p1_origin = p1_info.get('origin', '')
             p2_origin = p2_info.get('origin', '')
+            p1_destination = p1_info.get('destination', '')
+            p2_destination = p2_info.get('destination', '')
             
             # Format times (local) - only convert if not 'N/A'
             p1_outbound_dep_utc = p1_info.get('outbound_departure', '')
@@ -1118,8 +1142,30 @@ class OutputFormatter:
             p1_return_dep_utc = p1_info.get('return_departure', '')
             p1_return_arr_utc = p1_info.get('return_arrival', '')
             
-            p1_outbound_dep_local = OutputFormatter.convert_to_local_time(p1_outbound_dep_utc, p1_origin) if p1_outbound_dep_utc != 'N/A' else 'N/A'
-            p1_outbound_arr_local = OutputFormatter.convert_to_local_time(p1_outbound_arr_utc, dest) if p1_outbound_arr_utc != 'N/A' else 'N/A'
+            # Get flight type early to determine correct airports for time conversion
+            p1_flight_temp = best_match['person1_flight']
+            p2_flight_temp = best_match['person2_flight']
+            p1_flight_type_temp = p1_flight_temp.get('_flight_type', 'both')
+            p2_flight_type_temp = p2_flight_temp.get('_flight_type', 'both')
+            
+            # For return flights: departure is at dest (MAD), arrival is at person's origin (TLV = p1_destination)
+            # For outbound/round-trip: departure is at origin, arrival is at dest
+            if p1_flight_type_temp == 'return':
+                p1_dep_airport = dest  # Departure from destination (MAD)
+                p1_arr_airport = p1_destination  # Arrival at person's origin (TLV)
+            else:
+                p1_dep_airport = p1_origin
+                p1_arr_airport = dest
+            
+            if p2_flight_type_temp == 'return':
+                p2_dep_airport = dest  # Departure from destination (MAD)
+                p2_arr_airport = p2_destination  # Arrival at person's origin (TLV)
+            else:
+                p2_dep_airport = p2_origin
+                p2_arr_airport = dest
+            
+            p1_outbound_dep_local = OutputFormatter.convert_to_local_time(p1_outbound_dep_utc, p1_dep_airport) if p1_outbound_dep_utc != 'N/A' else 'N/A'
+            p1_outbound_arr_local = OutputFormatter.convert_to_local_time(p1_outbound_arr_utc, p1_arr_airport) if p1_outbound_arr_utc != 'N/A' else 'N/A'
             p1_return_dep_local = OutputFormatter.convert_to_local_time(p1_return_dep_utc, dest) if p1_return_dep_utc != 'N/A' else 'N/A'
             p1_return_arr_local = OutputFormatter.convert_to_local_time(p1_return_arr_utc, p1_origin) if p1_return_arr_utc != 'N/A' else 'N/A'
             
@@ -1128,8 +1174,8 @@ class OutputFormatter:
             p2_return_dep_utc = p2_info.get('return_departure', '')
             p2_return_arr_utc = p2_info.get('return_arrival', '')
             
-            p2_outbound_dep_local = OutputFormatter.convert_to_local_time(p2_outbound_dep_utc, p2_origin) if p2_outbound_dep_utc != 'N/A' else 'N/A'
-            p2_outbound_arr_local = OutputFormatter.convert_to_local_time(p2_outbound_arr_utc, dest) if p2_outbound_arr_utc != 'N/A' else 'N/A'
+            p2_outbound_dep_local = OutputFormatter.convert_to_local_time(p2_outbound_dep_utc, p2_dep_airport) if p2_outbound_dep_utc != 'N/A' else 'N/A'
+            p2_outbound_arr_local = OutputFormatter.convert_to_local_time(p2_outbound_arr_utc, p2_arr_airport) if p2_outbound_arr_utc != 'N/A' else 'N/A'
             p2_return_dep_local = OutputFormatter.convert_to_local_time(p2_return_dep_utc, dest) if p2_return_dep_utc != 'N/A' else 'N/A'
             p2_return_arr_local = OutputFormatter.convert_to_local_time(p2_return_arr_utc, p2_origin) if p2_return_arr_utc != 'N/A' else 'N/A'
             
@@ -1167,19 +1213,24 @@ class OutputFormatter:
             p2_is_one_way = len(p2_itineraries) == 1
             
             # Get flight type from flight object if available (stored during search)
-            p1_flight_type = p1_flight.get('_flight_type', 'both')
-            p2_flight_type = p2_flight.get('_flight_type', 'both')
+            # Reuse the flight types we already determined for time conversion
+            p1_flight_type = p1_flight_type_temp
+            p2_flight_type = p2_flight_type_temp
             
             # Get origin and destination names for display
+            # For return flights, p1_origin is the departure airport (destination) and p1_destination is the person's actual origin
             p1_origin_name = format_airport_code(p1_origin)
             p2_origin_name = format_airport_code(p2_origin)
+            p1_destination_name = format_airport_code(p1_destination)
+            p2_destination_name = format_airport_code(p2_destination)
             dest_name_formatted = format_airport_code(dest)
             
             # Determine labels based on flight type
             # For one-way flights, show full route: "From [origin] to [destination]"
             if p1_flight_type == 'return':
-                # Return flight: from destination to origin
-                p1_outbound_label = f"From {dest_name_formatted} to {p1_origin_name}"
+                # Return flight: from destination (MAD) to person's actual origin (TLV)
+                # p1_origin is MAD (departure), p1_destination is TLV (arrival/person's origin)
+                p1_outbound_label = f"From {dest_name_formatted} to {p1_destination_name}"
                 p1_return_label = None  # No return section for return-only flights
             elif p1_is_one_way:
                 # Outbound flight: from origin to destination
@@ -1191,8 +1242,9 @@ class OutputFormatter:
                 p1_return_label = "Returning home"
             
             if p2_flight_type == 'return':
-                # Return flight: from destination to origin
-                p2_outbound_label = f"From {dest_name_formatted} to {p2_origin_name}"
+                # Return flight: from destination (MAD) to person's actual origin (TLV)
+                # p2_origin is MAD (departure), p2_destination is TLV (arrival/person's origin)
+                p2_outbound_label = f"From {dest_name_formatted} to {p2_destination_name}"
                 p2_return_label = None  # No return section for return-only flights
             elif p2_is_one_way:
                 # Outbound flight: from origin to destination
@@ -1236,8 +1288,17 @@ class OutputFormatter:
             if not p1_is_one_way:
                 p1_prefer_direct = p1_prefer_direct and (p1_info.get('return_stops', 0) == 0)
             
+            # For return flights, swap origin and destination for Skyscanner URL
+            # Return flight: from destination (MAD) to person's actual origin (TLV)
+            if p1_flight_type == 'return':
+                p1_booking_origin = dest  # MAD (destination we're returning from)
+                p1_booking_destination = p1_destination  # TLV (person's actual origin)
+            else:
+                p1_booking_origin = p1_origin
+                p1_booking_destination = dest
+            
             p1_booking_url = OutputFormatter.create_skyscanner_url(
-                p1_origin, dest, p1_outbound_dep_utc, p1_return_dep_utc if p1_return_dep_utc != 'N/A' else None, 
+                p1_booking_origin, p1_booking_destination, p1_outbound_dep_utc, p1_return_dep_utc if p1_return_dep_utc != 'N/A' else None, 
                 prefer_direct=p1_prefer_direct
             )
             
@@ -1247,8 +1308,17 @@ class OutputFormatter:
             if not p2_is_one_way:
                 p2_prefer_direct = p2_prefer_direct and (p2_info.get('return_stops', 0) == 0)
             
+            # For return flights, swap origin and destination for Skyscanner URL
+            # Return flight: from destination (MAD) to person's actual origin (TLV)
+            if p2_flight_type == 'return':
+                p2_booking_origin = dest  # MAD (destination we're returning from)
+                p2_booking_destination = p2_destination  # TLV (person's actual origin)
+            else:
+                p2_booking_origin = p2_origin
+                p2_booking_destination = dest
+            
             p2_booking_url = OutputFormatter.create_skyscanner_url(
-                p2_origin, dest, p2_outbound_dep_utc, p2_return_dep_utc if p2_return_dep_utc != 'N/A' else None,
+                p2_booking_origin, p2_booking_destination, p2_outbound_dep_utc, p2_return_dep_utc if p2_return_dep_utc != 'N/A' else None,
                 prefer_direct=p2_prefer_direct
             )
             

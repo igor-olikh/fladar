@@ -794,8 +794,13 @@ class FlightSearch:
                 return None
             
             if days_old < self.cache_expiration_days:
-                logger.info(f"   ✓ Using cached destinations for {format_airport_code(origin)} (cached {days_old} day(s) ago)")
-                return cache_data.get('destinations', [])
+                cached_destinations = cache_data.get('destinations', [])
+                # Deduplicate destinations when loading from cache (in case cache file has duplicates)
+                unique_destinations = sorted(list(set(dest.upper() for dest in cached_destinations)))
+                if len(unique_destinations) < len(cached_destinations):
+                    logger.debug(f"   Deduplicated {len(cached_destinations)} → {len(unique_destinations)} destinations from cache")
+                logger.info(f"   ✓ Using cached destinations for {format_airport_code(origin)} (cached {days_old} day(s) ago, {len(unique_destinations)} unique)")
+                return unique_destinations
             else:
                 logger.debug(f"   Cache for {format_airport_code(origin)} is expired ({days_old} days old), will refresh")
                 return None
@@ -809,7 +814,7 @@ class FlightSearch:
         
         Args:
             origin: IATA code of origin airport
-            destinations: List of destination IATA codes
+            destinations: List of destination IATA codes (will be deduplicated before saving)
         """
         cache_dir = "data/destinations_cache"
         os.makedirs(cache_dir, exist_ok=True)
@@ -817,17 +822,22 @@ class FlightSearch:
         cache_file = os.path.join(cache_dir, f"{origin.upper()}_destinations.json")
         
         try:
+            # Deduplicate destinations before saving (convert to uppercase for consistency)
+            unique_destinations = sorted(list(set(dest.upper() for dest in destinations)))
+            
             cache_data = {
                 'origin': origin.upper(),
-                'destinations': destinations,
+                'destinations': unique_destinations,
                 'cached_date': datetime.now().isoformat(),
-                'count': len(destinations)
+                'count': len(unique_destinations)
             }
             
             with open(cache_file, 'w', encoding='utf-8') as f:
                 json.dump(cache_data, f, indent=2, ensure_ascii=False)
             
-            logger.debug(f"   Cached {len(destinations)} destinations for {format_airport_code(origin)} to {cache_file}")
+            if len(unique_destinations) < len(destinations):
+                logger.debug(f"   Deduplicated {len(destinations)} → {len(unique_destinations)} destinations before caching")
+            logger.debug(f"   Cached {len(unique_destinations)} unique destinations for {format_airport_code(origin)} to {cache_file}")
         except Exception as e:
             logger.debug(f"   Error saving cache for {format_airport_code(origin)}: {e}")
     
@@ -1086,6 +1096,9 @@ class FlightSearch:
             if response.data:
                 logger.info(f"   ✓ Found {len(response.data)} destination(s) from Amadeus API")
                 
+                # Use a set to automatically deduplicate destinations
+                destinations_set = set()
+                
                 # According to official Amadeus API documentation:
                 # FlightDestination object contains: type, origin, destination, departureDate, returnDate, price, links
                 # Reference: https://developers.amadeus.com/self-service/category/flights/api-doc/flight-inspiration-search/api-reference
@@ -1105,10 +1118,13 @@ class FlightSearch:
                                    f"departureDate={departure_date_from_api}, returnDate={return_date_from_api}, "
                                    f"price={price_info.get('total', 'N/A')} {price_info.get('currency', 'N/A')}")
                         
-                        # Add destination to list
-                        destinations.append(destination_code)
+                        # Add destination to set (automatically deduplicates)
+                        destinations_set.add(destination_code.upper())
                 
-                logger.info(f"   ✓ Extracted {len(destinations)} destination IATA code(s)")
+                # Convert set to sorted list for consistent output
+                destinations = sorted(list(destinations_set))
+                
+                logger.info(f"   ✓ Extracted {len(destinations)} unique destination IATA code(s)")
                 logger.info(f"   Sample destinations: {', '.join(destinations[:10])}...")
                 logger.info(f"   Note: These are from Inspiration Search cache - Flight Offers Search will validate actual availability")
                 
@@ -1117,6 +1133,15 @@ class FlightSearch:
                     self._save_cached_destinations(origin, destinations)
             else:
                 logger.warning(f"   ⚠️  No destinations found from Flight Inspiration Search API")
+                logger.info(f"   Trying Airport Routes API as fallback...")
+                
+                # Fallback to Airport Routes API if Inspiration Search returns no results
+                destinations = self._get_destinations_from_airport_routes(origin, non_stop)
+                if destinations:
+                    # Save to cache for future use
+                    self._save_cached_destinations(origin, destinations)
+                    return destinations
+                
                 logger.warning(f"   This is expected in test environment - Inspiration Search uses cached data")
                 logger.warning(f"   Test environment may not have data for origin {format_airport_code(origin)} (especially TLV (Tel Aviv))")
                 logger.info(f"   Returning empty list - caller will handle fallback to predefined list")
@@ -1161,7 +1186,15 @@ class FlightSearch:
                 logger.error(f"   Check your API key permissions in the Amadeus Developer Portal")
             
             # If it's a 404, it might be due to limited test data or no data available
+            # Try Airport Routes API as fallback
             if status_code == 404:
+                logger.info(f"   Trying Airport Routes API as fallback for 404 error...")
+                destinations = self._get_destinations_from_airport_routes(origin, non_stop)
+                if destinations:
+                    # Save to cache for future use
+                    self._save_cached_destinations(origin, destinations)
+                    return destinations
+                
                 if self.environment == "test":
                     logger.warning(f"   ⚠️  404 error: No data available for origin {format_airport_code(origin)} in test environment")
                     logger.warning(f"   This is expected - Amadeus test environment has limited cached data")
@@ -1219,6 +1252,15 @@ class FlightSearch:
             logger.debug(f"   [DEBUG] Full exception: {e}")
             import traceback
             logger.debug(f"   [DEBUG] Traceback:\n{traceback.format_exc()}")
+            
+            # Try Airport Routes API as fallback for unexpected errors
+            logger.info(f"   Trying Airport Routes API as fallback for unexpected error...")
+            destinations = self._get_destinations_from_airport_routes(origin, non_stop)
+            if destinations:
+                # Save to cache for future use
+                self._save_cached_destinations(origin, destinations)
+                return destinations
+            
             logger.info(f"   Returning empty list - caller will handle fallback to predefined list")
             return []
         
@@ -1232,9 +1274,235 @@ class FlightSearch:
         
         return destinations
     
+    def _get_destinations_from_airport_routes(
+        self, 
+        origin: str, 
+        non_stop: bool = False
+    ) -> List[str]:
+        """
+        Get destinations using Amadeus Airport Routes API (direct destinations)
+        This API returns all direct destinations (non-stop flights) from a specific airport.
+        Useful as a fallback when Flight Inspiration Search API returns no results.
+        
+        Reference: https://developers.amadeus.com/self-service/category/flights/api-doc/airport-routes
+        
+        Args:
+            origin: IATA code of origin airport
+            non_stop: If True, only return destinations with direct flights (this API always returns direct destinations)
+        
+        Returns:
+            List of destination IATA codes (direct destinations only)
+        """
+        destinations = []
+        
+        try:
+            logger.info(f"   Searching for direct destinations from {format_airport_code(origin)} using Airport Routes API...")
+            
+            # Airport Routes API endpoint: GET /v1/airport/direct-destinations?departureAirportCode=XXX
+            # This API returns all direct destinations (non-stop flights) from the specified airport
+            # Note: This API always returns direct destinations, so non_stop parameter is always True
+            api_params = {
+                'departureAirportCode': origin.upper()
+            }
+            
+            logger.debug(f"   [DEBUG] ===== Airport Routes API Call =====")
+            logger.debug(f"   [DEBUG] Endpoint: airport.direct_destinations.get()")
+            logger.debug(f"   [DEBUG] Parameters: {api_params}")
+            logger.debug(f"   [DEBUG] Origin: {format_airport_code(origin)}")
+            logger.debug(f"   [DEBUG] Non-stop only: {non_stop}")
+            logger.debug(f"   [DEBUG] Environment: {self.environment}")
+            logger.debug(f"   [DEBUG] Making authenticated API call...")
+            
+            # Make the API call - SDK will handle authentication automatically
+            # The endpoint is: airport.direct_destinations.get()
+            response = self.amadeus.airport.direct_destinations.get(**api_params)
+            
+            # DEBUG: Log comprehensive response details
+            logger.debug(f"   [DEBUG] ===== API Response =====")
+            logger.debug(f"   [DEBUG] Response type: {type(response)}")
+            logger.debug(f"   [DEBUG] Response object: {response}")
+            logger.debug(f"   [DEBUG] Has 'data' attribute: {hasattr(response, 'data')}")
+            
+            if hasattr(response, 'data'):
+                logger.debug(f"   [DEBUG] Data type: {type(response.data)}")
+                logger.debug(f"   [DEBUG] Data is None: {response.data is None}")
+                logger.debug(f"   [DEBUG] Data length: {len(response.data) if response.data else 0}")
+                
+                if response.data:
+                    logger.debug(f"   [DEBUG] Full response.data: {response.data}")
+                    logger.debug(f"   [DEBUG] First item (full): {response.data[0] if len(response.data) > 0 else 'N/A'}")
+                    logger.debug(f"   [DEBUG] First item type: {type(response.data[0]) if len(response.data) > 0 else 'N/A'}")
+                    if len(response.data) > 0 and isinstance(response.data[0], dict):
+                        logger.debug(f"   [DEBUG] First item keys: {list(response.data[0].keys())}")
+                        logger.debug(f"   [DEBUG] First item full structure: {json.dumps(response.data[0], indent=2, ensure_ascii=False)}")
+                    if len(response.data) > 1:
+                        logger.debug(f"   [DEBUG] Second item (full): {response.data[1]}")
+                else:
+                    logger.debug(f"   [DEBUG] response.data is empty or None")
+            else:
+                logger.debug(f"   [DEBUG] Response does not have 'data' attribute")
+                logger.debug(f"   [DEBUG] Available attributes: {dir(response)}")
+            
+            # Try to get raw response if available
+            if hasattr(response, 'response'):
+                logger.debug(f"   [DEBUG] Raw response object: {response.response}")
+            if hasattr(response, 'result'):
+                logger.debug(f"   [DEBUG] Response result: {response.result}")
+            
+            if response.data:
+                logger.info(f"   ✓ Found {len(response.data)} direct destination(s) from Airport Routes API")
+                
+                # Use a set to automatically deduplicate destinations
+                destinations_set = set()
+                
+                # According to Amadeus Airport Routes API documentation:
+                # Reference: https://developers.amadeus.com/self-service/category/flights/api-doc/airport-routes/api-reference
+                # Response contains a list of destination objects
+                # Each destination object may contain: 'destination' (IATA code) or 'iataCode' field
+                logger.debug(f"   [DEBUG] ===== Processing {len(response.data)} destination(s) =====")
+                for idx, destination_info in enumerate(response.data):
+                    logger.debug(f"   [DEBUG] --- Processing item {idx + 1}/{len(response.data)} ---")
+                    logger.debug(f"   [DEBUG] Item type: {type(destination_info)}")
+                    logger.debug(f"   [DEBUG] Item value: {destination_info}")
+                    
+                    # Try multiple possible field names for destination code
+                    destination_code = None
+                    if isinstance(destination_info, dict):
+                        logger.debug(f"   [DEBUG] Item is dict with keys: {list(destination_info.keys())}")
+                        logger.debug(f"   [DEBUG] Full item JSON: {json.dumps(destination_info, indent=2, ensure_ascii=False)}")
+                        
+                        # Try 'destination' field first (most common)
+                        destination_code = destination_info.get('destination')
+                        logger.debug(f"   [DEBUG] Trying 'destination' field: {destination_code}")
+                        
+                        # If not found, try 'iataCode' (alternative field name)
+                        if not destination_code:
+                            destination_code = destination_info.get('iataCode')
+                            logger.debug(f"   [DEBUG] Trying 'iataCode' field: {destination_code}")
+                        
+                        # If still not found, try 'destinationCode'
+                        if not destination_code:
+                            destination_code = destination_info.get('destinationCode')
+                            logger.debug(f"   [DEBUG] Trying 'destinationCode' field: {destination_code}")
+                        
+                        # If still not found, try other common variations
+                        if not destination_code:
+                            destination_code = destination_info.get('code')
+                            logger.debug(f"   [DEBUG] Trying 'code' field: {destination_code}")
+                        
+                        if not destination_code:
+                            destination_code = destination_info.get('airportCode')
+                            logger.debug(f"   [DEBUG] Trying 'airportCode' field: {destination_code}")
+                        
+                        # If still not found, log the structure for debugging
+                        if not destination_code:
+                            logger.debug(f"   [DEBUG] ⚠️  Could not find destination code in item!")
+                            logger.debug(f"   [DEBUG] All available keys: {list(destination_info.keys())}")
+                            logger.debug(f"   [DEBUG] Full item structure: {json.dumps(destination_info, indent=2, ensure_ascii=False)}")
+                    elif isinstance(destination_info, str):
+                        # If the response is a simple list of strings (IATA codes)
+                        destination_code = destination_info
+                        logger.debug(f"   [DEBUG] Item is string (IATA code): {destination_code}")
+                    else:
+                        logger.debug(f"   [DEBUG] ⚠️  Unexpected item type: {type(destination_info)}")
+                        logger.debug(f"   [DEBUG] Item value: {destination_info}")
+                    
+                    if destination_code:
+                        logger.debug(f"   [DEBUG] ✓ Extracted destination code: {destination_code}")
+                        # Add destination to set (automatically deduplicates)
+                        destinations_set.add(destination_code.upper())
+                    else:
+                        logger.debug(f"   [DEBUG] ✗ Skipping item - no destination code found")
+                
+                # Convert set to sorted list for consistent output
+                destinations = sorted(list(destinations_set))
+                
+                logger.info(f"   ✓ Extracted {len(destinations)} unique direct destination IATA code(s)")
+                logger.info(f"   Sample destinations: {', '.join(destinations[:10])}...")
+                logger.info(f"   Note: Airport Routes API returns direct destinations only (non-stop flights)")
+                logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
+            else:
+                logger.warning(f"   ⚠️  No destinations found from Airport Routes API")
+                
+        except ResponseError as error:
+            # Extract error details with comprehensive debugging
+            logger.debug(f"   [DEBUG] ===== Airport Routes API Error =====")
+            logger.debug(f"   [DEBUG] Error type: {type(error)}")
+            logger.debug(f"   [DEBUG] Error object: {error}")
+            logger.debug(f"   [DEBUG] Error attributes: {dir(error)}")
+            
+            status_code = 'Unknown'
+            error_code = 'Unknown'
+            error_title = 'Unknown'
+            error_detail = 'Unknown'
+            error_body = None
+            error_url = None
+            
+            if hasattr(error, 'response'):
+                logger.debug(f"   [DEBUG] Error has 'response' attribute")
+                logger.debug(f"   [DEBUG] Response type: {type(error.response)}")
+                logger.debug(f"   [DEBUG] Response object: {error.response}")
+                status_code = error.response.status_code if hasattr(error.response, 'status_code') else 'Unknown'
+                error_body = error.response.body if hasattr(error.response, 'body') else None
+                error_url = error.response.request.url if hasattr(error.response, 'request') and hasattr(error.response.request, 'url') else None
+                logger.debug(f"   [DEBUG] Response status_code: {status_code}")
+                logger.debug(f"   [DEBUG] Response body: {error_body}")
+                logger.debug(f"   [DEBUG] Request URL: {error_url}")
+            else:
+                logger.debug(f"   [DEBUG] Error does not have 'response' attribute")
+            
+            error_code = error.code if hasattr(error, 'code') else 'Unknown'
+            error_title = error.title if hasattr(error, 'title') else 'Unknown'
+            error_detail = error.description() if hasattr(error, 'description') else str(error)
+            
+            logger.debug(f"   [DEBUG] Error code: {error_code}")
+            logger.debug(f"   [DEBUG] Error title: {error_title}")
+            logger.debug(f"   [DEBUG] Error detail: {error_detail}")
+            
+            logger.warning(f"   ⚠️  Airport Routes API returned an error")
+            logger.warning(f"   Status Code: {status_code}")
+            logger.warning(f"   Error Code: {error_code}")
+            logger.warning(f"   Error Title: {error_title}")
+            logger.warning(f"   Error Detail: {error_detail}")
+            
+            # Parse error body if available
+            if error_body:
+                try:
+                    if isinstance(error_body, str):
+                        error_data = json.loads(error_body)
+                    else:
+                        error_data = error_body
+                    logger.debug(f"   [DEBUG] Parsed error body: {json.dumps(error_data, indent=2, ensure_ascii=False)}")
+                except Exception as parse_error:
+                    logger.debug(f"   [DEBUG] Could not parse error body: {parse_error}")
+                    logger.debug(f"   [DEBUG] Raw error body: {error_body}")
+            
+            # Handle 401 authentication errors
+            if status_code == 401:
+                logger.warning(f"   ⚠️  AUTHENTICATION ERROR: Missing or invalid Authorization header")
+                logger.warning(f"   Please verify your API credentials in config.yaml")
+                logger.warning(f"   Make sure your API key has access to 'Airport Routes' API")
+            
+            # If it's a 404, the airport might not have route data
+            if status_code == 404:
+                logger.warning(f"   ⚠️  404 error: No route data available for origin {format_airport_code(origin)}")
+                logger.warning(f"   This may indicate that the Airport Routes API has no data for this airport")
+            
+            logger.debug(f"   [DEBUG] Airport Routes API error: {error}")
+            
+        except Exception as e:
+            logger.warning(f"   ⚠️  Unexpected error using Airport Routes API: {type(e).__name__}")
+            logger.warning(f"   Error: {str(e)}")
+            logger.debug(f"   [DEBUG] Full exception: {e}")
+            import traceback
+            logger.debug(f"   [DEBUG] Traceback:\n{traceback.format_exc()}")
+        
+        return destinations
+    
     def _get_predefined_destinations(self) -> List[str]:
         """
         Get predefined list of popular destinations (fallback)
+        Returns deduplicated list sorted alphabetically
         """
         # Popular European destinations (IATA codes) - prioritized by likelihood
         # of having flights from both TLV and ALC
@@ -1251,8 +1519,13 @@ class FlightSearch:
             "HEL", "REK", "OPO"
         ]
         
-        logger.info(f"   Using {len(popular_destinations)} predefined destinations")
-        return popular_destinations
+        # Deduplicate and sort for consistency (convert to uppercase)
+        unique_destinations = sorted(list(set(dest.upper() for dest in popular_destinations)))
+        
+        if len(unique_destinations) < len(popular_destinations):
+            logger.debug(f"   Deduplicated predefined destinations: {len(popular_destinations)} → {len(unique_destinations)}")
+        logger.info(f"   Using {len(unique_destinations)} predefined destinations")
+        return unique_destinations
     
     def get_common_destinations(
         self,
@@ -1360,9 +1633,11 @@ class FlightSearch:
             predefined = self._get_predefined_destinations()
             return predefined
         
+        # Deduplicate destinations from both origins before finding intersection
+        dest1_set = set(dest.upper() for dest in dest1)
+        dest2_set = set(dest.upper() for dest in dest2)
+        
         # Both origins returned results - find intersection
-        dest1_set = set(dest1)
-        dest2_set = set(dest2)
         common = sorted(list(dest1_set.intersection(dest2_set)))
         logger.info(f"   Common destinations (intersection): {len(common)}")
         
@@ -1374,7 +1649,7 @@ class FlightSearch:
             logger.warning(f"   This may indicate test environment limitations or incomplete Inspiration Search data")
             logger.info(f"   Using union of both lists as fallback...")
             common = sorted(list(dest1_set.union(dest2_set)))
-            logger.info(f"   Using all destinations from both origins: {len(common)}")
+            logger.info(f"   Using all destinations from both origins: {len(common)} unique")
             logger.info(f"   Note: Flight Offers Search will validate which destinations are actually reachable")
         
         return common
