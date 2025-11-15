@@ -27,7 +27,8 @@ class DestinationFinder:
         min_departure_time_return: str = None,
         max_destinations: int = 50,
         use_dynamic_destinations: bool = True,
-        max_flight_duration_hours: float = 0
+        max_flight_duration_hours: float = 0,
+        nearby_airports_radius_km: int = 0
     ) -> List[Dict]:
         """
         Find destinations where both people can meet with matching flights

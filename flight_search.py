@@ -75,6 +75,76 @@ class FlightSearch:
             logger.debug(f"Pre-authentication call completed: {type(e).__name__}")
             # Don't raise - authentication might still work for other endpoints
     
+    def get_nearby_airports(self, airport_code: str, radius_km: int = 200) -> List[str]:
+        """
+        Get nearby airports within a specified radius using Amadeus Airport Nearest Relevant API
+        
+        Args:
+            airport_code: IATA code of the origin airport
+            radius_km: Search radius in kilometers (default: 200)
+            
+        Returns:
+            List of IATA codes for nearby airports (including the original airport)
+        """
+        if radius_km <= 0:
+            return [airport_code.upper()]
+        
+        nearby_airports = [airport_code.upper()]  # Always include the original airport
+        
+        try:
+            logger.debug(f"Searching for airports within {radius_km} km of {airport_code}")
+            
+            # Use Amadeus Airport Nearest Relevant API
+            # This API finds airports within a radius of a given location
+            response = self.amadeus.reference_data.locations.airports.get(
+                latitude=0,  # Will be determined from airport code
+                longitude=0,  # Will be determined from airport code
+                radius=radius_km
+            )
+            
+            # Actually, the Airport Nearest Relevant API requires lat/lon, not airport code
+            # We need to get coordinates first, or use a different approach
+            # Let's use airportsdata to get coordinates, then use Amadeus API
+            
+            import airportsdata
+            try:
+                airports_db = airportsdata.load('IATA')
+                airport_info = airports_db.get(airport_code.upper())
+                
+                if airport_info and 'lat' in airport_info and 'lon' in airport_info:
+                    lat = airport_info['lat']
+                    lon = airport_info['lon']
+                    
+                    logger.debug(f"Found coordinates for {airport_code}: {lat}, {lon}")
+                    
+                    # Now use Amadeus API to find nearby airports
+                    response = self.amadeus.reference_data.locations.airports.get(
+                        latitude=lat,
+                        longitude=lon,
+                        radius=radius_km
+                    )
+                    
+                    if response.data:
+                        for airport in response.data:
+                            iata_code = airport.get('iataCode')
+                            if iata_code and iata_code.upper() != airport_code.upper():
+                                nearby_airports.append(iata_code.upper())
+                        
+                        logger.info(f"  → Found {len(nearby_airports)} airport(s) within {radius_km} km of {airport_code}: {', '.join(nearby_airports)}")
+                    else:
+                        logger.debug(f"  → No nearby airports found via API, using only {airport_code}")
+                else:
+                    logger.debug(f"  → Could not get coordinates for {airport_code}, using only specified airport")
+            except Exception as e:
+                logger.debug(f"  → Error getting coordinates: {e}, using only {airport_code}")
+                
+        except ResponseError as error:
+            logger.debug(f"  → Airport Nearest Relevant API error: {error}, using only {airport_code}")
+        except Exception as e:
+            logger.debug(f"  → Error finding nearby airports: {e}, using only {airport_code}")
+        
+        return nearby_airports
+    
     def search_flights(
         self,
         origin: str,
@@ -83,7 +153,8 @@ class FlightSearch:
         return_date: str,
         max_stops: int = 0,
         min_departure_time_outbound: Optional[str] = None,
-        min_departure_time_return: Optional[str] = None
+        min_departure_time_return: Optional[str] = None,
+        nearby_airports_radius_km: int = 0
     ) -> List[Dict]:
         """
         Search for round-trip flights
@@ -96,27 +167,59 @@ class FlightSearch:
             max_stops: Maximum number of stops
             min_departure_time_outbound: Minimum departure time for outbound flights (HH:MM)
             min_departure_time_return: Minimum departure time for return flights (HH:MM)
+            nearby_airports_radius_km: Search radius in km for nearby airports (0 = disabled)
         
         Returns:
             List of flight offers
         """
         logger.debug(f"Searching flights: {origin} → {destination} ({departure_date} to {return_date})")
         
+        # Get nearby airports if radius is specified
+        origins_to_search = [origin.upper()]
+        if nearby_airports_radius_km > 0:
+            nearby_airports = self.get_nearby_airports(origin, nearby_airports_radius_km)
+            origins_to_search = nearby_airports
+            logger.info(f"  → Searching from {len(origins_to_search)} airport(s): {', '.join(origins_to_search)}")
+        
+        all_flights = []
+        
+        for search_origin in origins_to_search:
+            try:
+                # Search for flight offers
+                logger.debug(f"Calling Amadeus API for {search_origin} → {destination}")
+                response = self.amadeus.shopping.flight_offers_search.get(
+                    originLocationCode=search_origin,
+                    destinationLocationCode=destination,
+                    departureDate=departure_date,
+                    returnDate=return_date,
+                    adults=1,
+                    max=250  # Maximum results
+                )
+            
+                flights = response.data if response.data else []
+                logger.info(f"  → Amadeus API returned {len(flights)} flight(s) for {search_origin} → {destination}")
+                
+                # Add origin information to each flight for tracking
+                for flight in flights:
+                    flight['_search_origin'] = search_origin
+                
+                all_flights.extend(flights)
+                
+            except ResponseError as error:
+                logger.debug(f"  → API error for {search_origin} → {destination}: {error}")
+                continue
+            except Exception as e:
+                logger.debug(f"  → Error searching {search_origin} → {destination}: {e}")
+                continue
+        
+        flights = all_flights
+        logger.info(f"  → Total flights found from all airports: {len(flights)} for {origin} → {destination}")
+        
+        if not flights:
+            # If no flights found, return empty list
+            return []
+        
         try:
-            # Search for flight offers
-            logger.debug(f"Calling Amadeus API for {origin} → {destination}")
-            response = self.amadeus.shopping.flight_offers_search.get(
-                originLocationCode=origin,
-                destinationLocationCode=destination,
-                departureDate=departure_date,
-                returnDate=return_date,
-                adults=1,
-                max=250  # Maximum results
-            )
-            
-            flights = response.data if response.data else []
-            logger.info(f"  → Amadeus API returned {len(flights)} flight(s) for {origin} → {destination}")
-            
             initial_count = len(flights)
             
             # Filter by stops
@@ -762,7 +865,8 @@ class FlightSearch:
         max_stops: int = 0,
         arrival_tolerance_hours: int = 3,
         min_departure_time_outbound: Optional[str] = None,
-        min_departure_time_return: Optional[str] = None
+        min_departure_time_return: Optional[str] = None,
+        nearby_airports_radius_km: int = 0
     ) -> List[Dict]:
         """
         Find matching flights for a destination - this is the source of truth for route availability

@@ -105,6 +105,7 @@ def main():
     use_dynamic_destinations = search_config.get('use_dynamic_destinations', True)
     max_flight_duration = float(search_config.get('max_flight_duration_hours', 0))
     cache_expiration_days = search_config.get('destination_cache_expiration_days', 30)
+    nearby_airports_radius_km = search_config.get('nearby_airports_radius_km', 0)
     
     # Timezones are now automatically detected using airportsdata library
     # No manual configuration needed
@@ -179,6 +180,8 @@ def main():
         print(f"   Min Departure Time (Outbound): {min_departure_time_outbound}")
     if min_departure_time_return:
         print(f"   Min Departure Time (Return): {min_departure_time_return}")
+    if nearby_airports_radius_km > 0:
+        print(f"   Nearby Airports Radius: {nearby_airports_radius_km} km")
     print()
     
     # Find matching destinations
