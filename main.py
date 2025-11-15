@@ -2,7 +2,10 @@
 """
 Flight Search Application
 Finds destinations where two people can meet with matching flight arrivals
+
+Version: 1.0.0
 """
+__version__ = "1.0.0"
 import yaml
 import os
 import sys
