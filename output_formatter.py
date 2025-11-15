@@ -6,6 +6,17 @@ from datetime import datetime
 import csv
 import os
 import pytz
+import airportsdata
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Load airport database for automatic timezone detection
+try:
+    airports = airportsdata.load('IATA')  # Load IATA code database
+except Exception as e:
+    logger.warning(f"Could not load airports database: {e}. Will use fallback timezone mapping.")
+    airports = None
 
 
 class OutputFormatter:
@@ -61,25 +72,47 @@ class OutputFormatter:
         'OPO': 'Europe/Lisbon',  # Porto
     }
     
-    # Class variable to store custom timezones from config
-    _custom_timezones = {}
-    
-    @classmethod
-    def set_custom_timezones(cls, timezone_config: Dict[str, str]):
-        """Set custom timezones from config file"""
-        cls._custom_timezones = timezone_config or {}
-    
     @staticmethod
     def get_timezone_for_airport(airport_code: str) -> Optional[pytz.BaseTzInfo]:
-        """Get timezone for an airport code"""
-        # First check custom timezones from config, then defaults
-        timezone_name = OutputFormatter._custom_timezones.get(airport_code.upper()) or \
-                       OutputFormatter._AIRPORT_TIMEZONES.get(airport_code.upper())
+        """
+        Get timezone for an airport code automatically using airportsdata library.
+        Falls back to hardcoded mapping if library lookup fails.
+        
+        Args:
+            airport_code: IATA airport code (e.g., 'TLV', 'ALC')
+            
+        Returns:
+            pytz timezone object or None if not found
+        """
+        airport_code_upper = airport_code.upper()
+        
+        # Try automatic detection using airportsdata library
+        if airports is not None:
+            try:
+                airport_info = airports.get(airport_code_upper)
+                if airport_info and 'timezone' in airport_info:
+                    timezone_name = airport_info['timezone']
+                    try:
+                        tz = pytz.timezone(timezone_name)
+                        logger.debug(f"Auto-detected timezone for {airport_code_upper}: {timezone_name}")
+                        return tz
+                    except pytz.exceptions.UnknownTimeZoneError:
+                        logger.debug(f"Unknown timezone '{timezone_name}' for {airport_code_upper}, trying fallback")
+            except (KeyError, AttributeError, TypeError) as e:
+                logger.debug(f"Airport {airport_code_upper} not found in airports database: {e}")
+        
+        # Fallback to hardcoded mapping if automatic detection fails
+        timezone_name = OutputFormatter._AIRPORT_TIMEZONES.get(airport_code_upper)
         if timezone_name:
             try:
-                return pytz.timezone(timezone_name)
-            except:
+                tz = pytz.timezone(timezone_name)
+                logger.debug(f"Using fallback timezone for {airport_code_upper}: {timezone_name}")
+                return tz
+            except pytz.exceptions.UnknownTimeZoneError:
+                logger.warning(f"Invalid timezone '{timezone_name}' in fallback mapping for {airport_code_upper}")
                 return None
+        
+        logger.warning(f"Could not determine timezone for airport {airport_code_upper}")
         return None
     
     @staticmethod

@@ -106,11 +106,8 @@ def main():
     max_flight_duration = float(search_config.get('max_flight_duration_hours', 0))
     cache_expiration_days = search_config.get('destination_cache_expiration_days', 30)
     
-    # Load timezone configuration
-    timezone_config = config.get('timezones', {})
-    if timezone_config:
-        OutputFormatter.set_custom_timezones(timezone_config)
-        logger.debug(f"Loaded {len(timezone_config)} custom timezone(s) from config")
+    # Timezones are now automatically detected using airportsdata library
+    # No manual configuration needed
     
     # Initialize flight search
     try:
