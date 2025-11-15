@@ -289,11 +289,27 @@ class FlightSearch:
         try:
             logger.info(f"   Searching for destinations from {origin} using Flight Inspiration Search API...")
             
+            # DEBUG: Log exact API call details
+            logger.debug(f"   [DEBUG] API Call Details:")
+            logger.debug(f"   [DEBUG]   - Endpoint: shopping.flight_destinations.get")
+            logger.debug(f"   [DEBUG]   - Origin: {origin}")
+            logger.debug(f"   [DEBUG]   - Hostname: {self.amadeus.client.hostname if hasattr(self.amadeus, 'client') else 'Unknown'}")
+            
             # Use Flight Destinations API (Flight Inspiration Search)
             # Note: This API doesn't require departureDate, it finds cheapest destinations
             response = self.amadeus.shopping.flight_destinations.get(
                 origin=origin
             )
+            
+            # DEBUG: Log response details
+            logger.debug(f"   [DEBUG] API Response:")
+            logger.debug(f"   [DEBUG]   - Response type: {type(response)}")
+            logger.debug(f"   [DEBUG]   - Has data attribute: {hasattr(response, 'data')}")
+            if hasattr(response, 'data'):
+                logger.debug(f"   [DEBUG]   - Data type: {type(response.data)}")
+                logger.debug(f"   [DEBUG]   - Data length: {len(response.data) if response.data else 0}")
+                if response.data:
+                    logger.debug(f"   [DEBUG]   - First item sample: {response.data[0] if len(response.data) > 0 else 'N/A'}")
             
             if response.data:
                 logger.info(f"   ✓ Found {len(response.data)} destination(s) from Amadeus API")
@@ -308,16 +324,39 @@ class FlightSearch:
                 logger.info(f"   ✓ Extracted {len(destinations)} destination IATA code(s)")
                 logger.info(f"   Sample destinations: {', '.join(destinations[:10])}...")
             else:
-                logger.warning(f"   No destinations found from Flight Inspiration Search API")
+                logger.error(f"   ERROR: No destinations found from Flight Inspiration Search API")
+                logger.debug(f"   [DEBUG] Response.data is empty or None")
                 logger.info(f"   Falling back to predefined list")
                 return self._get_predefined_destinations()
                 
         except ResponseError as error:
-            # Extract error details
-            error_code = error.response.status_code if hasattr(error, 'response') else 'Unknown'
-            error_body = error.response.body if hasattr(error, 'response') and hasattr(error.response, 'body') else None
+            # Extract error details with full debug information
+            logger.error(f"   ERROR: Flight Inspiration Search API call failed")
             
-            logger.warning(f"   Flight Inspiration Search API error: Status {error_code}")
+            # DEBUG: Log full error details
+            logger.debug(f"   [DEBUG] Exception Type: ResponseError")
+            logger.debug(f"   [DEBUG] Exception: {error}")
+            
+            error_code = 'Unknown'
+            error_body = None
+            error_headers = None
+            error_url = None
+            
+            if hasattr(error, 'response'):
+                error_code = error.response.status_code if hasattr(error.response, 'status_code') else 'Unknown'
+                error_body = error.response.body if hasattr(error.response, 'body') else None
+                error_headers = error.response.headers if hasattr(error.response, 'headers') else None
+                error_url = error.response.request.url if hasattr(error.response, 'request') and hasattr(error.response.request, 'url') else None
+                
+                logger.debug(f"   [DEBUG] Error Response Details:")
+                logger.debug(f"   [DEBUG]   - Status Code: {error_code}")
+                logger.debug(f"   [DEBUG]   - URL: {error_url}")
+                logger.debug(f"   [DEBUG]   - Headers: {error_headers}")
+                logger.debug(f"   [DEBUG]   - Body type: {type(error_body)}")
+                logger.debug(f"   [DEBUG]   - Body content: {error_body}")
+            
+            logger.error(f"   ERROR: API returned status {error_code}")
+            
             if error_body:
                 import json
                 try:
@@ -325,21 +364,37 @@ class FlightSearch:
                         error_data = json.loads(error_body)
                     else:
                         error_data = error_body
+                    
+                    logger.debug(f"   [DEBUG] Parsed error data: {error_data}")
+                    
                     if 'errors' in error_data and len(error_data['errors']) > 0:
                         first_error = error_data['errors'][0]
-                        logger.warning(f"   Error: {first_error.get('title', 'N/A')} - {first_error.get('detail', 'N/A')}")
-                except:
-                    pass
+                        error_title = first_error.get('title', 'N/A')
+                        error_detail = first_error.get('detail', 'N/A')
+                        error_code_detail = first_error.get('code', 'N/A')
+                        logger.error(f"   ERROR: {error_title} - {error_detail}")
+                        logger.debug(f"   [DEBUG] Error code: {error_code_detail}")
+                        logger.debug(f"   [DEBUG] Full error object: {first_error}")
+                    else:
+                        logger.debug(f"   [DEBUG] Error data structure: {error_data}")
+                except Exception as parse_error:
+                    logger.debug(f"   [DEBUG] Failed to parse error body: {parse_error}")
+                    logger.debug(f"   [DEBUG] Raw error body: {error_body}")
             
             logger.info(f"   Falling back to predefined list")
             return self._get_predefined_destinations()
         except Exception as e:
-            logger.warning(f"   Error using Flight Inspiration Search API: {e}")
+            logger.error(f"   ERROR: Unexpected error using Flight Inspiration Search API: {type(e).__name__}")
+            logger.error(f"   ERROR: {str(e)}")
+            logger.debug(f"   [DEBUG] Full exception: {e}")
+            import traceback
+            logger.debug(f"   [DEBUG] Traceback:\n{traceback.format_exc()}")
             logger.info(f"   Falling back to predefined list")
             return self._get_predefined_destinations()
         
         if not destinations:
-            logger.warning(f"   No destinations found, falling back to predefined list")
+            logger.error(f"   ERROR: No destinations extracted from API response")
+            logger.info(f"   Falling back to predefined list")
             return self._get_predefined_destinations()
         
         logger.info(f"   Total destinations discovered: {len(destinations)}")

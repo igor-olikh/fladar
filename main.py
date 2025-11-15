@@ -11,12 +11,33 @@ from flight_search import FlightSearch
 from destination_finder import DestinationFinder
 from output_formatter import OutputFormatter
 import logging
+from datetime import datetime
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+# Configure logging with both console and file handlers
+log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+# Create debug logs directory if it doesn't exist
+os.makedirs('debug_logs', exist_ok=True)
+
+# Create file handler for debug logs
+log_filename = f"debug_logs/flight_search_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+file_handler = logging.FileHandler(log_filename, encoding='utf-8')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter(log_format))
+
+# Create console handler (INFO level for console, DEBUG for file)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter(log_format))
+
+# Configure root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+root_logger.addHandler(file_handler)
+root_logger.addHandler(console_handler)
+
 logger = logging.getLogger(__name__)
+logger.info(f"Debug logs will be saved to: {log_filename}")
 
 
 def load_config(config_path: str = "config.yaml") -> dict:

@@ -38,6 +38,10 @@ poetry.lock
 *.csv
 flight_results.csv
 
+# Debug logs
+debug_logs/
+*.log
+
 # Config with secrets (keep template)
 config.yaml
 
