@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 # Airport code to city name mapping - loaded from external file
 _AIRPORT_NAMES = None
 
+# Airport aliases mapping (non-airport codes -> nearest airport codes) - loaded from external file
+_AIRPORT_ALIASES = None
+
 
 def _load_airport_names():
     """Load airport names from external JSON file"""
@@ -55,6 +58,62 @@ def format_airport_code(code: str) -> str:
     if city_name:
         return f"{code} ({city_name})"
     return code
+
+
+def _load_airport_aliases():
+    """Load airport aliases from external JSON file (maps non-airport codes to nearest airports)"""
+    global _AIRPORT_ALIASES
+    if _AIRPORT_ALIASES is not None:
+        return _AIRPORT_ALIASES
+    
+    # Try to load from data/destinations_cache/airport_aliases.json
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    aliases_file = os.path.join(current_dir, 'data', 'destinations_cache', 'airport_aliases.json')
+    
+    # If not found, try relative to project root
+    if not os.path.exists(aliases_file):
+        aliases_file = os.path.join(current_dir, '..', 'data', 'destinations_cache', 'airport_aliases.json')
+        aliases_file = os.path.normpath(aliases_file)
+    
+    try:
+        if os.path.exists(aliases_file):
+            with open(aliases_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Remove comment keys
+                _AIRPORT_ALIASES = {k: v for k, v in data.items() if not k.startswith('_')}
+                logger.debug(f"Loaded {len(_AIRPORT_ALIASES)} airport aliases from {aliases_file}")
+        else:
+            logger.debug(f"Airport aliases file not found: {aliases_file}, using empty mapping")
+            _AIRPORT_ALIASES = {}
+    except Exception as e:
+        logger.warning(f"Error loading airport aliases from {aliases_file}: {e}, using empty mapping")
+        _AIRPORT_ALIASES = {}
+    
+    return _AIRPORT_ALIASES
+
+
+def resolve_airport_code(code: str) -> str:
+    """
+    Resolve airport code - if it's a non-airport code (like railway station),
+    return the nearest airport code from the aliases mapping.
+    
+    Args:
+        code: Airport code or non-airport code (e.g., XTI for railway station)
+    
+    Returns:
+        Actual airport code to use for flight search
+    """
+    aliases = _load_airport_aliases()
+    code_upper = code.upper()
+    
+    # Check if this code has an alias (non-airport -> airport mapping)
+    if code_upper in aliases:
+        airport_code = aliases[code_upper]
+        logger.debug(f"Resolved non-airport code {code_upper} to airport {airport_code}")
+        return airport_code
+    
+    # No alias found, return original code (assume it's already an airport code)
+    return code_upper
 
 
 class FlightSearch:
@@ -297,6 +356,10 @@ class FlightSearch:
             List of flight offers
         """
         logger.debug(f"Searching flights: {format_airport_code(origin)} → {format_airport_code(destination)} ({departure_date} to {return_date})")
+        
+        # Use resolved codes for search
+        origin = origin_resolved
+        destination = destination_resolved
         
         # Get nearby airports if radius is specified
         origins_to_search = [origin.upper()]
@@ -1139,9 +1202,9 @@ class FlightSearch:
         matching_pairs.sort(key=lambda x: x['total_price'])
         
         if matching_pairs:
-            logger.info(f"   ✓ Found {len(matching_pairs)} matching flight pair(s) for {format_airport_code(destination)}")
+            logger.info(f"   ✓ Found {len(matching_pairs)} matching flight pair(s) for {format_airport_code(destination_resolved)}")
         else:
-            logger.info(f"   ✗ No matching flight pairs found for {format_airport_code(destination)}")
+            logger.info(f"   ✗ No matching flight pairs found for {format_airport_code(destination_resolved)}")
         
         return matching_pairs
     
