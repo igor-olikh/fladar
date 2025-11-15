@@ -874,7 +874,8 @@ class FlightSearch:
         origin2: str,
         departure_date: str,
         use_dynamic: bool = True,
-        max_duration_hours: float = 0
+        max_duration_hours: float = 0,
+        non_stop: bool = False
     ) -> List[str]:
         """
         Get destinations that are reachable from both origins
@@ -885,6 +886,7 @@ class FlightSearch:
             departure_date: Departure date (YYYY-MM-DD)
             use_dynamic: If True, use dynamic discovery
             max_duration_hours: Maximum flight duration in hours
+            non_stop: If True, only get destinations with direct flights (when max_stops=0)
         
         Returns:
             List of common destination IATA codes
