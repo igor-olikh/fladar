@@ -666,14 +666,20 @@ class FlightSearch:
                 logger.error(f"   Make sure your API key has access to 'Flight Inspiration Search' API")
                 logger.error(f"   Check your API key permissions in the Amadeus Developer Portal")
             
-            # If it's a 404, it might be due to limited test data
+            # If it's a 404, it might be due to limited test data or no data available
             if status_code == 404:
-                logger.warning(f"   ⚠️  404 error: No data available for origin {origin} in test environment")
-                logger.warning(f"   This is expected - Amadeus test environment has limited cached data")
-                logger.warning(f"   TLV (Tel Aviv) is not in the test cache, which is why you see this error")
-                logger.warning(f"   The application will fall back to predefined destinations")
-                logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
-                logger.info(f"   For production use, switch to 'production' environment for complete data")
+                if self.environment == "test":
+                    logger.warning(f"   ⚠️  404 error: No data available for origin {origin} in test environment")
+                    logger.warning(f"   This is expected - Amadeus test environment has limited cached data")
+                    logger.warning(f"   TLV (Tel Aviv) is not in the test cache, which is why you see this error")
+                    logger.warning(f"   The application will fall back to predefined destinations")
+                    logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
+                    logger.info(f"   For production use, switch to 'production' environment for complete data")
+                else:
+                    logger.warning(f"   ⚠️  404 error: No data available for origin {origin}")
+                    logger.warning(f"   This may indicate that the Flight Inspiration Search API has no cached data for this origin")
+                    logger.warning(f"   The application will fall back to predefined destinations")
+                    logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
             
             # DEBUG: Log full error details
             logger.debug(f"   [DEBUG] Exception Type: ResponseError")
