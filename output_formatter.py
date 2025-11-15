@@ -25,6 +25,53 @@ except Exception as e:
 class OutputFormatter:
     """Formats and outputs flight search results"""
     
+    @staticmethod
+    def format_duration_human(duration_str: str) -> str:
+        """
+        Convert ISO 8601 duration string (e.g., 'PT5H30M') to human-readable format (e.g., '5h 30m')
+        
+        Args:
+            duration_str: ISO 8601 duration string like 'PT5H30M' or 'PT2H30M'
+        
+        Returns:
+            Human-readable duration string like '5h 30m' or '2h 30m' or '45m'
+        """
+        if not duration_str or not isinstance(duration_str, str):
+            return duration_str
+        
+        try:
+            # Remove 'PT' prefix if present
+            duration = duration_str.replace('PT', '')
+            
+            hours = 0
+            minutes = 0
+            
+            # Extract hours
+            if 'H' in duration:
+                hours_str = duration.split('H')[0]
+                hours = int(hours_str)
+                duration = duration.split('H', 1)[1]
+            
+            # Extract minutes
+            if 'M' in duration:
+                minutes_str = duration.split('M')[0]
+                minutes = int(minutes_str)
+            
+            # Format as human-readable
+            parts = []
+            if hours > 0:
+                parts.append(f"{hours}h")
+            if minutes > 0:
+                parts.append(f"{minutes}m")
+            
+            if not parts:
+                return "0m"
+            
+            return " ".join(parts)
+        except Exception as e:
+            logger.debug(f"Error formatting duration '{duration_str}': {e}")
+            return duration_str
+    
     # Airport timezone mapping (IATA code -> timezone name)
     # Common airports and their timezones
     # Can be overridden by config file
@@ -250,20 +297,24 @@ class OutputFormatter:
             # Person 1 details
             p1_origin_code = p1_info.get('origin', 'TLV')
             print(f"\n👤 Person 1 ({p1_origin_code} → {dest}):")
+            p1_outbound_duration_human = OutputFormatter.format_duration_human(p1_info.get('outbound_duration', ''))
+            p1_return_duration_human = OutputFormatter.format_duration_human(p1_info.get('return_duration', ''))
             print(f"   Outbound: {p1_info.get('outbound_departure', 'N/A')} → {p1_info.get('outbound_arrival', 'N/A')} "
-                  f"({p1_info.get('outbound_duration', 'N/A')}, {p1_info.get('outbound_stops', 0)} stops)")
+                  f"({p1_outbound_duration_human}, {p1_info.get('outbound_stops', 0)} stops)")
             print(f"   Return:   {p1_info.get('return_departure', 'N/A')} → {p1_info.get('return_arrival', 'N/A')} "
-                  f"({p1_info.get('return_duration', 'N/A')}, {p1_info.get('return_stops', 0)} stops)")
+                  f"({p1_return_duration_human}, {p1_info.get('return_stops', 0)} stops)")
             print(f"   Airlines: {p1_info.get('airlines', 'N/A')}")
             print(f"   Price: {p1_price:.2f} {p1_info.get('currency', 'EUR')}")
             
             # Person 2 details
             p2_origin_code = p2_info.get('origin', 'ALC')
             print(f"\n👤 Person 2 ({p2_origin_code} → {dest}):")
+            p2_outbound_duration_human = OutputFormatter.format_duration_human(p2_info.get('outbound_duration', ''))
+            p2_return_duration_human = OutputFormatter.format_duration_human(p2_info.get('return_duration', ''))
             print(f"   Outbound: {p2_info.get('outbound_departure', 'N/A')} → {p2_info.get('outbound_arrival', 'N/A')} "
-                  f"({p2_info.get('outbound_duration', 'N/A')}, {p2_info.get('outbound_stops', 0)} stops)")
+                  f"({p2_outbound_duration_human}, {p2_info.get('outbound_stops', 0)} stops)")
             print(f"   Return:   {p2_info.get('return_departure', 'N/A')} → {p2_info.get('return_arrival', 'N/A')} "
-                  f"({p2_info.get('return_duration', 'N/A')}, {p2_info.get('return_stops', 0)} stops)")
+                  f"({p2_return_duration_human}, {p2_info.get('return_stops', 0)} stops)")
             print(f"   Airlines: {p2_info.get('airlines', 'N/A')}")
             print(f"   Price: {p2_price:.2f} {p2_info.get('currency', 'EUR')}")
             
@@ -282,6 +333,8 @@ class OutputFormatter:
                 fieldnames = [
                     # First column: Route (From → To) - MOST IMPORTANT
                     'route',
+                    # Second column: Human-readable description
+                    'description',
                     'destination',
                     'total_price_eur',
                     'price_person1_eur',
@@ -392,12 +445,12 @@ class OutputFormatter:
                         'person1_outbound_departure_local_tlv': p1_outbound_dep_local,
                         'person1_outbound_arrival_utc': p1_outbound_arr_utc,
                         'person1_outbound_arrival_local_dest': p1_outbound_arr_local,
-                        'person1_outbound_duration': p1_info.get('outbound_duration', ''),
+                        'person1_outbound_duration': p1_outbound_duration_human,
                         'person1_return_departure_utc': p1_return_dep_utc,
                         'person1_return_departure_local_dest': p1_return_dep_local,
                         'person1_return_arrival_utc': p1_return_arr_utc,
                         'person1_return_arrival_local_tlv': p1_return_arr_local,
-                        'person1_return_duration': p1_info.get('return_duration', ''),
+                        'person1_return_duration': p1_return_duration_human,
                         'person1_airlines': p1_info.get('airlines', ''),
                         
                         # Person 2 - with local times
@@ -407,12 +460,12 @@ class OutputFormatter:
                         'person2_outbound_departure_local_alc': p2_outbound_dep_local,
                         'person2_outbound_arrival_utc': p2_outbound_arr_utc,
                         'person2_outbound_arrival_local_dest': p2_outbound_arr_local,
-                        'person2_outbound_duration': p2_info.get('outbound_duration', ''),
+                        'person2_outbound_duration': p2_outbound_duration_human,
                         'person2_return_departure_utc': p2_return_dep_utc,
                         'person2_return_departure_local_dest': p2_return_dep_local,
                         'person2_return_arrival_utc': p2_return_arr_utc,
                         'person2_return_arrival_local_alc': p2_return_arr_local,
-                        'person2_return_duration': p2_info.get('return_duration', ''),
+                        'person2_return_duration': p2_return_duration_human,
                         'person2_airlines': p2_info.get('airlines', '')
                     }
                     
