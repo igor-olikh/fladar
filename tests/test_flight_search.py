@@ -57,15 +57,27 @@ class TestFlightSearch(unittest.TestCase):
     
     def test_get_stops(self):
         """Test getting maximum stops"""
+        # Flight with 2 segments = 1 stop (connection between segments)
         flight = {
             'itineraries': [{
                 'segments': [
-                    {'numberOfStops': 0},
-                    {'numberOfStops': 1}
+                    {'numberOfStops': 0},  # TLV → VIE
+                    {'numberOfStops': 0}   # VIE → AMS
                 ]
             }]
         }
+        # 2 segments - 1 = 1 stop
         self.assertEqual(self.flight_search._get_stops(flight), 1)
+        
+        # Direct flight: 1 segment = 0 stops
+        direct_flight = {
+            'itineraries': [{
+                'segments': [
+                    {'numberOfStops': 0}  # TLV → AMS direct
+                ]
+            }]
+        }
+        self.assertEqual(self.flight_search._get_stops(direct_flight), 0)
     
     def test_get_outbound_arrival_time(self):
         """Test extracting outbound arrival time"""

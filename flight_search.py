@@ -514,19 +514,38 @@ class FlightSearch:
             return []
     
     def _is_direct_flight(self, flight_offer: Dict) -> bool:
-        """Check if flight is direct (no stops)"""
+        """Check if flight is direct (no stops)
+        
+        A direct flight has exactly 1 segment per itinerary.
+        Multiple segments indicate connections (stops).
+        """
         for itinerary in flight_offer.get('itineraries', []):
-            for segment in itinerary.get('segments', []):
-                if segment.get('numberOfStops', 0) > 0:
-                    return False
+            segments = itinerary.get('segments', [])
+            # Direct flight = 1 segment, any more = has stops
+            if len(segments) > 1:
+                return False
+            # Also check if the single segment itself has stops
+            if segments and segments[0].get('numberOfStops', 0) > 0:
+                return False
         return True
     
     def _get_stops(self, flight_offer: Dict) -> int:
-        """Get maximum number of stops in the flight"""
+        """Get maximum number of stops in the flight
+        
+        Stops are calculated as: number of segments - 1
+        Example: 2 segments (TLV → VIE → AMS) = 1 stop in VIE
+        Direct flight: 1 segment = 0 stops
+        """
         max_stops = 0
         for itinerary in flight_offer.get('itineraries', []):
-            for segment in itinerary.get('segments', []):
-                max_stops = max(max_stops, segment.get('numberOfStops', 0))
+            segments = itinerary.get('segments', [])
+            if segments:
+                # Count stops: segments - 1 (each connection is a stop)
+                itinerary_stops = max(0, len(segments) - 1)
+                # Also check if any segment itself has stops (rare case)
+                segment_stops = max(seg.get('numberOfStops', 0) for seg in segments)
+                # Take the maximum (either connection stops or segment stops)
+                max_stops = max(max_stops, itinerary_stops, segment_stops)
         return max_stops
     
     def _filter_by_departure_times(

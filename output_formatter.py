@@ -443,9 +443,11 @@ class OutputFormatter:
             outbound_duration = outbound.get('duration', '')
             return_duration = return_trip.get('duration', '')
             
-            # Get stops
-            outbound_stops = sum(seg.get('numberOfStops', 0) for seg in outbound_segments)
-            return_stops = sum(seg.get('numberOfStops', 0) for seg in return_segments)
+            # Get stops: number of segments - 1 (each segment connection is a stop)
+            # Example: 2 segments = 1 stop (TLV → VIE → AMS has 1 stop in VIE)
+            # Direct flight: 1 segment = 0 stops
+            outbound_stops = max(0, len(outbound_segments) - 1) if outbound_segments else 0
+            return_stops = max(0, len(return_segments) - 1) if return_segments else 0
             
             return {
                 'price': flight.get('price', {}).get('total', 'N/A'),
