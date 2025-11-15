@@ -356,6 +356,7 @@ For each destination in filtered list:
 |-----|---------|--------|-------|---------------|
 | **Flight Offers Search** | Get actual flights | ✅ Working | 431 requests (main API) | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-offers-search) |
 | **Flight Inspiration Search** | Find destinations | ⚠️ Limited (test env) | 16 requests, 404/401 errors | [Official Docs](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-inspiration-search) |
+| **nonStop Parameter** | Filter direct flights | ✅ Implemented | Used when max_stops=0 | Automatically set based on config |
 | **Airport Nearest Relevant** | Find nearby airports | ✅ Used when radius > 0 | Used for nearby airport search | [Official Docs](https://developers.amadeus.com/self-service/category/airport/api-doc/airport-nearest-relevant) |
 
 **Destination Selection**: Currently uses predefined list (32 destinations) due to Flight Inspiration Search API limitations in test environment (404 for TLV/ALC). Falls back automatically on errors.
