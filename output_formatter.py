@@ -1148,6 +1148,22 @@ class OutputFormatter:
             p2_outbound_stops_html = format_stop_details_html(p2_outbound_stop_details)
             p2_return_stops_html = format_stop_details_html(p2_return_stop_details)
             
+            # Create booking links for Person 1
+            p1_outbound_dep_utc = p1_info.get('outbound_departure', '')
+            p1_return_dep_utc = p1_info.get('return_departure', '')
+            p1_booking_url = OutputFormatter.create_skyscanner_url(
+                p1_origin, dest, p1_outbound_dep_utc, p1_return_dep_utc, 
+                prefer_direct=(p1_info.get('outbound_stops', 0) == 0 and p1_info.get('return_stops', 0) == 0)
+            )
+            
+            # Create booking links for Person 2
+            p2_outbound_dep_utc = p2_info.get('outbound_departure', '')
+            p2_return_dep_utc = p2_info.get('return_departure', '')
+            p2_booking_url = OutputFormatter.create_skyscanner_url(
+                p2_origin, dest, p2_outbound_dep_utc, p2_return_dep_utc,
+                prefer_direct=(p2_info.get('outbound_stops', 0) == 0 and p2_info.get('return_stops', 0) == 0)
+            )
+            
             html += f"""
         <div class="destination-card">
             <div class="destination-header">

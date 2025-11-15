@@ -137,6 +137,27 @@
             margin-top: 5px;
             font-style: italic;
         }
+        .booking-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        .booking-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        .person-section.person2 .booking-link {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
         @media (max-width: 768px) {
             .flight-details {
                 grid-template-columns: 1fr;
@@ -160,75 +181,237 @@
 
         <div class="destination-card">
             <div class="destination-header">
-                <div class="destination-name">#1 AMS (Amsterdam)</div>
-                <div class="total-price">863.65 <span class="currency">EUR</span></div>
+                <div class="destination-name">#1 CPH (Copenhagen)</div>
+                <div class="total-price">725.26 <span class="currency">EUR</span></div>
             </div>
             
             <div class="flight-details">
                 <div class="person-section person1">
                     <div class="person-label">Person 1</div>
-                    <div class="price-badge">310.86 EUR</div>
+                    <div class="price-badge">408.41 EUR</div>
                     
-                    <div class="flight-route">Going to AMS (Amsterdam)</div>
+                    <div class="flight-route">Going to CPH (Copenhagen)</div>
                     <div class="flight-info">
-                        <strong>Departure:</strong> 2025-11-20 14:20 (Paris)
+                        <strong>Departure:</strong> 2025-11-20 19:50 (Paris)
                     </div>
                     <div class="flight-info">
-                        <strong>Arrival:</strong> 2025-11-20 21:40 (Paris)
+                        <strong>Arrival:</strong> 2025-11-21 10:00 (Paris)
                     </div>
                     <div class="flight-info">
-                        <strong>Duration:</strong> 7h 20m
+                        <strong>Duration:</strong> 14h 10m
                         <span class="stops-info">1 stop</span>
                     </div>
-                    <div class="stop-details">Stop: ARN (Stockholm) (1h 5m)</div>
+                    <div class="stop-details">Stop: AMS (Amsterdam) (10h)</div>
                     
                     <div class="flight-route" style="margin-top: 20px;">Returning home</div>
                     <div class="flight-info">
-                        <strong>Departure:</strong> 2025-11-25 11:30 (Paris)
+                        <strong>Departure:</strong> 2025-11-25 13:05 (Paris)
                     </div>
                     <div class="flight-info">
-                        <strong>Arrival:</strong> 2025-11-25 18:45 (Paris)
+                        <strong>Arrival:</strong> 2025-11-25 18:55 (Paris)
                     </div>
                     <div class="flight-info">
-                        <strong>Duration:</strong> 7h 15m
+                        <strong>Duration:</strong> 5h 50m
                         <span class="stops-info">1 stop</span>
                     </div>
-                    <div class="stop-details">Stop: CPH (Copenhagen) (2h 30m)</div>
+                    <div class="stop-details">Stop: AMS (Amsterdam) (1h 45m)</div>
                     
-                    <div class="airline-info">Airlines: SK (SAS)</div>
+                    <div class="airline-info">Airlines: KL (KLM)</div>
+                    
+                    <a href="https://www.skyscanner.de/transport/flights/alc/cph/201125/251125/?adultsv2=1&cabinclass=economy&rtn=1&preferdirects=false" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>
                 </div>
                 
                 <div class="person-section person2">
                     <div class="person-label">Person 2</div>
-                    <div class="price-badge">552.79 EUR</div>
+                    <div class="price-badge">316.85 EUR</div>
+                    
+                    <div class="flight-route">Going to CPH (Copenhagen)</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> 2025-11-20 17:55 (Jerusalem)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> 2025-11-21 00:00 (Paris)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> 8h 5m
+                        <span class="stops-info">1 stop</span>
+                    </div>
+                    <div class="stop-details">Stop: CDG (Paris) (1h 20m)</div>
+                    
+                    <div class="flight-route" style="margin-top: 20px;">Returning home</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> 2025-11-25 18:30 (Paris)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> 2025-11-26 06:00 (Jerusalem)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> 9h 30m
+                        <span class="stops-info">1 stop</span>
+                    </div>
+                    <div class="stop-details">Stop: AMS (Amsterdam) (2h 15m)</div>
+                    
+                    <div class="airline-info">Airlines: KL (KLM), AF (Air France)</div>
+                    
+                    <a href="https://www.skyscanner.de/transport/flights/tlv/cph/201125/251125/?adultsv2=1&cabinclass=economy&rtn=1&preferdirects=false" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="destination-card">
+            <div class="destination-header">
+                <div class="destination-name">#2 AMS (Amsterdam)</div>
+                <div class="total-price">749.44 <span class="currency">EUR</span></div>
+            </div>
+            
+            <div class="flight-details">
+                <div class="person-section person1">
+                    <div class="person-label">Person 1</div>
+                    <div class="price-badge">382.88 EUR</div>
                     
                     <div class="flight-route">Going to AMS (Amsterdam)</div>
                     <div class="flight-info">
-                        <strong>Departure:</strong> 2025-11-20 18:05 (Jerusalem)
+                        <strong>Departure:</strong> 2025-11-20 19:15 (Paris)
                     </div>
                     <div class="flight-info">
-                        <strong>Arrival:</strong> 2025-11-20 21:20 (Paris)
+                        <strong>Arrival:</strong> 2025-11-20 22:10 (Paris)
                     </div>
                     <div class="flight-info">
-                        <strong>Duration:</strong> 5h 15m
+                        <strong>Duration:</strong> 2h 55m
                         <span class="stops-info">No stops</span>
                     </div>
                     
+                    
+                    <div class="flight-route" style="margin-top: 20px;">Returning home</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> 2025-11-25 13:15 (Paris)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> 2025-11-25 21:55 (Paris)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> 8h 40m
+                        <span class="stops-info">1 stop</span>
+                    </div>
+                    <div class="stop-details">Stop: MAD (Madrid) (4h 40m)</div>
+                    
+                    <div class="airline-info">Airlines: IB (Iberia)</div>
+                    
+                    <a href="https://www.skyscanner.de/transport/flights/alc/ams/201125/251125/?adultsv2=1&cabinclass=economy&rtn=1&preferdirects=false" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>
+                </div>
+                
+                <div class="person-section person2">
+                    <div class="person-label">Person 2</div>
+                    <div class="price-badge">366.56 EUR</div>
+                    
+                    <div class="flight-route">Going to AMS (Amsterdam)</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> 2025-11-20 17:55 (Jerusalem)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> 2025-11-20 22:55 (Paris)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> 7h
+                        <span class="stops-info">1 stop</span>
+                    </div>
+                    <div class="stop-details">Stop: CDG (Paris) (1h 5m)</div>
+                    
+                    <div class="flight-route" style="margin-top: 20px;">Returning home</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> 2025-11-25 22:10 (Paris)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> 2025-11-26 06:00 (Jerusalem)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> 5h 50m
+                        <span class="stops-info">No stops</span>
+                    </div>
+                    
+                    
+                    <div class="airline-info">Airlines: KL (KLM), AF (Air France)</div>
+                    
+                    <a href="https://www.skyscanner.de/transport/flights/tlv/ams/201125/251125/?adultsv2=1&cabinclass=economy&rtn=1&preferdirects=false" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="destination-card">
+            <div class="destination-header">
+                <div class="destination-name">#3 ARN (Stockholm)</div>
+                <div class="total-price">871.47 <span class="currency">EUR</span></div>
+            </div>
+            
+            <div class="flight-details">
+                <div class="person-section person1">
+                    <div class="person-label">Person 1</div>
+                    <div class="price-badge">429.50 EUR</div>
+                    
+                    <div class="flight-route">Going to ARN (Stockholm)</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> 2025-11-20 19:50 (Paris)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> 2025-11-21 10:00 (Paris)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> 14h 10m
+                        <span class="stops-info">1 stop</span>
+                    </div>
+                    <div class="stop-details">Stop: AMS (Amsterdam) (9h 15m)</div>
                     
                     <div class="flight-route" style="margin-top: 20px;">Returning home</div>
                     <div class="flight-info">
                         <strong>Departure:</strong> 2025-11-25 12:30 (Paris)
                     </div>
                     <div class="flight-info">
-                        <strong>Arrival:</strong> 2025-11-25 18:55 (Jerusalem)
+                        <strong>Arrival:</strong> 2025-11-25 18:55 (Paris)
                     </div>
                     <div class="flight-info">
-                        <strong>Duration:</strong> 4h 25m
-                        <span class="stops-info">No stops</span>
+                        <strong>Duration:</strong> 6h 25m
+                        <span class="stops-info">1 stop</span>
                     </div>
+                    <div class="stop-details">Stop: AMS (Amsterdam) (1h 35m)</div>
                     
+                    <div class="airline-info">Airlines: KL (KLM)</div>
                     
-                    <div class="airline-info">Airlines: LY (El Al)</div>
+                    <a href="https://www.skyscanner.de/transport/flights/alc/arn/201125/251125/?adultsv2=1&cabinclass=economy&rtn=1&preferdirects=false" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>
+                </div>
+                
+                <div class="person-section person2">
+                    <div class="person-label">Person 2</div>
+                    <div class="price-badge">441.97 EUR</div>
+                    
+                    <div class="flight-route">Going to ARN (Stockholm)</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> 2025-11-20 18:35 (Jerusalem)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> 2025-11-21 00:40 (Paris)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> 8h 5m
+                        <span class="stops-info">1 stop</span>
+                    </div>
+                    <div class="stop-details">Stop: FRA (Frankfurt) (1h 15m)</div>
+                    
+                    <div class="flight-route" style="margin-top: 20px;">Returning home</div>
+                    <div class="flight-info">
+                        <strong>Departure:</strong> 2025-11-25 16:20 (Paris)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Arrival:</strong> 2025-11-26 05:55 (Jerusalem)
+                    </div>
+                    <div class="flight-info">
+                        <strong>Duration:</strong> 11h 35m
+                        <span class="stops-info">1 stop</span>
+                    </div>
+                    <div class="stop-details">Stop: VIE (Vienna) (5h 30m)</div>
+                    
+                    <div class="airline-info">Airlines: OS (Austrian), LH (Lufthansa)</div>
+                    
+                    <a href="https://www.skyscanner.de/transport/flights/tlv/arn/201125/251125/?adultsv2=1&cabinclass=economy&rtn=1&preferdirects=false" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>
                 </div>
             </div>
         </div>
