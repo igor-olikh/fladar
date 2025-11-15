@@ -1,0 +1,2 @@
+Find meeting destinations for two people by searching flights with matching arrival times. Python app using Amadeus API to discover destinations, search flights, and match arrivals. Easy to use, configurable, with CSV output.
+

@@ -1,6 +1,10 @@
-# Fladar - Flight Meeting Destination Finder
+# ✈️ Fladar - Flight Meeting Destination Finder
 
-A Python application that finds destinations where two people can meet by searching for flights with matching arrival times. The application automatically discovers destinations, searches for flights, and matches them based on arrival times, price, and other criteria.
+**Find the perfect meeting destination for two people by automatically searching flights with matching arrival times.**
+
+A powerful Python application that helps two people find where to meet by searching flights from their respective cities. Uses Amadeus Flight API to discover destinations, search for flights, match arrivals within a time window, and filter by price, stops, and departure times. Perfect for planning trips, finding meeting points, or discovering travel destinations.
+
+**Keywords:** flight search, find flights, flight API, Amadeus API, meeting destination, flight finder, travel planner, flight matching, Python flight search, easy flight search, automatic flight search, flight discovery
 
 ## 🎯 What It Does
 
@@ -365,7 +369,27 @@ See [docs/amadeus_test_vs_production.md](docs/amadeus_test_vs_production.md) for
 
 ## 🤝 Contributing
 
-This is a private project, but suggestions and improvements are welcome!
+Contributions are welcome! If you improve this project, please consider submitting a pull request. See the [License](#-license) section for details.
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Commit your changes (`git commit -m 'Add some amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+## 🌟 Features in Detail
+
+- **Easy Flight Search**: Simple configuration, powerful results
+- **Automatic Destination Discovery**: No need to manually list destinations
+- **Smart Matching**: Finds flights where both people arrive at similar times
+- **Flexible Filtering**: Price, stops, duration, departure times
+- **Rich Output**: CSV with local times, airline names, human-readable descriptions
+- **API Integration**: Uses Amadeus Flight API for real-time flight data
+- **Caching**: Reduces API calls with intelligent caching
+- **Timezone Support**: Automatic timezone detection for all airports
 
 ## 📄 License
 
