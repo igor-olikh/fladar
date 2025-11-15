@@ -129,51 +129,39 @@ class DestinationFinder:
         Returns:
             List of matching flight pairs for different destinations
         """
-        # Get origin countries for filtering
-        origin1_country = get_airport_country(origin1)
-        origin2_country = get_airport_country(origin2)
-        origin_countries = {c for c in [origin1_country, origin2_country] if c}
-        
-        if origin_countries:
-            logger.debug(f"   Origin countries: {', '.join(origin_countries)} (will filter out same-country destinations)")
-        
         # If specific destinations are provided, use only those (skip discovery)
         if destinations_to_check and len(destinations_to_check) > 0:
             # Normalize destination codes (uppercase, strip whitespace)
             destinations_to_check = [dest.upper().strip() for dest in destinations_to_check if dest.strip()]
             
-            # Filter out invalid airports and same-country destinations
+            # Filter out invalid airports (railway stations, non-airport codes)
+            # Note: We don't filter by country - destinations in same country as origins are allowed
+            # (e.g., Alicante to Madrid is valid even though both are in Spain)
             filtered_destinations = []
             for dest in destinations_to_check:
                 # Resolve railway stations to airports
                 dest_resolved = resolve_airport_code(dest)
                 
-                # Check if it's a valid airport
+                # Check if it's a valid airport (not a railway station or invalid code)
                 if not is_valid_airport(dest_resolved):
                     logger.debug(f"   Filtering out invalid airport code: {format_airport_code(dest)}")
-                    continue
-                
-                # Check if destination is in same country as origins
-                dest_country = get_airport_country(dest_resolved)
-                if dest_country and dest_country in origin_countries:
-                    logger.debug(f"   Filtering out same-country destination: {format_airport_code(dest_resolved)} ({dest_country})")
                     continue
                 
                 filtered_destinations.append(dest_resolved)
             
             if len(filtered_destinations) < len(destinations_to_check):
                 filtered_out = len(destinations_to_check) - len(filtered_destinations)
-                logger.info(f"   Filtered out {filtered_out} destination(s) (invalid airports or same-country)")
+                logger.info(f"   Filtered out {filtered_out} destination(s) (invalid airports/non-airport codes)")
             
             destinations_to_check = filtered_destinations
             
             if destinations_to_check:
                 logger.info(f"📋 Using specified destinations (skipping discovery)")
                 logger.info(f"   Will check only these {len(destinations_to_check)} destination(s): {', '.join([format_airport_code(d) for d in destinations_to_check])}")
-                logger.info(f"   Flight Offers Search will validate which destinations are actually reachable")
+                logger.info(f"   Flight Offers Search will validate which destinations are actually reachable from both origins")
                 logger.info(f"")
             else:
-                logger.warning(f"⚠️  All specified destinations were filtered out (invalid or same-country)")
+                logger.warning(f"⚠️  All specified destinations were filtered out (invalid airports/non-airport codes)")
                 logger.warning(f"   Falling back to normal destination discovery")
                 # Set to empty list to trigger normal discovery
                 destinations_to_check = []
@@ -206,30 +194,26 @@ class DestinationFinder:
                     non_stop=(max_stops_for_discovery == 0)
                 )
             
-            # Filter destinations: remove invalid airports and same-country destinations
+            # Filter destinations: remove invalid airports (railway stations, non-airport codes)
+            # Note: We don't filter by country - destinations in same country as origins are allowed
+            # (e.g., Alicante to Madrid is valid even though both are in Spain)
+            # The Flight Offers Search API will validate if flights exist from both origins
             filtered_destinations = []
             filtered_count = 0
             for dest in destinations:
                 # Resolve railway stations to airports
                 dest_resolved = resolve_airport_code(dest)
                 
-                # Check if it's a valid airport
+                # Check if it's a valid airport (not a railway station or invalid code)
                 if not is_valid_airport(dest_resolved):
                     filtered_count += 1
                     logger.debug(f"   Filtering out invalid airport code: {format_airport_code(dest)}")
                     continue
                 
-                # Check if destination is in same country as origins
-                dest_country = get_airport_country(dest_resolved)
-                if dest_country and dest_country in origin_countries:
-                    filtered_count += 1
-                    logger.debug(f"   Filtering out same-country destination: {format_airport_code(dest_resolved)} ({dest_country})")
-                    continue
-                
                 filtered_destinations.append(dest_resolved)
             
             if filtered_count > 0:
-                logger.info(f"   Filtered out {filtered_count} destination(s) (invalid airports or same-country)")
+                logger.info(f"   Filtered out {filtered_count} destination(s) (invalid airports/non-airport codes)")
             
             # Limit destinations to check
             if max_destinations > 0:
