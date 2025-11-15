@@ -685,8 +685,8 @@ class OutputFormatter:
                         'price_person2_eur': f"{match['person2_price']:.2f}",
                         'currency': p1_info.get('currency', 'EUR'),
                         
-                    # Person 1 - with local times (using correct airport timezones)
-                    'person1_route': f"{p1_origin} → {dest} (outbound), {p1_return_origin} → {p1_return_dest} (return)",
+                        # Person 1 - with local times (using correct airport timezones)
+                        'person1_route': f"{p1_origin} → {dest} (outbound), {p1_return_origin} → {p1_return_dest} (return)",
                     'person1_price_eur': f"{match['person1_price']:.2f}",
                     'person1_outbound_departure_utc': p1_outbound_dep_utc,
                     'person1_outbound_departure_local': p1_outbound_dep_local,  # Local time at origin airport
@@ -700,10 +700,10 @@ class OutputFormatter:
                     'person1_return_arrival_local': p1_return_arr_local,  # Local time at origin airport
                     'person1_return_duration': p1_return_duration_human,
                     'person1_return_stops': p1_return_stops_str,
-                    'person1_airlines': p1_info.get('airlines_formatted', p1_info.get('airlines', '')),
+                        'person1_airlines': p1_info.get('airlines_formatted', p1_info.get('airlines', '')),
                         
-                    # Person 2 - with local times (using correct airport timezones)
-                    'person2_route': f"{p2_origin} → {dest} (outbound), {p2_return_origin} → {p2_return_dest} (return)",
+                        # Person 2 - with local times (using correct airport timezones)
+                        'person2_route': f"{p2_origin} → {dest} (outbound), {p2_return_origin} → {p2_return_dest} (return)",
                     'person2_price_eur': f"{match['person2_price']:.2f}",
                     'person2_outbound_departure_utc': p2_outbound_dep_utc,
                     'person2_outbound_departure_local': p2_outbound_dep_local,  # Local time at origin airport
