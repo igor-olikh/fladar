@@ -1008,6 +1008,8 @@ class FlightSearch:
             arrival_tolerance_hours: Hours tolerance for arrival times
             min_departure_time_outbound: Minimum departure time for outbound (HH:MM)
             min_departure_time_return: Minimum departure time for return (HH:MM)
+            nearby_airports_radius_km: Search radius for nearby airports (0 = disabled)
+            max_duration_hours: Maximum flight duration in hours (0 = no limit)
         
         Returns:
             List of matching flight pairs with details
