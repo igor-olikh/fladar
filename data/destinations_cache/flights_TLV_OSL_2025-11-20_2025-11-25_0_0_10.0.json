@@ -1,0 +1,835 @@
+{
+  "origin": "TLV",
+  "destination": "OSL",
+  "departure_date": "2025-11-20",
+  "return_date": "2025-11-25",
+  "max_stops": 0,
+  "nearby_airports_radius_km": 0,
+  "max_duration_hours": 10.0,
+  "flights": [
+    {
+      "type": "flight-offer",
+      "id": "106",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-20",
+      "lastTicketingDateTime": "2025-11-20",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT8H40M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "TLV",
+                "terminal": "3",
+                "at": "2025-11-20T15:55:00"
+              },
+              "arrival": {
+                "iataCode": "CDG",
+                "terminal": "2E",
+                "at": "2025-11-20T19:40:00"
+              },
+              "carrierCode": "AF",
+              "number": "963",
+              "aircraft": {
+                "code": "77W"
+              },
+              "operating": {
+                "carrierCode": "AF"
+              },
+              "duration": "PT4H45M",
+              "id": "62",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "CDG",
+                "terminal": "2F",
+                "at": "2025-11-20T21:10:00"
+              },
+              "arrival": {
+                "iataCode": "OSL",
+                "at": "2025-11-20T23:35:00"
+              },
+              "carrierCode": "AF",
+              "number": "1274",
+              "aircraft": {
+                "code": "319"
+              },
+              "operating": {
+                "carrierCode": "AF"
+              },
+              "duration": "PT2H25M",
+              "id": "63",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT8H25M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "OSL",
+                "at": "2025-11-25T15:15:00"
+              },
+              "arrival": {
+                "iataCode": "CDG",
+                "terminal": "2B",
+                "at": "2025-11-25T17:45:00"
+              },
+              "carrierCode": "AF",
+              "number": "4584",
+              "aircraft": {
+                "code": "32N"
+              },
+              "operating": {
+                "carrierCode": "SK"
+              },
+              "duration": "PT2H30M",
+              "id": "110",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "CDG",
+                "terminal": "2B",
+                "at": "2025-11-25T19:15:00"
+              },
+              "arrival": {
+                "iataCode": "TLV",
+                "terminal": "3",
+                "at": "2025-11-26T00:40:00"
+              },
+              "carrierCode": "AF",
+              "number": "7074",
+              "aircraft": {
+                "code": "738"
+              },
+              "operating": {
+                "carrierCode": "LY"
+              },
+              "duration": "PT4H25M",
+              "id": "111",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "716.16",
+        "base": "494.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "716.16"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": false
+      },
+      "validatingAirlineCodes": [
+        "AF"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "716.16",
+            "base": "494.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "62",
+              "cabin": "ECONOMY",
+              "fareBasis": "NGS0KBLA",
+              "class": "N",
+              "includedCheckedBags": {
+                "quantity": 0
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "63",
+              "cabin": "ECONOMY",
+              "fareBasis": "NGS0KBLA",
+              "class": "L",
+              "includedCheckedBags": {
+                "quantity": 0
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "110",
+              "cabin": "ECONOMY",
+              "fareBasis": "HGS0ABLA",
+              "class": "N",
+              "includedCheckedBags": {
+                "quantity": 0
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "111",
+              "cabin": "ECONOMY",
+              "fareBasis": "HGS0ABLA",
+              "class": "H",
+              "includedCheckedBags": {
+                "quantity": 0
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "TLV"
+    },
+    {
+      "type": "flight-offer",
+      "id": "122",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-20",
+      "lastTicketingDateTime": "2025-11-20",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT8H40M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "TLV",
+                "terminal": "3",
+                "at": "2025-11-20T15:55:00"
+              },
+              "arrival": {
+                "iataCode": "CDG",
+                "terminal": "2E",
+                "at": "2025-11-20T19:40:00"
+              },
+              "carrierCode": "AF",
+              "number": "963",
+              "aircraft": {
+                "code": "77W"
+              },
+              "operating": {
+                "carrierCode": "AF"
+              },
+              "duration": "PT4H45M",
+              "id": "62",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "CDG",
+                "terminal": "2F",
+                "at": "2025-11-20T21:10:00"
+              },
+              "arrival": {
+                "iataCode": "OSL",
+                "at": "2025-11-20T23:35:00"
+              },
+              "carrierCode": "AF",
+              "number": "1274",
+              "aircraft": {
+                "code": "319"
+              },
+              "operating": {
+                "carrierCode": "AF"
+              },
+              "duration": "PT2H25M",
+              "id": "63",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT9H35M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "OSL",
+                "at": "2025-11-25T17:20:00"
+              },
+              "arrival": {
+                "iataCode": "CDG",
+                "terminal": "2F",
+                "at": "2025-11-25T19:50:00"
+              },
+              "carrierCode": "AF",
+              "number": "1775",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "AF"
+              },
+              "duration": "PT2H30M",
+              "id": "128",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "CDG",
+                "terminal": "2B",
+                "at": "2025-11-25T22:30:00"
+              },
+              "arrival": {
+                "iataCode": "TLV",
+                "terminal": "3",
+                "at": "2025-11-26T03:55:00"
+              },
+              "carrierCode": "AF",
+              "number": "7072",
+              "aircraft": {
+                "code": "739"
+              },
+              "operating": {
+                "carrierCode": "LY"
+              },
+              "duration": "PT4H25M",
+              "id": "129",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "793.16",
+        "base": "571.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "793.16"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": false
+      },
+      "validatingAirlineCodes": [
+        "AF"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "793.16",
+            "base": "571.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "62",
+              "cabin": "ECONOMY",
+              "fareBasis": "NGS0KBLA",
+              "class": "N",
+              "includedCheckedBags": {
+                "quantity": 0
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "63",
+              "cabin": "ECONOMY",
+              "fareBasis": "NGS0KBLA",
+              "class": "L",
+              "includedCheckedBags": {
+                "quantity": 0
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "128",
+              "cabin": "ECONOMY",
+              "fareBasis": "UGS0ABLA",
+              "class": "Y",
+              "includedCheckedBags": {
+                "quantity": 0
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "129",
+              "cabin": "ECONOMY",
+              "fareBasis": "UGS0ABLA",
+              "class": "U",
+              "includedCheckedBags": {
+                "quantity": 0
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "TLV"
+    },
+    {
+      "type": "flight-offer",
+      "id": "158",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-20",
+      "lastTicketingDateTime": "2025-11-20",
+      "numberOfBookableSeats": 1,
+      "itineraries": [
+        {
+          "duration": "PT9H50M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "TLV",
+                "terminal": "3",
+                "at": "2025-11-20T14:55:00"
+              },
+              "arrival": {
+                "iataCode": "FRA",
+                "terminal": "1",
+                "at": "2025-11-20T18:40:00"
+              },
+              "carrierCode": "LY",
+              "number": "355",
+              "aircraft": {
+                "code": "738"
+              },
+              "operating": {
+                "carrierCode": "LY"
+              },
+              "duration": "PT4H45M",
+              "id": "74",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "FRA",
+                "terminal": "1",
+                "at": "2025-11-20T21:45:00"
+              },
+              "arrival": {
+                "iataCode": "OSL",
+                "at": "2025-11-20T23:45:00"
+              },
+              "carrierCode": "LH",
+              "number": "866",
+              "aircraft": {
+                "code": "32N"
+              },
+              "operating": {
+                "carrierCode": "LH"
+              },
+              "duration": "PT2H",
+              "id": "75",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT8H25M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "OSL",
+                "at": "2025-11-25T15:15:00"
+              },
+              "arrival": {
+                "iataCode": "CDG",
+                "terminal": "2B",
+                "at": "2025-11-25T17:45:00"
+              },
+              "carrierCode": "LY",
+              "number": "9790",
+              "aircraft": {
+                "code": "32N"
+              },
+              "operating": {
+                "carrierCode": "SK"
+              },
+              "duration": "PT2H30M",
+              "id": "112",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "CDG",
+                "terminal": "2B",
+                "at": "2025-11-25T19:15:00"
+              },
+              "arrival": {
+                "iataCode": "TLV",
+                "terminal": "3",
+                "at": "2025-11-26T00:40:00"
+              },
+              "carrierCode": "LY",
+              "number": "328",
+              "aircraft": {
+                "code": "738"
+              },
+              "operating": {
+                "carrierCode": "LY"
+              },
+              "duration": "PT4H25M",
+              "id": "113",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "892.62",
+        "base": "711.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "892.62"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "LY"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "892.62",
+            "base": "711.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "74",
+              "cabin": "ECONOMY",
+              "fareBasis": "SC2TGI",
+              "class": "S",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "75",
+              "cabin": "ECONOMY",
+              "fareBasis": "SC2TGI",
+              "class": "V",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "112",
+              "cabin": "ECONOMY",
+              "fareBasis": "NC2CSKI",
+              "class": "N",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "113",
+              "cabin": "ECONOMY",
+              "fareBasis": "NC2CSKI",
+              "class": "N",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "TLV"
+    },
+    {
+      "type": "flight-offer",
+      "id": "185",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-20",
+      "lastTicketingDateTime": "2025-11-20",
+      "numberOfBookableSeats": 1,
+      "itineraries": [
+        {
+          "duration": "PT9H50M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "TLV",
+                "terminal": "3",
+                "at": "2025-11-20T14:55:00"
+              },
+              "arrival": {
+                "iataCode": "FRA",
+                "terminal": "1",
+                "at": "2025-11-20T18:40:00"
+              },
+              "carrierCode": "LY",
+              "number": "355",
+              "aircraft": {
+                "code": "738"
+              },
+              "operating": {
+                "carrierCode": "LY"
+              },
+              "duration": "PT4H45M",
+              "id": "74",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "FRA",
+                "terminal": "1",
+                "at": "2025-11-20T21:45:00"
+              },
+              "arrival": {
+                "iataCode": "OSL",
+                "at": "2025-11-20T23:45:00"
+              },
+              "carrierCode": "LH",
+              "number": "866",
+              "aircraft": {
+                "code": "32N"
+              },
+              "operating": {
+                "carrierCode": "LH"
+              },
+              "duration": "PT2H",
+              "id": "75",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT6H55M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "OSL",
+                "at": "2025-11-25T19:50:00"
+              },
+              "arrival": {
+                "iataCode": "WAW",
+                "at": "2025-11-25T21:50:00"
+              },
+              "carrierCode": "LO",
+              "number": "484",
+              "aircraft": {
+                "code": "E90"
+              },
+              "operating": {
+                "carrierCode": "LO"
+              },
+              "duration": "PT2H",
+              "id": "181",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "WAW",
+                "at": "2025-11-25T23:00:00"
+              },
+              "arrival": {
+                "iataCode": "TLV",
+                "terminal": "3",
+                "at": "2025-11-26T03:45:00"
+              },
+              "carrierCode": "LY",
+              "number": "9256",
+              "aircraft": {
+                "code": "7M8"
+              },
+              "operating": {
+                "carrierCode": "LO"
+              },
+              "duration": "PT3H45M",
+              "id": "182",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "929.11",
+        "base": "732.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "929.11"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "LY"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "929.11",
+            "base": "732.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "74",
+              "cabin": "ECONOMY",
+              "fareBasis": "SC2TGI",
+              "class": "S",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "75",
+              "cabin": "ECONOMY",
+              "fareBasis": "SC2TGI",
+              "class": "V",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "181",
+              "cabin": "ECONOMY",
+              "fareBasis": "LC2TGI",
+              "class": "S",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "182",
+              "cabin": "ECONOMY",
+              "fareBasis": "LC2TGI",
+              "class": "L",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "TLV"
+    }
+  ],
+  "cached_date": "2025-11-15T11:32:56.726044",
+  "count": 4
+}

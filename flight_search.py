@@ -770,10 +770,10 @@ class FlightSearch:
         # Sanitize cache key for filename (replace invalid characters)
         cache_key_safe = cache_key.replace('/', '_').replace(':', '_')
         
-        cache_dir = os.path.join(os.path.dirname(__file__), 'data', 'destinations_cache')
+        cache_dir = os.path.join(os.path.dirname(__file__), 'data', 'flights_cache')
         os.makedirs(cache_dir, exist_ok=True)
         
-        cache_file = os.path.join(cache_dir, f"flights_{cache_key_safe}.json")
+        cache_file = os.path.join(cache_dir, f"{cache_key_safe}.json")
         
         if not os.path.exists(cache_file):
             logger.debug(f"   Cache file not found for {format_airport_code(origin)} → {format_airport_code(destination)} ({departure_date} to {return_date})")
@@ -840,10 +840,10 @@ class FlightSearch:
         # Sanitize cache key for filename
         cache_key_safe = cache_key.replace('/', '_').replace(':', '_')
         
-        cache_dir = os.path.join(os.path.dirname(__file__), 'data', 'destinations_cache')
+        cache_dir = os.path.join(os.path.dirname(__file__), 'data', 'flights_cache')
         os.makedirs(cache_dir, exist_ok=True)
         
-        cache_file = os.path.join(cache_dir, f"flights_{cache_key_safe}.json")
+        cache_file = os.path.join(cache_dir, f"{cache_key_safe}.json")
         
         try:
             cache_data = {

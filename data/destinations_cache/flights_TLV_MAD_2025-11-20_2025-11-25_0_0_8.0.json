@@ -1,0 +1,12 @@
+{
+  "origin": "TLV",
+  "destination": "MAD",
+  "departure_date": "2025-11-20",
+  "return_date": "2025-11-25",
+  "max_stops": 0,
+  "nearby_airports_radius_km": 0,
+  "max_duration_hours": 8.0,
+  "flights": [],
+  "cached_date": "2025-11-15T11:29:21.726994",
+  "count": 0
+}

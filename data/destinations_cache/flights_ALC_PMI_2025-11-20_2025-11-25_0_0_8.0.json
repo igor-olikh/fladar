@@ -1,0 +1,3076 @@
+{
+  "origin": "ALC",
+  "destination": "PMI",
+  "departure_date": "2025-11-20",
+  "return_date": "2025-11-25",
+  "max_stops": 0,
+  "nearby_airports_radius_km": 0,
+  "max_duration_hours": 8.0,
+  "flights": [
+    {
+      "type": "flight-offer",
+      "id": "6",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 9,
+      "itineraries": [
+        {
+          "duration": "PT55M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T17:10:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T18:05:00"
+              },
+              "carrierCode": "UX",
+              "number": "4027",
+              "aircraft": {
+                "code": "73H"
+              },
+              "operating": {
+                "carrierCode": "UX"
+              },
+              "duration": "PT55M",
+              "id": "28",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T18:55:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T19:55:00"
+              },
+              "carrierCode": "UX",
+              "number": "4026",
+              "aircraft": {
+                "code": "73H"
+              },
+              "operating": {
+                "carrierCode": "UX"
+              },
+              "duration": "PT1H",
+              "id": "38",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "95.94",
+        "base": "72.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "95.94"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": false
+      },
+      "validatingAirlineCodes": [
+        "UX"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "95.94",
+            "base": "72.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "28",
+              "cabin": "ECONOMY",
+              "fareBasis": "PDYY3L",
+              "class": "P",
+              "includedCheckedBags": {
+                "quantity": 0
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            },
+            {
+              "segmentId": "38",
+              "cabin": "ECONOMY",
+              "fareBasis": "NDYY3L",
+              "class": "N",
+              "includedCheckedBags": {
+                "quantity": 0
+              },
+              "includedCabinBags": {
+                "quantity": 1
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "45",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T14:00:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T15:00:00"
+              },
+              "carrierCode": "VY",
+              "number": "3934",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H",
+              "id": "1",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT6H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T16:45:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T17:40:00"
+              },
+              "carrierCode": "VY",
+              "number": "3903",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT55M",
+              "id": "47",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "VY",
+              "number": "1310",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "48",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "352.28",
+        "base": "321.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "352.28"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "VY"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "352.28",
+            "base": "321.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "1",
+              "cabin": "ECONOMY",
+              "fareBasis": "LROPLVY",
+              "class": "L",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "47",
+              "cabin": "ECONOMY",
+              "fareBasis": "OROPLVY",
+              "class": "O",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "48",
+              "cabin": "ECONOMY",
+              "fareBasis": "TROPLVY",
+              "class": "T",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "46",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T14:00:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T15:00:00"
+              },
+              "carrierCode": "VY",
+              "number": "3934",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H",
+              "id": "1",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT7H10M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T15:35:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T16:30:00"
+              },
+              "carrierCode": "VY",
+              "number": "3913",
+              "aircraft": {
+                "code": "32A"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT55M",
+              "id": "53",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "VY",
+              "number": "1310",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "54",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "352.28",
+        "base": "321.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "352.28"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "VY"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "352.28",
+            "base": "321.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "1",
+              "cabin": "ECONOMY",
+              "fareBasis": "LROPLVY",
+              "class": "L",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "53",
+              "cabin": "ECONOMY",
+              "fareBasis": "OROPLVY",
+              "class": "O",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "54",
+              "cabin": "ECONOMY",
+              "fareBasis": "TROPLVY",
+              "class": "T",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "48",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 1,
+      "itineraries": [
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T14:00:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T15:00:00"
+              },
+              "carrierCode": "IB",
+              "number": "5531",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H",
+              "id": "2",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT4H45M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T16:10:00"
+              },
+              "arrival": {
+                "iataCode": "MAD",
+                "terminal": "4",
+                "at": "2025-11-25T17:35:00"
+              },
+              "carrierCode": "IB",
+              "number": "1664",
+              "aircraft": {
+                "code": "32A"
+              },
+              "operating": {
+                "carrierCode": "I2"
+              },
+              "duration": "PT1H25M",
+              "id": "75",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "MAD",
+                "terminal": "4",
+                "at": "2025-11-25T19:40:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T20:55:00"
+              },
+              "carrierCode": "IB",
+              "number": "1015",
+              "aircraft": {
+                "code": "CRK"
+              },
+              "operating": {
+                "carrierName": "AIR NOSTRUM FOR IBERIA"
+              },
+              "duration": "PT1H15M",
+              "id": "76",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "352.89",
+        "base": "321.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "352.89"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "IB"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "352.89",
+            "base": "321.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "2",
+              "cabin": "ECONOMY",
+              "fareBasis": "KRVYN4",
+              "class": "K",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "75",
+              "cabin": "ECONOMY",
+              "fareBasis": "NJN0M4",
+              "class": "N",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "76",
+              "cabin": "ECONOMY",
+              "fareBasis": "NJN0M4",
+              "class": "N",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "49",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T14:00:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T15:00:00"
+              },
+              "carrierCode": "VY",
+              "number": "3934",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H",
+              "id": "1",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT3H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T19:45:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T20:35:00"
+              },
+              "carrierCode": "VY",
+              "number": "3923",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "39",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "VY",
+              "number": "1310",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "40",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "356.28",
+        "base": "325.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "356.28"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "VY"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "356.28",
+            "base": "325.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "1",
+              "cabin": "ECONOMY",
+              "fareBasis": "LROPLVY",
+              "class": "L",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "39",
+              "cabin": "ECONOMY",
+              "fareBasis": "QROPLVY",
+              "class": "Q",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "40",
+              "cabin": "ECONOMY",
+              "fareBasis": "TROPLVY",
+              "class": "T",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "50",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T14:00:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T15:00:00"
+              },
+              "carrierCode": "VY",
+              "number": "3934",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H",
+              "id": "1",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT4H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T18:45:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T19:35:00"
+              },
+              "carrierCode": "VY",
+              "number": "3917",
+              "aircraft": {
+                "code": "32A"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "43",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "VY",
+              "number": "1310",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "44",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "356.28",
+        "base": "325.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "356.28"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "VY"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "356.28",
+            "base": "325.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "1",
+              "cabin": "ECONOMY",
+              "fareBasis": "LROPLVY",
+              "class": "L",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "43",
+              "cabin": "ECONOMY",
+              "fareBasis": "QROPLVY",
+              "class": "Q",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "44",
+              "cabin": "ECONOMY",
+              "fareBasis": "TROPLVY",
+              "class": "T",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "52",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T14:00:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T15:00:00"
+              },
+              "carrierCode": "IB",
+              "number": "5531",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H",
+              "id": "2",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT3H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T19:45:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T20:35:00"
+              },
+              "carrierCode": "IB",
+              "number": "5129",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "41",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "IB",
+              "number": "5076",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "42",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "366.28",
+        "base": "335.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "366.28"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "IB"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "366.28",
+            "base": "335.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "2",
+              "cabin": "ECONOMY",
+              "fareBasis": "KRVYN4",
+              "class": "K",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "41",
+              "cabin": "ECONOMY",
+              "fareBasis": "QRVYN4",
+              "class": "Q",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "42",
+              "cabin": "ECONOMY",
+              "fareBasis": "ZRVYN4",
+              "class": "Z",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "53",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T14:00:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T15:00:00"
+              },
+              "carrierCode": "IB",
+              "number": "5531",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H",
+              "id": "2",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT4H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T18:45:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T19:35:00"
+              },
+              "carrierCode": "IB",
+              "number": "5123",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "45",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "IB",
+              "number": "5076",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "46",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "366.28",
+        "base": "335.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "366.28"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "IB"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "366.28",
+            "base": "335.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "2",
+              "cabin": "ECONOMY",
+              "fareBasis": "KRVYN4",
+              "class": "K",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "45",
+              "cabin": "ECONOMY",
+              "fareBasis": "QRVYN4",
+              "class": "Q",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "46",
+              "cabin": "ECONOMY",
+              "fareBasis": "ZRVYN4",
+              "class": "Z",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "54",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T14:00:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T15:00:00"
+              },
+              "carrierCode": "VY",
+              "number": "3934",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H",
+              "id": "1",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT3H30M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T14:15:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T15:10:00"
+              },
+              "carrierCode": "VY",
+              "number": "3911",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT55M",
+              "id": "63",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T16:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T17:45:00"
+              },
+              "carrierCode": "VY",
+              "number": "1308",
+              "aircraft": {
+                "code": "321"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "64",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "371.28",
+        "base": "340.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "371.28"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "VY"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "371.28",
+            "base": "340.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "1",
+              "cabin": "ECONOMY",
+              "fareBasis": "LROPLVY",
+              "class": "L",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "63",
+              "cabin": "ECONOMY",
+              "fareBasis": "OROPLVY",
+              "class": "O",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "64",
+              "cabin": "ECONOMY",
+              "fareBasis": "XROPLVY",
+              "class": "X",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "57",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T14:00:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T15:00:00"
+              },
+              "carrierCode": "IB",
+              "number": "5531",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H",
+              "id": "2",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT4H35M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T18:10:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T19:00:00"
+              },
+              "carrierCode": "IB",
+              "number": "5121",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "69",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "IB",
+              "number": "5076",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "70",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "379.28",
+        "base": "348.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "379.28"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "IB"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "379.28",
+            "base": "348.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "2",
+              "cabin": "ECONOMY",
+              "fareBasis": "KRVYN4",
+              "class": "K",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "69",
+              "cabin": "ECONOMY",
+              "fareBasis": "ZRVYN4",
+              "class": "Z",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "70",
+              "cabin": "ECONOMY",
+              "fareBasis": "ZRVYN4",
+              "class": "Z",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "59",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT1H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T14:00:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T15:00:00"
+              },
+              "carrierCode": "IB",
+              "number": "5531",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H",
+              "id": "2",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT3H30M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T14:15:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T15:10:00"
+              },
+              "carrierCode": "IB",
+              "number": "5117",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT55M",
+              "id": "65",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T16:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T17:45:00"
+              },
+              "carrierCode": "IB",
+              "number": "5140",
+              "aircraft": {
+                "code": "321"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "66",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "381.28",
+        "base": "350.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "381.28"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "IB"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "381.28",
+            "base": "350.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "2",
+              "cabin": "ECONOMY",
+              "fareBasis": "KRVYN4",
+              "class": "K",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "65",
+              "cabin": "ECONOMY",
+              "fareBasis": "ORVYN4",
+              "class": "O",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "66",
+              "cabin": "ECONOMY",
+              "fareBasis": "VRVYN4",
+              "class": "V",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "89",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT2H55M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T19:40:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T20:50:00"
+              },
+              "carrierCode": "VY",
+              "number": "1311",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "29",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T21:45:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T22:35:00"
+              },
+              "carrierCode": "VY",
+              "number": "3920",
+              "aircraft": {
+                "code": "32A"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "30",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT3H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T19:45:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T20:35:00"
+              },
+              "carrierCode": "VY",
+              "number": "3923",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "39",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "VY",
+              "number": "1310",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "40",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "600.68",
+        "base": "545.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "600.68"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "VY"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "600.68",
+            "base": "545.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "29",
+              "cabin": "ECONOMY",
+              "fareBasis": "LROPLVY",
+              "class": "L",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "30",
+              "cabin": "ECONOMY",
+              "fareBasis": "UROPLVY",
+              "class": "U",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "39",
+              "cabin": "ECONOMY",
+              "fareBasis": "QROPLVY",
+              "class": "Q",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "40",
+              "cabin": "ECONOMY",
+              "fareBasis": "TROPLVY",
+              "class": "T",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "90",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT2H55M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T19:40:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T20:50:00"
+              },
+              "carrierCode": "VY",
+              "number": "1311",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "29",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T21:45:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T22:35:00"
+              },
+              "carrierCode": "VY",
+              "number": "3920",
+              "aircraft": {
+                "code": "32A"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "30",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT4H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T18:45:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T19:35:00"
+              },
+              "carrierCode": "VY",
+              "number": "3917",
+              "aircraft": {
+                "code": "32A"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "43",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "VY",
+              "number": "1310",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "44",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "600.68",
+        "base": "545.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "600.68"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "VY"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "600.68",
+            "base": "545.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "29",
+              "cabin": "ECONOMY",
+              "fareBasis": "LROPLVY",
+              "class": "L",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "30",
+              "cabin": "ECONOMY",
+              "fareBasis": "UROPLVY",
+              "class": "U",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "43",
+              "cabin": "ECONOMY",
+              "fareBasis": "QROPLVY",
+              "class": "Q",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "44",
+              "cabin": "ECONOMY",
+              "fareBasis": "TROPLVY",
+              "class": "T",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "93",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT2H55M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T19:40:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T20:50:00"
+              },
+              "carrierCode": "VY",
+              "number": "1311",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "29",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T21:45:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T22:35:00"
+              },
+              "carrierCode": "VY",
+              "number": "3920",
+              "aircraft": {
+                "code": "32A"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "30",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT3H30M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T14:15:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T15:10:00"
+              },
+              "carrierCode": "VY",
+              "number": "3911",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT55M",
+              "id": "63",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T16:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T17:45:00"
+              },
+              "carrierCode": "VY",
+              "number": "1308",
+              "aircraft": {
+                "code": "321"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "64",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "614.68",
+        "base": "559.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "614.68"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "VY"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "614.68",
+            "base": "559.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "29",
+              "cabin": "ECONOMY",
+              "fareBasis": "LROPLVY",
+              "class": "L",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "30",
+              "cabin": "ECONOMY",
+              "fareBasis": "UROPLVY",
+              "class": "U",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "63",
+              "cabin": "ECONOMY",
+              "fareBasis": "OROPLVY",
+              "class": "O",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "64",
+              "cabin": "ECONOMY",
+              "fareBasis": "XROPLVY",
+              "class": "X",
+              "includedCheckedBags": {
+                "weight": 25,
+                "weightUnit": "KG"
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "95",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT2H55M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T19:40:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T20:50:00"
+              },
+              "carrierCode": "IB",
+              "number": "5803",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "31",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T21:45:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T22:35:00"
+              },
+              "carrierCode": "IB",
+              "number": "5126",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "32",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT3H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T19:45:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T20:35:00"
+              },
+              "carrierCode": "IB",
+              "number": "5129",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "41",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "IB",
+              "number": "5076",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "42",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "656.68",
+        "base": "601.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "656.68"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "IB"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "656.68",
+            "base": "601.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "31",
+              "cabin": "ECONOMY",
+              "fareBasis": "KRVYN4",
+              "class": "K",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "32",
+              "cabin": "ECONOMY",
+              "fareBasis": "BRVYN4",
+              "class": "B",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "41",
+              "cabin": "ECONOMY",
+              "fareBasis": "QRVYN4",
+              "class": "Q",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "42",
+              "cabin": "ECONOMY",
+              "fareBasis": "ZRVYN4",
+              "class": "Z",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "96",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT2H55M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T19:40:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T20:50:00"
+              },
+              "carrierCode": "IB",
+              "number": "5803",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "31",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T21:45:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T22:35:00"
+              },
+              "carrierCode": "IB",
+              "number": "5126",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "32",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT4H",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T18:45:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T19:35:00"
+              },
+              "carrierCode": "IB",
+              "number": "5123",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "45",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T21:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T22:45:00"
+              },
+              "carrierCode": "IB",
+              "number": "5076",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "46",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "656.68",
+        "base": "601.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "656.68"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "IB"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "656.68",
+            "base": "601.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "31",
+              "cabin": "ECONOMY",
+              "fareBasis": "KRVYN4",
+              "class": "K",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "32",
+              "cabin": "ECONOMY",
+              "fareBasis": "BRVYN4",
+              "class": "B",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "45",
+              "cabin": "ECONOMY",
+              "fareBasis": "QRVYN4",
+              "class": "Q",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "46",
+              "cabin": "ECONOMY",
+              "fareBasis": "ZRVYN4",
+              "class": "Z",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    },
+    {
+      "type": "flight-offer",
+      "id": "97",
+      "source": "GDS",
+      "instantTicketingRequired": false,
+      "nonHomogeneous": false,
+      "oneWay": false,
+      "isUpsellOffer": false,
+      "lastTicketingDate": "2025-11-16",
+      "lastTicketingDateTime": "2025-11-16",
+      "numberOfBookableSeats": 4,
+      "itineraries": [
+        {
+          "duration": "PT2H55M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "ALC",
+                "at": "2025-11-20T19:40:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T20:50:00"
+              },
+              "carrierCode": "IB",
+              "number": "5803",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "31",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-20T21:45:00"
+              },
+              "arrival": {
+                "iataCode": "PMI",
+                "at": "2025-11-20T22:35:00"
+              },
+              "carrierCode": "IB",
+              "number": "5126",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT50M",
+              "id": "32",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        },
+        {
+          "duration": "PT3H30M",
+          "segments": [
+            {
+              "departure": {
+                "iataCode": "PMI",
+                "at": "2025-11-25T14:15:00"
+              },
+              "arrival": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T15:10:00"
+              },
+              "carrierCode": "IB",
+              "number": "5117",
+              "aircraft": {
+                "code": "320"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT55M",
+              "id": "65",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            },
+            {
+              "departure": {
+                "iataCode": "BCN",
+                "terminal": "1",
+                "at": "2025-11-25T16:35:00"
+              },
+              "arrival": {
+                "iataCode": "ALC",
+                "at": "2025-11-25T17:45:00"
+              },
+              "carrierCode": "IB",
+              "number": "5140",
+              "aircraft": {
+                "code": "321"
+              },
+              "operating": {
+                "carrierCode": "VY"
+              },
+              "duration": "PT1H10M",
+              "id": "66",
+              "numberOfStops": 0,
+              "blacklistedInEU": false
+            }
+          ]
+        }
+      ],
+      "price": {
+        "currency": "EUR",
+        "total": "670.68",
+        "base": "615.00",
+        "fees": [
+          {
+            "amount": "0.00",
+            "type": "SUPPLIER"
+          },
+          {
+            "amount": "0.00",
+            "type": "TICKETING"
+          }
+        ],
+        "grandTotal": "670.68"
+      },
+      "pricingOptions": {
+        "fareType": [
+          "PUBLISHED"
+        ],
+        "includedCheckedBagsOnly": true
+      },
+      "validatingAirlineCodes": [
+        "IB"
+      ],
+      "travelerPricings": [
+        {
+          "travelerId": "1",
+          "fareOption": "STANDARD",
+          "travelerType": "ADULT",
+          "price": {
+            "currency": "EUR",
+            "total": "670.68",
+            "base": "615.00"
+          },
+          "fareDetailsBySegment": [
+            {
+              "segmentId": "31",
+              "cabin": "ECONOMY",
+              "fareBasis": "KRVYN4",
+              "class": "K",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "32",
+              "cabin": "ECONOMY",
+              "fareBasis": "BRVYN4",
+              "class": "B",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "65",
+              "cabin": "ECONOMY",
+              "fareBasis": "ORVYN4",
+              "class": "O",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            },
+            {
+              "segmentId": "66",
+              "cabin": "ECONOMY",
+              "fareBasis": "VRVYN4",
+              "class": "V",
+              "includedCheckedBags": {
+                "quantity": 1
+              },
+              "includedCabinBags": {
+                "quantity": 2
+              }
+            }
+          ]
+        }
+      ],
+      "_search_origin": "ALC"
+    }
+  ],
+  "cached_date": "2025-11-15T11:29:26.727084",
+  "count": 17
+}
