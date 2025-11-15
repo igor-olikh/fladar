@@ -369,4 +369,20 @@ This is a private project, but suggestions and improvements are welcome!
 
 ## 📄 License
 
-Private project - All rights reserved
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+
+### What this means:
+
+- ✅ **You can use** this software for any purpose
+- ✅ **You can modify** the code
+- ✅ **You can distribute** the software
+- ⚠️ **You must** release any modifications under the same GPL-3.0 license
+- ⚠️ **You must** include the original license and copyright notice
+
+### Contributing Back
+
+If you improve or modify this software, you are **encouraged** to contribute your improvements back to the original repository by submitting a pull request. This helps everyone benefit from improvements!
+
+See the full license text in [LICENSE](LICENSE) file.
+
+**Note:** GPL-3.0 is a "copyleft" license, which means derivative works must also be open source and use the same license. This ensures improvements remain available to everyone.
