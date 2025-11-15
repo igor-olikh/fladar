@@ -43,6 +43,7 @@ class DestinationFinder:
             arrival_tolerance_hours: Hours tolerance for arrival times
             min_departure_time_outbound: Minimum departure time for outbound flights (HH:MM)
             min_departure_time_return: Minimum departure time for return flights (HH:MM)
+                This checks when the return flight departs FROM the destination (not arrival at origin)
             max_destinations: Maximum number of destinations to check
             use_dynamic_destinations: Use Amadeus API to discover destinations dynamically
             max_flight_duration_hours: Maximum flight duration in hours (0 = no limit)

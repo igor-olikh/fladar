@@ -65,8 +65,9 @@ search:
   # Minimum departure time for outbound flights (going to destination)
   min_departure_time_outbound: "14:00"  # e.g., "08:00" - don't fly earlier than this time
   
-  # Minimum departure time for return flights (coming back from destination)
-  min_departure_time_return: "14:00"  # e.g., "10:00" - don't fly earlier than this time
+  # Minimum departure time for return flights (when leaving FROM the destination)
+  # This checks when the flight departs FROM the destination airport, NOT when it arrives back at origin
+  min_departure_time_return: "14:00"  # e.g., "10:00" - don't leave destination earlier than this time
 
 # API Configuration
 api:

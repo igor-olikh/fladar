@@ -353,6 +353,7 @@ class FlightSearch:
             max_stops: Maximum number of stops
             min_departure_time_outbound: Minimum departure time for outbound flights (HH:MM)
             min_departure_time_return: Minimum departure time for return flights (HH:MM)
+                This checks when the return flight departs FROM the destination (not arrival at origin)
             nearby_airports_radius_km: Search radius in km for nearby airports (0 = disabled)
         
         Returns:
@@ -540,14 +541,17 @@ class FlightSearch:
         Args:
             flights: List of flight offers
             min_time_outbound: Minimum departure time for outbound flights (HH:MM) or None
+                This checks when the flight departs FROM the origin airport
             min_time_return: Minimum departure time for return flights (HH:MM) or None
+                This checks when the return flight departs FROM the destination airport
+                (NOT when it arrives back at the origin)
         """
         filtered = []
         
         for flight in flights:
             valid = True
             
-            # Check outbound departure time
+            # Check outbound departure time (departure FROM origin)
             if min_time_outbound:
                 outbound = flight.get('itineraries', [{}])[0]
                 if outbound.get('segments'):
@@ -561,7 +565,8 @@ class FlightSearch:
                             valid = False
                             logger.debug(f"      Outbound departure {dep_time} is before {min_time_outbound}")
             
-            # Check return departure time (if return flight exists and constraint is set)
+            # Check return departure time (departure FROM destination, not arrival at origin)
+            # This is when the flight LEAVES the destination airport
             if valid and min_time_return and len(flight.get('itineraries', [])) > 1:
                 return_trip = flight.get('itineraries', [{}])[1]
                 if return_trip.get('segments'):
@@ -573,7 +578,7 @@ class FlightSearch:
                         dep_datetime = datetime.fromisoformat(dep_time.replace('Z', '+00:00'))
                         if not (dep_datetime.hour > min_hour or (dep_datetime.hour == min_hour and dep_datetime.minute >= min_minute)):
                             valid = False
-                            logger.debug(f"      Return departure {dep_time} is before {min_time_return}")
+                            logger.debug(f"      Return departure FROM destination {dep_time} is before {min_time_return}")
             
             if valid:
                 filtered.append(flight)
