@@ -70,6 +70,23 @@ search:
   # Set to false to always fetch fresh results from the API
   use_flight_cache: true
   
+  # Pre-validate routes using cheaper APIs before Flight Offers Search
+  # If enabled, checks Airport Routes API first to see if route exists
+  # Can save 50-80% of expensive Flight Offers Search API calls
+  # Set to false to always use Flight Offers Search (more accurate but more expensive)
+  pre_validate_routes: true  # Default: true
+  
+  # Maximum results to request from Flight Offers Search API
+  # Lower values = faster responses and lower cost
+  # We only need top 3 flights per destination anyway
+  # Recommended: 10-20 (default: 20, was 250)
+  max_flight_results: 20  # Default: 20 (was 250)
+  
+  # Early exit: if Person 1 has no flights, skip Person 2 search
+  # Can save 50% of calls when routes don't exist
+  # Set to false to always search both persons (more thorough but more expensive)
+  early_exit_on_no_flights: true  # Default: true
+  
   # Maximum number of destinations to check (limits API usage)
   # If the API or predefined list returns 100 destinations, but you set this to 20,
   # only the first 20 destinations will be searched for flights
