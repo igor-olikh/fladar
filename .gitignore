@@ -37,6 +37,8 @@ poetry.lock
 # Output files
 *.csv
 flight_results.csv
+*.html
+flight_results.html
 
 # Debug logs
 debug_logs/
