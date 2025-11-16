@@ -162,6 +162,7 @@ def main():
         max_flight_duration_person2 = float(search_config.get('max_flight_duration_hours_person2', 0))
     cache_expiration_days = search_config.get('destination_cache_expiration_days', 30)
     nearby_airports_radius_km = search_config.get('nearby_airports_radius_km', 0)
+    return_airport_radius_km = search_config.get('return_airport_radius_km', 0)
     max_destinations_to_check = search_config.get('max_destinations_to_check', 50)
     use_flight_cache = search_config.get('use_flight_cache', True)
     # Check for destinations_to_check in search section first, then root level (for backward compatibility)
@@ -246,6 +247,8 @@ def main():
         print(f"   Min Departure Time (Return): {min_departure_time_return}")
     if nearby_airports_radius_km > 0:
         print(f"   Nearby Airports Radius: {nearby_airports_radius_km} km")
+    if return_airport_radius_km > 0:
+        print(f"   Return Airport Radius: {return_airport_radius_km} km (return flights can depart from nearby airports)")
     if destinations_to_check and len(destinations_to_check) > 0:
         print(f"   Specific Destinations to Check: {', '.join(destinations_to_check)}")
         print(f"   (Skipping destination discovery - using only specified destinations)")
@@ -274,6 +277,7 @@ def main():
         max_flight_duration_hours_person1=max_flight_duration_person1,
         max_flight_duration_hours_person2=max_flight_duration_person2,
         nearby_airports_radius_km=nearby_airports_radius_km,
+        return_airport_radius_km=return_airport_radius_km,
         max_destinations=max_destinations_to_check,
         destinations_to_check=destinations_to_check,
         flight_type=flight_type

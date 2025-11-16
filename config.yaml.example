@@ -35,6 +35,13 @@ search:
   # Recommended: 200-500 km for major cities, 0 for smaller airports
   nearby_airports_radius_km: 200  # e.g., 200 km radius around Tel Aviv
   
+  # Return flight airport radius (in kilometers)
+  # If set, return flights can depart from nearby airports of the destination within this radius
+  # For example: If you fly to Paphos (PFO), you can return from Larnaca (LCA) if within radius
+  # Set to 0 to require return flight from the same airport as outbound destination
+  # Recommended: 50-200 km for destinations with multiple nearby airports (e.g., Cyprus: PFO/LCA)
+  return_airport_radius_km: 0  # 0 = same airport, or set to e.g., 100 for 100 km radius
+  
   # Maximum number of stops for each person (0 = direct flights only)
   max_stops_person1: 0  # Maximum stops for Person 1 flights
   max_stops_person2: 0  # Maximum stops for Person 2 flights

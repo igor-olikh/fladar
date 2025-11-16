@@ -359,6 +359,7 @@ class FlightSearch:
         min_departure_time_outbound: Optional[str] = None,
         min_departure_time_return: Optional[str] = None,
         nearby_airports_radius_km: int = 0,
+        return_airport_radius_km: int = 0,
         max_duration_hours: float = 0,
         flight_type: str = "both"
     ) -> List[Dict]:
@@ -375,6 +376,7 @@ class FlightSearch:
             min_departure_time_return: Minimum departure time for return flights (HH:MM)
                 This checks when the return flight departs FROM the destination (not arrival at origin)
             nearby_airports_radius_km: Search radius in km for nearby airports (0 = disabled)
+            return_airport_radius_km: Return flight airport radius (km) - return flights can depart from nearby airports of destination
             max_duration_hours: Maximum flight duration in hours (0 = no limit)
             flight_type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination)
         
@@ -410,80 +412,166 @@ class FlightSearch:
         origin = origin_resolved
         destination = destination_resolved
         
-        # For return flights, swap origin and destination (we're searching FROM destination TO origin)
-        if is_return_only:
-            search_origin = destination
-            search_destination = origin
-            search_date = return_date
-        else:
-            search_origin = origin
-            search_destination = destination
-            search_date = departure_date
-        
-        # Check cache first (before any API calls)
-        cache_return_date = return_date if is_round_trip else None
-        cached_flights = self._get_cached_flights(
-            origin=search_origin,
-            destination=search_destination,
-            departure_date=search_date,
-            return_date=cache_return_date,
-            max_stops=max_stops,
-            nearby_airports_radius_km=nearby_airports_radius_km,
-            max_duration_hours=max_duration_hours,
-            flight_type=flight_type
-        )
-        
-        if cached_flights is not None:
-            # Return cached results (they're already filtered)
-            return cached_flights
-        
-        # Get nearby airports if radius is specified
-        origins_to_search = [search_origin.upper()]
-        if nearby_airports_radius_km > 0:
-            nearby_airports = self.get_nearby_airports(search_origin, nearby_airports_radius_km)
-            origins_to_search = nearby_airports
-            logger.info(f"  → Searching from {len(origins_to_search)} airport(s): {', '.join(origins_to_search)}")
-        
-        all_flights = []
-        
-        for airport_origin in origins_to_search:
-            try:
-                # Build API parameters
-                api_params = {
-                    'originLocationCode': airport_origin,
-                    'destinationLocationCode': search_destination,
-                    'departureDate': search_date,
-                    'adults': 1,
-                    'max': 250  # Maximum results
-                }
-                
-                # Only include returnDate for round-trip flights
-                if is_round_trip:
-                    api_params['returnDate'] = return_date
-                
-                # Search for flight offers
-                logger.debug(f"Calling Amadeus API for {format_airport_code(airport_origin)} → {format_airport_code(search_destination)} (flight_type={flight_type})")
-                response = self.amadeus.shopping.flight_offers_search.get(**api_params)
+        # Special handling for round-trip flights with return_airport_radius_km > 0
+        # In this case, we need to search outbound and return separately and combine them
+        if is_round_trip and return_airport_radius_km > 0:
+            logger.info(f"  → Return airport radius enabled ({return_airport_radius_km} km): searching outbound and return flights separately")
             
-                flights = response.data if response.data else []
-                logger.info(f"  → Amadeus API returned {len(flights)} flight(s) for {format_airport_code(airport_origin)} → {format_airport_code(search_destination)}")
+            # Search outbound flights: origin → destination
+            outbound_flights = self.search_flights(
+                origin, destination, departure_date, None,  # No return_date for one-way
+                max_stops, min_departure_time_outbound, None,
+                nearby_airports_radius_km, 0, max_duration_hours, "outbound"
+            )
+            
+            if not outbound_flights:
+                logger.info(f"  → No outbound flights found, returning empty list")
+                return []
+            
+            # Get nearby airports to destination for return flights
+            return_airports = self.get_nearby_airports(destination, return_airport_radius_km)
+            logger.info(f"  → Searching return flights from {len(return_airports)} airport(s) near destination: {', '.join([format_airport_code(ap) for ap in return_airports])}")
+            
+            # Search return flights from each nearby airport
+            all_return_flights = []
+            for return_airport in return_airports:
+                return_flights = self.search_flights(
+                    return_airport, origin, return_date, None,  # One-way return
+                    max_stops, min_departure_time_return, None,
+                    0, 0, max_duration_hours, "outbound"  # Use "outbound" type for one-way return search
+                )
+                # Mark which airport each return flight departs from
+                for rf in return_flights:
+                    rf['_return_airport'] = return_airport
+                all_return_flights.extend(return_flights)
+            
+            if not all_return_flights:
+                logger.info(f"  → No return flights found from nearby airports, returning empty list")
+                return []
+            
+            # Combine outbound and return flights into round-trip flight objects
+            combined_flights = []
+            for outbound in outbound_flights:
+                for return_flight in all_return_flights:
+                    # Create a combined round-trip flight object
+                    combined_flight = {
+                        'type': 'flight-offer',
+                        'id': f"{outbound.get('id', '')}_{return_flight.get('id', '')}",
+                        'source': outbound.get('source', 'GDS'),
+                        'instantTicketingRequired': outbound.get('instantTicketingRequired', False),
+                        'nonHomogeneous': outbound.get('nonHomogeneous', False),
+                        'oneWay': False,
+                        'lastTicketingDate': outbound.get('lastTicketingDate'),
+                        'numberOfBookableSeats': min(
+                            outbound.get('numberOfBookableSeats', 9),
+                            return_flight.get('numberOfBookableSeats', 9)
+                        ),
+                        'itineraries': [
+                            outbound.get('itineraries', [{}])[0],  # Outbound itinerary
+                            return_flight.get('itineraries', [{}])[0]  # Return itinerary
+                        ],
+                        'price': {
+                            'currency': outbound.get('price', {}).get('currency', 'EUR'),
+                            'total': str(float(outbound.get('price', {}).get('total', '0')) + float(return_flight.get('price', {}).get('total', '0'))),
+                            'base': str(float(outbound.get('price', {}).get('base', '0')) + float(return_flight.get('price', {}).get('base', '0'))),
+                            'fees': [
+                                *outbound.get('price', {}).get('fees', []),
+                                *return_flight.get('price', {}).get('fees', [])
+                            ],
+                            'grandTotal': str(float(outbound.get('price', {}).get('grandTotal', '0')) + float(return_flight.get('price', {}).get('grandTotal', '0')))
+                        },
+                        'pricingOptions': outbound.get('pricingOptions', {}),
+                        'validatingAirlineCodes': list(set(
+                            outbound.get('validatingAirlineCodes', []) + 
+                            return_flight.get('validatingAirlineCodes', [])
+                        )),
+                        'travelerPricings': outbound.get('travelerPricings', []),
+                        '_search_origin': outbound.get('_search_origin', origin),
+                        '_return_airport': return_flight.get('_return_airport', destination),
+                        '_flight_type': 'both'
+                    }
+                    combined_flights.append(combined_flight)
+            
+            logger.info(f"  → Combined {len(outbound_flights)} outbound flight(s) with {len(all_return_flights)} return flight(s) into {len(combined_flights)} round-trip option(s)")
+            flights = combined_flights
+        else:
+            # Standard logic: use round-trip API call or one-way
+            # For return flights, swap origin and destination (we're searching FROM destination TO origin)
+            if is_return_only:
+                search_origin = destination
+                search_destination = origin
+                search_date = return_date
+            else:
+                search_origin = origin
+                search_destination = destination
+                search_date = departure_date
+            
+            # Check cache first (before any API calls)
+            cache_return_date = return_date if is_round_trip else None
+            cached_flights = self._get_cached_flights(
+                origin=search_origin,
+                destination=search_destination,
+                departure_date=search_date,
+                return_date=cache_return_date,
+                max_stops=max_stops,
+                nearby_airports_radius_km=nearby_airports_radius_km,
+                return_airport_radius_km=return_airport_radius_km,
+                max_duration_hours=max_duration_hours,
+                flight_type=flight_type
+            )
+            
+            if cached_flights is not None:
+                # Return cached results (they're already filtered)
+                return cached_flights
+            
+            # Get nearby airports if radius is specified
+            origins_to_search = [search_origin.upper()]
+            if nearby_airports_radius_km > 0:
+                nearby_airports = self.get_nearby_airports(search_origin, nearby_airports_radius_km)
+                origins_to_search = nearby_airports
+                logger.info(f"  → Searching from {len(origins_to_search)} airport(s): {', '.join(origins_to_search)}")
+            
+            all_flights = []
+            
+            for airport_origin in origins_to_search:
+                try:
+                    # Build API parameters
+                    api_params = {
+                        'originLocationCode': airport_origin,
+                        'destinationLocationCode': search_destination,
+                        'departureDate': search_date,
+                        'adults': 1,
+                        'max': 250  # Maximum results
+                    }
+                    
+                    # Only include returnDate for round-trip flights
+                    if is_round_trip:
+                        api_params['returnDate'] = return_date
+                    
+                    # Search for flight offers
+                    logger.debug(f"Calling Amadeus API for {format_airport_code(airport_origin)} → {format_airport_code(search_destination)} (flight_type={flight_type})")
+                    response = self.amadeus.shopping.flight_offers_search.get(**api_params)
                 
-                # Add origin information to each flight for tracking
-                for flight in flights:
-                    flight['_search_origin'] = airport_origin
-                    flight['_flight_type'] = flight_type  # Store flight type for later processing
-                
-                all_flights.extend(flights)
-                
-            except ResponseError as error:
-                logger.debug(f"  → API error for {format_airport_code(airport_origin)} → {format_airport_code(search_destination)}: {error}")
-                continue
-            except Exception as e:
-                logger.debug(f"  → Error searching {format_airport_code(airport_origin)} → {format_airport_code(search_destination)}: {e}")
-                continue
-        
-        flights = all_flights
-        logger.info(f"  → Total flights found from all airports: {len(flights)} for {format_airport_code(search_origin)} → {format_airport_code(search_destination)}")
+                    flights = response.data if response.data else []
+                    logger.info(f"  → Amadeus API returned {len(flights)} flight(s) for {format_airport_code(airport_origin)} → {format_airport_code(search_destination)}")
+                    
+                    # Add origin information to each flight for tracking
+                    for flight in flights:
+                        flight['_search_origin'] = airport_origin
+                        flight['_flight_type'] = flight_type  # Store flight type for later processing
+                    
+                    all_flights.extend(flights)
+                    
+                except ResponseError as error:
+                    logger.debug(f"  → API error for {format_airport_code(airport_origin)} → {format_airport_code(search_destination)}: {error}")
+                    continue
+                except Exception as e:
+                    logger.debug(f"  → Error searching {format_airport_code(airport_origin)} → {format_airport_code(search_destination)}: {e}")
+                    continue
+            
+            flights = all_flights
+            if flights:
+                logger.info(f"  → Total flights found from all airports: {len(flights)} for {format_airport_code(search_origin)} → {format_airport_code(search_destination)}")
         
         if not flights:
             # If no flights found, return empty list
@@ -540,18 +628,20 @@ class FlightSearch:
             
             logger.info(f"  → Final result: {len(flights)} flight(s) after filtering for {format_airport_code(search_origin)} → {format_airport_code(search_destination)}")
             
-            # Save to cache after successful search and filtering
-            self._save_cached_flights(
-                origin=search_origin,
-                destination=search_destination,
-                departure_date=search_date,
-                return_date=cache_return_date,
-                max_stops=max_stops,
-                nearby_airports_radius_km=nearby_airports_radius_km,
-                max_duration_hours=max_duration_hours,
-                flights=flights,
-                flight_type=flight_type
-            )
+            # Save to cache after successful search and filtering (only for standard searches, not combined)
+            if not (is_round_trip and return_airport_radius_km > 0):
+                self._save_cached_flights(
+                    origin=search_origin,
+                    destination=search_destination,
+                    departure_date=search_date,
+                    return_date=cache_return_date,
+                    max_stops=max_stops,
+                    nearby_airports_radius_km=nearby_airports_radius_km,
+                    return_airport_radius_km=return_airport_radius_km,
+                    max_duration_hours=max_duration_hours,
+                    flights=flights,
+                    flight_type=flight_type
+                )
             
             return flights
             
@@ -849,6 +939,7 @@ class FlightSearch:
         return_date: Optional[str],
         max_stops: int,
         nearby_airports_radius_km: int,
+        return_airport_radius_km: int,
         max_duration_hours: float,
         flight_type: str = "both"
     ) -> Optional[List[Dict]]:
@@ -862,6 +953,7 @@ class FlightSearch:
             return_date: Return date (YYYY-MM-DD)
             max_stops: Maximum number of stops
             nearby_airports_radius_km: Search radius for nearby airports
+            return_airport_radius_km: Return flight airport radius (km)
             max_duration_hours: Maximum flight duration in hours
         
         Returns:
@@ -874,7 +966,7 @@ class FlightSearch:
         # Create cache key from all search parameters
         # This ensures we cache correctly based on all search criteria
         return_date_str = return_date if return_date else "none"
-        cache_key = f"{origin.upper()}_{destination.upper()}_{departure_date}_{return_date_str}_{max_stops}_{nearby_airports_radius_km}_{max_duration_hours}_{flight_type}"
+        cache_key = f"{origin.upper()}_{destination.upper()}_{departure_date}_{return_date_str}_{max_stops}_{nearby_airports_radius_km}_{return_airport_radius_km}_{max_duration_hours}_{flight_type}"
         
         # Sanitize cache key for filename (replace invalid characters)
         cache_key_safe = cache_key.replace('/', '_').replace(':', '_')
@@ -899,6 +991,7 @@ class FlightSearch:
             cached_return_date = cache_data.get('return_date')
             cached_max_stops = cache_data.get('max_stops')
             cached_nearby_radius = cache_data.get('nearby_airports_radius_km')
+            cached_return_radius = cache_data.get('return_airport_radius_km', 0)  # Default to 0 for old cache files
             cached_max_duration = cache_data.get('max_duration_hours')
             cached_flight_type = cache_data.get('flight_type', 'both')  # Default to 'both' for old cache files without flight_type
             
@@ -909,11 +1002,12 @@ class FlightSearch:
                 cached_return_date != return_date or
                 cached_max_stops != max_stops or
                 cached_nearby_radius != nearby_airports_radius_km or
+                cached_return_radius != return_airport_radius_km or
                 cached_max_duration != max_duration_hours or
                 cached_flight_type != flight_type):
                 logger.debug(f"   Cache parameters don't match - ignoring cache")
-                logger.debug(f"     Expected: {origin.upper()}_{destination.upper()}_{departure_date}_{return_date}_{max_stops}_{nearby_airports_radius_km}_{max_duration_hours}_{flight_type}")
-                logger.debug(f"     Cached:   {cached_origin}_{cached_destination}_{cached_departure_date}_{cached_return_date}_{cached_max_stops}_{cached_nearby_radius}_{cached_max_duration}_{cached_flight_type}")
+                logger.debug(f"     Expected: {origin.upper()}_{destination.upper()}_{departure_date}_{return_date}_{max_stops}_{nearby_airports_radius_km}_{return_airport_radius_km}_{max_duration_hours}_{flight_type}")
+                logger.debug(f"     Cached:   {cached_origin}_{cached_destination}_{cached_departure_date}_{cached_return_date}_{cached_max_stops}_{cached_nearby_radius}_{cached_return_radius}_{cached_max_duration}_{cached_flight_type}")
                 return None
             
             # Check if cache is still valid (same day - flights don't change for the same date)
@@ -988,6 +1082,7 @@ class FlightSearch:
                 'return_date': return_date,
                 'max_stops': max_stops,
                 'nearby_airports_radius_km': nearby_airports_radius_km,
+                'return_airport_radius_km': return_airport_radius_km,
                 'max_duration_hours': max_duration_hours,
                 'flight_type': flight_type,  # Store flight_type in metadata for verification
                 'flights': flights,
@@ -1757,6 +1852,7 @@ class FlightSearch:
         min_departure_time_outbound: Optional[str] = None,
         min_departure_time_return: Optional[str] = None,
         nearby_airports_radius_km: int = 0,
+        return_airport_radius_km: int = 0,
         max_duration_hours_person1: float = 0,
         max_duration_hours_person2: float = 0,
         flight_type: str = "both"
@@ -1786,6 +1882,7 @@ class FlightSearch:
             min_departure_time_outbound: Minimum departure time for outbound (HH:MM)
             min_departure_time_return: Minimum departure time for return (HH:MM)
             nearby_airports_radius_km: Search radius for nearby airports (0 = disabled)
+            return_airport_radius_km: Return flight airport radius (km) - return flights can depart from nearby airports of destination
             max_duration_hours_person1: Maximum flight duration in hours for Person 1 (0 = no limit)
             max_duration_hours_person2: Maximum flight duration in hours for Person 2 (0 = no limit)
             flight_type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination)
@@ -1819,7 +1916,7 @@ class FlightSearch:
             return self.search_flights(
                 origin1_resolved, destination_resolved, departure_date, return_date,
                 max_stops_person1, min_departure_time_outbound, min_departure_time_return,
-                nearby_airports_radius_km, max_duration_hours_person1, flight_type
+                nearby_airports_radius_km, return_airport_radius_km, max_duration_hours_person1, flight_type
             )
         
         def search_person2():
@@ -1828,7 +1925,7 @@ class FlightSearch:
             return self.search_flights(
                 origin2_resolved, destination_resolved, departure_date, return_date,
                 max_stops_person2, min_departure_time_outbound, min_departure_time_return,
-                nearby_airports_radius_km, max_duration_hours_person2, flight_type
+                nearby_airports_radius_km, return_airport_radius_km, max_duration_hours_person2, flight_type
             )
         
         # Execute both searches in parallel using ThreadPoolExecutor

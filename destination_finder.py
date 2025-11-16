@@ -104,6 +104,7 @@ class DestinationFinder:
         max_flight_duration_hours_person1: float = 0,
         max_flight_duration_hours_person2: float = 0,
         nearby_airports_radius_km: int = 0,
+        return_airport_radius_km: int = 0,
         destinations_to_check: List[str] = None,
         flight_type: str = "both"
     ) -> List[Dict]:
@@ -127,6 +128,7 @@ class DestinationFinder:
             max_flight_duration_hours_person1: Maximum flight duration in hours for Person 1 (0 = no limit)
             max_flight_duration_hours_person2: Maximum flight duration in hours for Person 2 (0 = no limit)
             nearby_airports_radius_km: Search radius for nearby airports (km)
+            return_airport_radius_km: Return flight airport radius (km) - return flights can depart from nearby airports of destination
             destinations_to_check: Optional list of specific destinations to check (skips discovery if provided)
             flight_type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination)
         
@@ -279,6 +281,7 @@ class DestinationFinder:
                     min_departure_time_outbound=min_departure_time_outbound,
                     min_departure_time_return=min_departure_time_return,
                     nearby_airports_radius_km=nearby_airports_radius_km,
+                    return_airport_radius_km=return_airport_radius_km,
                     max_duration_hours_person1=max_flight_duration_hours_person1,
                     max_duration_hours_person2=max_flight_duration_hours_person2,
                     flight_type=flight_type
