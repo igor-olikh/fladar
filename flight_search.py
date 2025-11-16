@@ -1041,6 +1041,7 @@ class FlightSearch:
         return_date: Optional[str],
         max_stops: int,
         nearby_airports_radius_km: int,
+        return_airport_radius_km: int,
         max_duration_hours: float,
         flights: List[Dict],
         flight_type: str = "both"
@@ -1055,8 +1056,10 @@ class FlightSearch:
             return_date: Return date (YYYY-MM-DD)
             max_stops: Maximum number of stops
             nearby_airports_radius_km: Search radius for nearby airports
+            return_airport_radius_km: Return flight airport radius (km)
             max_duration_hours: Maximum flight duration in hours
             flights: List of flight offers to cache
+            flight_type: Flight type ("both", "outbound", or "return")
         """
         if not self.use_flight_cache:
             logger.debug(f"   Flight caching is disabled (use_flight_cache=False)")
@@ -1064,7 +1067,7 @@ class FlightSearch:
         
         # Create cache key from all search parameters
         return_date_str = return_date if return_date else "none"
-        cache_key = f"{origin.upper()}_{destination.upper()}_{departure_date}_{return_date_str}_{max_stops}_{nearby_airports_radius_km}_{max_duration_hours}_{flight_type}"
+        cache_key = f"{origin.upper()}_{destination.upper()}_{departure_date}_{return_date_str}_{max_stops}_{nearby_airports_radius_km}_{return_airport_radius_km}_{max_duration_hours}_{flight_type}"
         
         # Sanitize cache key for filename
         cache_key_safe = cache_key.replace('/', '_').replace(':', '_')
