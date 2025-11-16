@@ -901,6 +901,7 @@ class OutputFormatter:
             results: List of flight match results
             filename: Output HTML file path
             top_destinations: Number of top destinations to display (default: 3)
+            booking_link_provider: Booking link provider - "google_flights" (default) or "skyscanner"
         """
         if not results:
             print("No results to export to HTML.")
