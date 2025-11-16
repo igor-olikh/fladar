@@ -33,7 +33,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml') }}
 
     - name: Install dependencies
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
@@ -42,6 +42,10 @@ jobs:
     - name: Install project
       run: poetry install --no-interaction
 
+    - name: Verify imports
+      run: |
+        poetry run python -c "import flight_search; import destination_finder; import output_formatter; print('✓ All imports successful')"
+
     - name: Run tests
       run: poetry run python run_tests.py
       env:
@@ -49,9 +53,11 @@ jobs:
         # This is expected behavior for CI/CD
         AMADEUS_API_KEY: ${{ secrets.AMADEUS_API_KEY }}
         AMADEUS_API_SECRET: ${{ secrets.AMADEUS_API_SECRET }}
+      continue-on-error: false
 
-    - name: Check code style (basic)
+    - name: Check code syntax
       run: |
-        poetry run python -m py_compile *.py
-        poetry run python -m py_compile tests/*.py || true
+        poetry run python -m py_compile main.py flight_search.py destination_finder.py output_formatter.py
+        poetry run python -m py_compile tests/*.py
+        echo "✓ All Python files compile successfully"
 
