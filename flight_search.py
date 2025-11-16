@@ -1757,7 +1757,8 @@ class FlightSearch:
         min_departure_time_outbound: Optional[str] = None,
         min_departure_time_return: Optional[str] = None,
         nearby_airports_radius_km: int = 0,
-        max_duration_hours: float = 0,
+        max_duration_hours_person1: float = 0,
+        max_duration_hours_person2: float = 0,
         flight_type: str = "both"
     ) -> List[Dict]:
         """
@@ -1785,7 +1786,8 @@ class FlightSearch:
             min_departure_time_outbound: Minimum departure time for outbound (HH:MM)
             min_departure_time_return: Minimum departure time for return (HH:MM)
             nearby_airports_radius_km: Search radius for nearby airports (0 = disabled)
-            max_duration_hours: Maximum flight duration in hours (0 = no limit)
+            max_duration_hours_person1: Maximum flight duration in hours for Person 1 (0 = no limit)
+            max_duration_hours_person2: Maximum flight duration in hours for Person 2 (0 = no limit)
             flight_type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination)
         
         Returns:
@@ -1817,7 +1819,7 @@ class FlightSearch:
             return self.search_flights(
                 origin1_resolved, destination_resolved, departure_date, return_date,
                 max_stops_person1, min_departure_time_outbound, min_departure_time_return,
-                nearby_airports_radius_km, max_duration_hours, flight_type
+                nearby_airports_radius_km, max_duration_hours_person1, flight_type
             )
         
         def search_person2():
@@ -1826,7 +1828,7 @@ class FlightSearch:
             return self.search_flights(
                 origin2_resolved, destination_resolved, departure_date, return_date,
                 max_stops_person2, min_departure_time_outbound, min_departure_time_return,
-                nearby_airports_radius_km, max_duration_hours, flight_type
+                nearby_airports_radius_km, max_duration_hours_person2, flight_type
             )
         
         # Execute both searches in parallel using ThreadPoolExecutor

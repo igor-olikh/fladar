@@ -101,7 +101,8 @@ class DestinationFinder:
         min_departure_time_return: str = None,
         max_destinations: int = 50,
         use_dynamic_destinations: bool = True,
-        max_flight_duration_hours: float = 0,
+        max_flight_duration_hours_person1: float = 0,
+        max_flight_duration_hours_person2: float = 0,
         nearby_airports_radius_km: int = 0,
         destinations_to_check: List[str] = None,
         flight_type: str = "both"
@@ -123,7 +124,8 @@ class DestinationFinder:
                 This checks when the return flight departs FROM the destination (not arrival at origin)
             max_destinations: Maximum number of destinations to check
             use_dynamic_destinations: Use Amadeus API to discover destinations dynamically
-            max_flight_duration_hours: Maximum flight duration in hours (0 = no limit)
+            max_flight_duration_hours_person1: Maximum flight duration in hours for Person 1 (0 = no limit)
+            max_flight_duration_hours_person2: Maximum flight duration in hours for Person 2 (0 = no limit)
             nearby_airports_radius_km: Search radius for nearby airports (km)
             destinations_to_check: Optional list of specific destinations to check (skips discovery if provided)
             flight_type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination)
@@ -178,10 +180,22 @@ class DestinationFinder:
                 logger.info("📋 Using dynamic destination discovery (Inspiration Search API)")
                 logger.info("   Note: Inspiration Search uses cached data and may be incomplete")
                 logger.info("   Flight Offers Search will validate which destinations are actually reachable")
+                # For destination discovery, use the more restrictive (minimum) duration limit
+                # If both have limits, use the minimum (more restrictive)
+                # If only one has a limit, use that one
+                # If neither has a limit, use 0 (no limit)
+                if max_flight_duration_hours_person1 > 0 and max_flight_duration_hours_person2 > 0:
+                    max_duration_for_discovery = min(max_flight_duration_hours_person1, max_flight_duration_hours_person2)
+                elif max_flight_duration_hours_person1 > 0:
+                    max_duration_for_discovery = max_flight_duration_hours_person1
+                elif max_flight_duration_hours_person2 > 0:
+                    max_duration_for_discovery = max_flight_duration_hours_person2
+                else:
+                    max_duration_for_discovery = 0
                 destinations = self.flight_search.get_common_destinations(
                     origin1, origin2, departure_date, 
                     use_dynamic=True, 
-                    max_duration_hours=max_flight_duration_hours,
+                    max_duration_hours=max_duration_for_discovery,
                     non_stop=(max_stops_for_discovery == 0)
                 )
             else:
@@ -189,10 +203,22 @@ class DestinationFinder:
                 logger.info("📋 Using predefined destination list")
                 logger.info("   This is more reliable than Inspiration Search, especially in test environment")
                 logger.info("   Flight Offers Search will validate which destinations are actually reachable")
+                # For destination discovery, use the more restrictive (minimum) duration limit
+                # If both have limits, use the minimum (more restrictive)
+                # If only one has a limit, use that one
+                # If neither has a limit, use 0 (no limit)
+                if max_flight_duration_hours_person1 > 0 and max_flight_duration_hours_person2 > 0:
+                    max_duration_for_discovery = min(max_flight_duration_hours_person1, max_flight_duration_hours_person2)
+                elif max_flight_duration_hours_person1 > 0:
+                    max_duration_for_discovery = max_flight_duration_hours_person1
+                elif max_flight_duration_hours_person2 > 0:
+                    max_duration_for_discovery = max_flight_duration_hours_person2
+                else:
+                    max_duration_for_discovery = 0
                 destinations = self.flight_search.get_destination_suggestions(
                     origin1, departure_date, 
                     use_dynamic=False, 
-                    max_duration_hours=max_flight_duration_hours,
+                    max_duration_hours=max_duration_for_discovery,
                     non_stop=(max_stops_for_discovery == 0)
                 )
             
@@ -253,7 +279,8 @@ class DestinationFinder:
                     min_departure_time_outbound=min_departure_time_outbound,
                     min_departure_time_return=min_departure_time_return,
                     nearby_airports_radius_km=nearby_airports_radius_km,
-                    max_duration_hours=max_flight_duration_hours,
+                    max_duration_hours_person1=max_flight_duration_hours_person1,
+                    max_duration_hours_person2=max_flight_duration_hours_person2,
                     flight_type=flight_type
                 )
                 

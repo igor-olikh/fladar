@@ -149,7 +149,17 @@ def main():
     min_departure_time_outbound = search_config.get('min_departure_time_outbound') or None
     min_departure_time_return = search_config.get('min_departure_time_return') or None
     use_dynamic_destinations = search_config.get('use_dynamic_destinations', True)
-    max_flight_duration = float(search_config.get('max_flight_duration_hours', 0))
+    # Handle backward compatibility: check for old max_flight_duration_hours parameter
+    if 'max_flight_duration_hours' in search_config and 'max_flight_duration_hours_person1' not in search_config:
+        old_max_duration = float(search_config.get('max_flight_duration_hours', 0))
+        logger.warning(f"⚠️  DEPRECATED: Old 'max_flight_duration_hours' parameter detected (value: {old_max_duration})")
+        logger.warning(f"   Please update your config.yaml to use 'max_flight_duration_hours_person1' and 'max_flight_duration_hours_person2'")
+        logger.warning(f"   Using {old_max_duration} for both persons as fallback")
+        max_flight_duration_person1 = old_max_duration
+        max_flight_duration_person2 = old_max_duration
+    else:
+        max_flight_duration_person1 = float(search_config.get('max_flight_duration_hours_person1', 0))
+        max_flight_duration_person2 = float(search_config.get('max_flight_duration_hours_person2', 0))
     cache_expiration_days = search_config.get('destination_cache_expiration_days', 30)
     nearby_airports_radius_km = search_config.get('nearby_airports_radius_km', 0)
     max_destinations_to_check = search_config.get('max_destinations_to_check', 50)
@@ -226,8 +236,9 @@ def main():
     print(f"   Max Stops - Person 2: {max_stops_person2}")
     print(f"   Flight Type: {flight_type}")
     print(f"   Arrival Tolerance: ±{arrival_tolerance} hours")
-    if max_flight_duration > 0:
-        print(f"   Max Flight Duration: {max_flight_duration} hours")
+    if max_flight_duration_person1 > 0 or max_flight_duration_person2 > 0:
+        print(f"   Max Flight Duration - Person 1: {max_flight_duration_person1} hours" + (" (no limit)" if max_flight_duration_person1 == 0 else ""))
+        print(f"   Max Flight Duration - Person 2: {max_flight_duration_person2} hours" + (" (no limit)" if max_flight_duration_person2 == 0 else ""))
     print(f"   Destination Discovery: {'Dynamic (Amadeus API)' if use_dynamic_destinations else 'Predefined List'}")
     if min_departure_time_outbound:
         print(f"   Min Departure Time (Outbound): {min_departure_time_outbound}")
@@ -260,7 +271,8 @@ def main():
         min_departure_time_outbound=min_departure_time_outbound,
         min_departure_time_return=min_departure_time_return,
         use_dynamic_destinations=use_dynamic_destinations,
-        max_flight_duration_hours=max_flight_duration,
+        max_flight_duration_hours_person1=max_flight_duration_person1,
+        max_flight_duration_hours_person2=max_flight_duration_person2,
         nearby_airports_radius_km=nearby_airports_radius_km,
         max_destinations=max_destinations_to_check,
         destinations_to_check=destinations_to_check,

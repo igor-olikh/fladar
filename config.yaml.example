@@ -42,9 +42,10 @@ search:
   # Arrival time tolerance in hours (how close arrivals should be)
   arrival_tolerance_hours: 6
   
-  # Maximum flight duration in hours (e.g., 5 = only destinations reachable within 5 hours)
-  # Set to 0 or empty to disable duration filtering
-  max_flight_duration_hours: 0  # 0 = no limit, or set to e.g., 5 for 5-hour max
+  # Maximum flight duration in hours for each person (e.g., 5 = only destinations reachable within 5 hours)
+  # Set to 0 or empty to disable duration filtering for that person
+  max_flight_duration_hours_person1: 0  # 0 = no limit, or set to e.g., 5 for 5-hour max
+  max_flight_duration_hours_person2: 0  # 0 = no limit, or set to e.g., 5 for 5-hour max
   
   # Use dynamic destination discovery from Amadeus API instead of predefined list
   # true = use Amadeus Flight Inspiration Search API to find destinations dynamically
