@@ -2,7 +2,7 @@
 name = "fladar"
 version = "1.1.0"
 description = "Flight search application for finding meeting destinations for two people"
-authors = ["Igor Olikh <your.email@example.com>"]
+authors = ["Igor Olikh <igor-olikh@users.noreply.github.com>"]
 readme = "README.md"
 license = "GPL-3.0"
 homepage = "https://github.com/igor-olikh/fladar"
