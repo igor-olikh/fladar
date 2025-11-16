@@ -113,4 +113,10 @@ output:
   # Number of top destinations to display in HTML output (default: 3)
   # Set to any positive integer to show more or fewer destinations
   html_top_destinations: 3
+  
+  # Booking link provider for HTML output (default: "google_flights")
+  # Options: "google_flights" or "skyscanner"
+  # - "google_flights": Use Google Flights for booking links (default)
+  # - "skyscanner": Use Skyscanner for booking links
+  booking_link_provider: "google_flights"  # Options: "google_flights", "skyscanner"
 

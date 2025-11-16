@@ -98,6 +98,7 @@ def main():
     api_config = config['api']
     output_config = config.get('output', {})
     html_top_destinations = output_config.get('html_top_destinations', 3)
+    booking_link_provider = output_config.get('booking_link_provider', 'google_flights')  # Default to Google Flights
     
     # Delete existing CSV and HTML output files from previous run if they exist
     output_format = output_config.get('format', 'console')
@@ -278,7 +279,7 @@ def main():
     if 'csv' in output_format:
         OutputFormatter.export_csv(results, csv_file)
         # Also export HTML with top N destinations (configurable)
-        OutputFormatter.export_html(results, html_file, top_destinations=html_top_destinations)
+        OutputFormatter.export_html(results, html_file, top_destinations=html_top_destinations, booking_link_provider=booking_link_provider)
     
     print(f"\n✨ Search completed!")
 

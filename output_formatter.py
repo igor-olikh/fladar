@@ -214,6 +214,56 @@ class OutputFormatter:
         return description
     
     @staticmethod
+    def create_google_flights_url(origin: str, destination: str, departure_date_str: str, return_date_str: Optional[str] = None, prefer_direct: bool = True) -> str:
+        """
+        Create a Google Flights URL for a flight search (round-trip or one-way)
+        
+        Args:
+            origin: IATA code of origin airport (e.g., 'TLV')
+            destination: IATA code of destination airport (e.g., 'MAD')
+            departure_date_str: Departure date in ISO format (e.g., '2025-11-20T17:25:00' or '2025-11-20')
+            return_date_str: Return date in ISO format (optional for one-way flights)
+            prefer_direct: Whether to prefer direct flights (default: True)
+        
+        Returns:
+            Google Flights URL string
+        """
+        try:
+            # Check if return_date is provided and valid
+            is_one_way = not return_date_str or return_date_str == 'N/A' or return_date_str == ''
+            
+            # Extract date from ISO format string (handle both with and without time)
+            if 'T' in departure_date_str:
+                dep_date = datetime.fromisoformat(departure_date_str.replace('Z', '+00:00'))
+            else:
+                dep_date = datetime.strptime(departure_date_str, "%Y-%m-%d")
+            
+            # Format dates as YYYY-MM-DD for Google Flights
+            dep_date_str = dep_date.strftime("%Y-%m-%d")
+            
+            # Build URL based on flight type
+            # Google Flights URL format: https://www.google.com/travel/flights?q=Flights%20from%20{origin}%20to%20{destination}%20on%20{date}
+            base_url = "https://www.google.com/travel/flights"
+            
+            if is_one_way:
+                # One-way flight URL format: /flights?q=Flights from ORIGIN to DEST on DATE
+                url = f"{base_url}?q=Flights%20from%20{origin}%20to%20{destination}%20on%20{dep_date_str}"
+            else:
+                # Round-trip flight URL format: /flights?q=Flights from ORIGIN to DEST on DEP_DATE returning RET_DATE
+                if 'T' in return_date_str:
+                    ret_date = datetime.fromisoformat(return_date_str.replace('Z', '+00:00'))
+                else:
+                    ret_date = datetime.strptime(return_date_str, "%Y-%m-%d")
+                
+                ret_date_str = ret_date.strftime("%Y-%m-%d")
+                url = f"{base_url}?q=Flights%20from%20{origin}%20to%20{destination}%20on%20{dep_date_str}%20returning%20{ret_date_str}"
+            
+            return url
+        except Exception as e:
+            logger.debug(f"Error creating Google Flights URL: {e}")
+            return ""
+    
+    @staticmethod
     def create_skyscanner_url(origin: str, destination: str, departure_date_str: str, return_date_str: Optional[str] = None, prefer_direct: bool = True) -> str:
         """
         Create a Skyscanner URL for a flight search (round-trip or one-way)
@@ -279,6 +329,29 @@ class OutputFormatter:
         except Exception as e:
             logger.debug(f"Error creating Skyscanner URL: {e}")
             return ""
+    
+    @staticmethod
+    def create_booking_url(provider: str, origin: str, destination: str, departure_date_str: str, return_date_str: Optional[str] = None, prefer_direct: bool = True) -> str:
+        """
+        Create a booking URL using the specified provider
+        
+        Args:
+            provider: Booking provider ('google_flights' or 'skyscanner')
+            origin: IATA code of origin airport
+            destination: IATA code of destination airport
+            departure_date_str: Departure date in ISO format
+            return_date_str: Return date in ISO format (optional)
+            prefer_direct: Whether to prefer direct flights
+        
+        Returns:
+            Booking URL string
+        """
+        provider_lower = provider.lower() if provider else 'google_flights'
+        
+        if provider_lower == 'skyscanner':
+            return OutputFormatter.create_skyscanner_url(origin, destination, departure_date_str, return_date_str, prefer_direct)
+        else:  # Default to Google Flights
+            return OutputFormatter.create_google_flights_url(origin, destination, departure_date_str, return_date_str, prefer_direct)
     
     @staticmethod
     def format_duration_human(duration_str: str) -> str:
@@ -820,7 +893,7 @@ class OutputFormatter:
             traceback.print_exc()
     
     @staticmethod
-    def export_html(results: List[Dict], filename: str, top_destinations: int = 3):
+    def export_html(results: List[Dict], filename: str, top_destinations: int = 3, booking_link_provider: str = "google_flights"):
         """
         Export top destinations with best flight to beautiful HTML file
         
@@ -862,7 +935,7 @@ class OutputFormatter:
                 return
             
             # Generate HTML
-            html_content = OutputFormatter._generate_html_content(sorted_destinations)
+            html_content = OutputFormatter._generate_html_content(sorted_destinations, booking_link_provider)
             
             # Write to file
             with open(filename, 'w', encoding='utf-8') as f:
@@ -939,7 +1012,7 @@ class OutputFormatter:
         return stop_details
     
     @staticmethod
-    def _generate_html_content(sorted_destinations: List[tuple]) -> str:
+    def _generate_html_content(sorted_destinations: List[tuple], booking_link_provider: str = "google_flights") -> str:
         """Generate HTML content for top destinations"""
         html = """<!DOCTYPE html>
 <html lang="en">
@@ -1168,7 +1241,7 @@ class OutputFormatter:
             
             # Generate HTML for each of the top 3 flights
             for flight_idx, match in enumerate(top_flights, 1):
-                html += OutputFormatter._generate_single_flight_html(match, dest, flight_idx, len(top_flights))
+                html += OutputFormatter._generate_single_flight_html(match, dest, flight_idx, len(top_flights), booking_link_provider)
             
             # Close destination card
             html += """
@@ -1182,7 +1255,7 @@ class OutputFormatter:
         return html
     
     @staticmethod
-    def _generate_single_flight_html(match: Dict, dest: str, flight_idx: int, total_flights: int) -> str:
+    def _generate_single_flight_html(match: Dict, dest: str, flight_idx: int, total_flights: int, booking_link_provider: str = "google_flights") -> str:
         """Generate HTML for a single flight option within a destination"""
         
         p1_info = OutputFormatter.format_flight_info(match['person1_flight'])
@@ -1353,7 +1426,7 @@ class OutputFormatter:
         if not p1_is_one_way:
             p1_prefer_direct = p1_prefer_direct and (p1_info.get('return_stops', 0) == 0)
         
-        # For return flights, swap origin and destination for Skyscanner URL
+        # For return flights, swap origin and destination for booking URL
         # Return flight: from destination (MAD) to person's actual origin (TLV)
         if p1_flight_type == 'return':
             p1_booking_origin = dest  # MAD (destination we're returning from)
@@ -1362,7 +1435,8 @@ class OutputFormatter:
             p1_booking_origin = p1_origin
             p1_booking_destination = dest
         
-        p1_booking_url = OutputFormatter.create_skyscanner_url(
+        p1_booking_url = OutputFormatter.create_booking_url(
+            booking_link_provider,
             p1_booking_origin, p1_booking_destination, p1_outbound_dep_utc, p1_return_dep_utc if p1_return_dep_utc != 'N/A' else None, 
             prefer_direct=p1_prefer_direct
         )
@@ -1373,7 +1447,7 @@ class OutputFormatter:
         if not p2_is_one_way:
             p2_prefer_direct = p2_prefer_direct and (p2_info.get('return_stops', 0) == 0)
         
-        # For return flights, swap origin and destination for Skyscanner URL
+        # For return flights, swap origin and destination for booking URL
         # Return flight: from destination (MAD) to person's actual origin (TLV)
         if p2_flight_type == 'return':
             p2_booking_origin = dest  # MAD (destination we're returning from)
@@ -1382,10 +1456,14 @@ class OutputFormatter:
             p2_booking_origin = p2_origin
             p2_booking_destination = dest
         
-        p2_booking_url = OutputFormatter.create_skyscanner_url(
+        p2_booking_url = OutputFormatter.create_booking_url(
+            booking_link_provider,
             p2_booking_origin, p2_booking_destination, p2_outbound_dep_utc, p2_return_dep_utc if p2_return_dep_utc != 'N/A' else None,
             prefer_direct=p2_prefer_direct
         )
+        
+        # Get provider display name for HTML
+        provider_display = "Google Flights" if booking_link_provider.lower() != "skyscanner" else "Skyscanner"
         
         # Build Person 1 HTML section
         p1_outbound_section = f"""
@@ -1466,7 +1544,7 @@ class OutputFormatter:
                         
                         {f'<div class="airline-info">Airlines: {p1_airlines}</div>' if p1_airlines else ''}
                         
-                        {f'<a href="{p1_booking_url}" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>' if p1_booking_url else ''}
+                        {f'<a href="{p1_booking_url}" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on {provider_display}</a>' if p1_booking_url else ''}
                     </div>
                     
                     <div class="person-section person2">
@@ -1477,7 +1555,7 @@ class OutputFormatter:
                         
                         {f'<div class="airline-info">Airlines: {p2_airlines}</div>' if p2_airlines else ''}
                         
-                        {f'<a href="{p2_booking_url}" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on Skyscanner</a>' if p2_booking_url else ''}
+                        {f'<a href="{p2_booking_url}" target="_blank" rel="noopener noreferrer" class="booking-link">🔗 Book this flight on {provider_display}</a>' if p2_booking_url else ''}
                     </div>
                 </div>
             </div>"""
