@@ -108,12 +108,14 @@ class TestFindAtLeastOneResult(unittest.TestCase):
         mock_amadeus.shopping.flight_offers_search.get.side_effect = flight_search_side_effect
         mock_amadeus.reference_data.locations.airports.get.return_value = Mock(data=[])
         
-        # Create flight search
-        flight_search = FlightSearch("test_key", "test_secret")
+        # Create flight search with caching disabled
+        flight_search = FlightSearch("test_key", "test_secret", use_flight_cache=False)
         flight_search.amadeus = mock_amadeus
         
-        # Override destination suggestions
-        flight_search.get_destination_suggestions = lambda origin, date: destinations
+        # Override destination suggestions - match actual method signature
+        def mock_get_destinations(origin, departure_date, use_dynamic=True, max_duration_hours=0, non_stop=False):
+            return destinations
+        flight_search.get_destination_suggestions = mock_get_destinations
         
         # Create destination finder
         destination_finder = DestinationFinder(flight_search)
@@ -128,7 +130,8 @@ class TestFindAtLeastOneResult(unittest.TestCase):
             max_stops_person1=0,
             max_stops_person2=0,
             arrival_tolerance_hours=3,  # 30 min difference is within 3 hours
-            max_destinations=10
+            max_destinations=10,
+            use_dynamic_destinations=False  # Use mocked destinations instead of predefined list
         )
         
         # Should find at least one result
@@ -162,9 +165,11 @@ class TestFindAtLeastOneResult(unittest.TestCase):
         mock_amadeus.shopping.flight_offers_search.get.side_effect = flight_search_side_effect
         mock_amadeus.reference_data.locations.airports.get.return_value = Mock(data=[])
         
-        flight_search = FlightSearch("test_key", "test_secret")
+        flight_search = FlightSearch("test_key", "test_secret", use_flight_cache=False)
         flight_search.amadeus = mock_amadeus
-        flight_search.get_destination_suggestions = lambda origin, date: ["PAR"]
+        def mock_get_destinations(origin, departure_date, use_dynamic=True, max_duration_hours=0, non_stop=False):
+            return ["PAR"]
+        flight_search.get_destination_suggestions = mock_get_destinations
         
         destination_finder = DestinationFinder(flight_search)
         
@@ -202,9 +207,11 @@ class TestFindAtLeastOneResult(unittest.TestCase):
         mock_amadeus.shopping.flight_offers_search.get.side_effect = flight_search_side_effect
         mock_amadeus.reference_data.locations.airports.get.return_value = Mock(data=[])
         
-        flight_search = FlightSearch("test_key", "test_secret")
+        flight_search = FlightSearch("test_key", "test_secret", use_flight_cache=False)
         flight_search.amadeus = mock_amadeus
-        flight_search.get_destination_suggestions = lambda origin, date: ["PAR"]
+        def mock_get_destinations(origin, departure_date, use_dynamic=True, max_duration_hours=0, non_stop=False):
+            return ["PAR"]
+        flight_search.get_destination_suggestions = mock_get_destinations
         
         destination_finder = DestinationFinder(flight_search)
         
