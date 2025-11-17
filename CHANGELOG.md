@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2025-11-27
+## [1.1.0] - 2025-11-15
 
 ### ✨ Added
 - **Separate Max Stops Configuration**: Added `max_stops_person1` and `max_stops_person2` parameters to allow different stop preferences for each person
@@ -117,7 +117,7 @@ First stable release of Fladar - Flight Meeting Destination Finder.
 
 ## Version History
 
-- **1.1.0** (2025-11-27): Added separate max_stops configuration per person, automatic CSV cleanup
+- **1.1.0** (2025-11-15): Added separate max_stops configuration per person, automatic CSV cleanup
 - **1.0.0** (2025-11-15): Initial stable release
 
 [1.1.0]: https://github.com/igor-olikh/fladar/releases/tag/v1.1.0
