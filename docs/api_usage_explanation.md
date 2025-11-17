@@ -38,9 +38,14 @@ amadeus.shopping.flight_offers_search.get(
     departureDate="2025-11-20",     # Required: Departure date (YYYY-MM-DD)
     returnDate="2025-11-25",        # Required for round-trip: Return date (YYYY-MM-DD)
     adults=1,                        # Required: Number of adult passengers
-    max=250                          # Optional: Maximum number of results (default: 250)
+    max=20                           # Optional: Maximum number of results (default: 20, configurable via max_flight_results)
 )
 ```
+
+**Flight Types**:
+- **Round-trip ("both")**: Both `departureDate` and `returnDate` are required
+- **One-way outbound ("outbound")**: Only `departureDate` is required, `returnDate` is ignored
+- **One-way return ("return")**: Only `returnDate` is required (searches flights from destination to origin)
 
 **Official Documentation**: 
 - [Flight Offers Search API Reference](https://developers.amadeus.com/self-service/category/flights/api-doc/flight-offers-search/api-reference)

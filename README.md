@@ -26,23 +26,27 @@ The application generates a comprehensive HTML report displaying the top meeting
 
 The application helps two people find a meeting destination by:
 1. **Discovering destinations** dynamically using Amadeus API or a predefined list
-2. **Searching flights** from both origins to each destination
-3. **Matching flights** where arrivals are within a configurable tolerance window
+2. **Searching flights** from both origins to each destination (round-trip, one-way outbound, or one-way return)
+3. **Matching flights** where arrivals/departures are within a configurable tolerance window
 4. **Filtering results** by price, stops, duration, and departure times
-5. **Outputting results** in a clear CSV format with all flight details
+5. **Outputting results** in console, CSV, and HTML formats with all flight details
 
 ## ✨ Key Features
 
 - 🔍 **Dynamic Destination Discovery**: Automatically finds destinations using Amadeus Flight Inspiration Search API
-- 🎯 **Smart Matching**: Matches flights where both people arrive within ±3-6 hours (configurable)
-- 💰 **Price Filtering**: Filters by maximum price per person for round-trip flights
+- 🎯 **Smart Matching**: Matches flights where both people arrive/depart within ±3-6 hours (configurable)
+- ✈️ **Flight Types**: Supports round-trip ("both"), one-way outbound ("outbound"), or one-way return ("return") flights
+- 💰 **Price Filtering**: Filters by maximum price per person (round-trip or one-way based on flight type)
 - ⏱️ **Time Constraints**: Separate minimum departure times for outbound and return flights
-- 🚫 **Stops Control**: Configurable maximum stops (default: direct flights only)
-- ⏰ **Duration Filtering**: Optional maximum flight duration limit
+- 🚫 **Stops Control**: Configurable maximum stops per person (default: direct flights only)
+- ⏰ **Duration Filtering**: Optional maximum flight duration limit per person
 - 🗺️ **Nearby Airports**: Search from nearby airports within a configurable radius
+- 🔄 **Return Airport Flexibility**: Return flights can depart from nearby airports of destination
 - 💾 **Caching**: Caches destination and flight data to reduce API calls
-- 📊 **Rich Output**: CSV with local times, airline names, human-readable descriptions
+- ⚡ **API Optimization**: Pre-validates routes and early-exit optimizations to save API calls
+- 📊 **Rich Output**: Console, CSV, and HTML with local times, airline names, human-readable descriptions
 - 🌍 **Auto Timezones**: Automatic timezone detection for all airports
+- 🔗 **Booking Links**: Direct links to Google Flights or Skyscanner for each flight option
 
 ## 🚀 Quick Start
 
@@ -154,15 +158,28 @@ search:
 
 ```yaml
 search:
+  # Flight type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination)
+  flight_type: "both"  # Options: "both", "outbound", "return"
+  
   # Nearby airports search (useful for major cities)
   nearby_airports_radius_km: 200   # Search within 200km radius
   
-  # Flight duration limit
-  max_flight_duration_hours: 6     # Only flights ≤ 6 hours (0 = no limit)
+  # Return flight airport radius (km) - return flights can depart from nearby airports of destination
+  return_airport_radius_km: 0      # 0 = same airport, or set to e.g., 100 for 100 km radius
+  
+  # Flight duration limit (per person)
+  max_flight_duration_hours_person1: 0  # 0 = no limit, or set to e.g., 6 for 6-hour max
+  max_flight_duration_hours_person2: 0  # 0 = no limit, or set to e.g., 6 for 6-hour max
   
   # Destination discovery
   use_dynamic_destinations: true   # Use API to discover destinations
   max_destinations_to_check: 50    # Limit number of destinations to search
+  destinations_to_check: []        # Optional: specific destinations to check (skips discovery if provided)
+  
+  # API optimization
+  pre_validate_routes: true        # Pre-validate routes using cheaper APIs (saves 50-80% of calls)
+  max_flight_results: 20           # Maximum results to request from API (default: 20)
+  early_exit_on_no_flights: true   # Skip Person 2 search if Person 1 has no flights (saves 50% of calls)
   
   # Caching
   destination_cache_expiration_days: 30  # Cache destinations for 30 days
@@ -175,6 +192,14 @@ search:
 # API environment
 api:
   environment: "test"  # "test" or "production"/"live"
+
+# Output settings
+output:
+  format: "console,csv"            # Output formats: "console", "csv", or "console,csv"
+  csv_file: "flight_results.csv"   # CSV output file path
+  html_file: "flight_results.html" # HTML output file path
+  html_top_destinations: 3         # Number of top destinations to display in HTML
+  booking_link_provider: "google_flights"  # Options: "google_flights" or "skyscanner"
 ```
 
 ### Configuration Parameters Explained
@@ -182,21 +207,29 @@ api:
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `outbound_date` | Departure date (YYYY-MM-DD) | Required |
-| `return_date` | Return date (YYYY-MM-DD) | Required |
-| `max_price` | Maximum round-trip price per person (EUR) | Required |
+| `return_date` | Return date (YYYY-MM-DD) | Required for "both" or "return", ignored for "outbound" |
+| `flight_type` | Flight type: "both" (round trip), "outbound" (one-way to destination), or "return" (one-way from destination) | "both" |
+| `max_price` | Maximum price per person (EUR). For "both": round-trip price. For "outbound"/"return": one-way price | Required |
 | `max_stops_person1` | Maximum number of stops for Person 1 (0 = direct only) | 0 |
 | `max_stops_person2` | Maximum number of stops for Person 2 (0 = direct only) | 0 |
 | `arrival_tolerance_hours` | Hours tolerance for arrival matching | 3 |
 | `nearby_airports_radius_km` | Search radius for nearby airports (0 = disabled) | 0 |
-| `max_flight_duration_hours` | Maximum flight duration (0 = no limit) | 0 |
+| `return_airport_radius_km` | Return flight airport radius (km) - return flights can depart from nearby airports of destination | 0 |
+| `max_flight_duration_hours_person1` | Maximum flight duration for Person 1 in hours (0 = no limit) | 0 |
+| `max_flight_duration_hours_person2` | Maximum flight duration for Person 2 in hours (0 = no limit) | 0 |
 | `use_dynamic_destinations` | Use API to discover destinations | true |
 | `max_destinations_to_check` | Limit destinations to search (0 = all) | 50 |
+| `destinations_to_check` | Optional list of specific destinations to check (skips discovery if provided) | [] |
+| `pre_validate_routes` | Pre-validate routes using cheaper APIs before Flight Offers Search | true |
+| `max_flight_results` | Maximum results to request from Flight Offers Search API | 20 |
+| `early_exit_on_no_flights` | Skip Person 2 search if Person 1 has no flights | true |
 | `destination_cache_expiration_days` | Cache expiration for destinations | 30 |
 | `use_flight_cache` | Cache flight results for same day | true |
 | `min_departure_time_outbound` | Minimum departure time from origin (HH:MM) | None |
 | `min_departure_time_return` | Minimum departure time from destination (HH:MM) | None |
-| `environment` | API environment: "test" or "production" | "test" |
+| `environment` | API environment: "test" or "production"/"live" | "test" |
 | `html_top_destinations` | Number of top destinations to display in HTML output | 3 |
+| `booking_link_provider` | Booking link provider: "google_flights" or "skyscanner" | "google_flights" |
 
 ## 📊 Output Format
 
@@ -271,18 +304,26 @@ The application can discover destinations in two ways:
 ### 2. Flight Search
 
 For each destination:
-- Searches flights from both origins
-- Optionally searches from nearby airports (if radius is set)
+- Searches flights from both origins (round-trip, one-way outbound, or one-way return based on `flight_type`)
+- Optionally searches from nearby airports (if `nearby_airports_radius_km` is set)
+- For round-trip flights, optionally allows return flights from nearby airports of destination (if `return_airport_radius_km` is set)
+- Pre-validates routes using cheaper APIs if `pre_validate_routes` is enabled (saves API calls)
 - Filters by stops, duration, and departure times
 - Caches results to avoid redundant API calls
 
 ### 3. Matching Logic
 
 Flights are matched if:
-- Both people have flights to the same destination
-- Arrival times are within the tolerance window (±3-6 hours)
+- Both people have flights to/from the same destination (based on flight type)
+- For round-trip ("both"): Arrival times are within the tolerance window (±3-6 hours)
+- For one-way return ("return"): Departure times are within the tolerance window (±3-6 hours)
 - Prices are within the maximum limit
 - All other filters pass (stops, duration, times)
+
+**Flight Types:**
+- **"both"** (round-trip): Searches for outbound and return flights, matches by arrival times
+- **"outbound"** (one-way to destination): Searches only flights going to destination, matches by arrival times
+- **"return"** (one-way from destination): Searches only flights leaving from destination, matches by departure times
 
 ### 4. Result Processing
 

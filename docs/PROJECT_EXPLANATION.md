@@ -56,14 +56,22 @@ For each potential destination, the application:
 
 1. **Searches flights for Person 1** (e.g., TLV → Destination)
    - Gets all available flights on the specified dates
-   - Filters by: max stops, departure time constraints, price
+   - Flight type determines what to search:
+     - **"both"** (round-trip): Searches outbound and return flights
+     - **"outbound"** (one-way): Searches only flights going to destination
+     - **"return"** (one-way): Searches only flights leaving from destination
+   - Optionally searches from nearby airports (if `nearby_airports_radius_km` is set)
+   - For round-trip flights, optionally allows return flights from nearby airports of destination (if `return_airport_radius_km` is set)
+   - Pre-validates routes using cheaper APIs if enabled (saves API calls)
+   - Filters by: max stops, departure time constraints, price, duration
 
 2. **Searches flights for Person 2** (e.g., ALC → Destination)
-   - Same filtering criteria
+   - Same filtering criteria and flight type
 
 3. **Finds matching pairs**:
-   - Outbound flights that arrive within the tolerance window (e.g., ±3 hours)
-   - Return flights that meet the same criteria
+   - For round-trip ("both") or outbound ("outbound"): Flights that arrive within the tolerance window (e.g., ±3 hours)
+   - For return ("return"): Flights that depart within the tolerance window (e.g., ±3 hours)
+   - Return flights that meet the same criteria (for round-trip)
    - Both flights must be on the same day
 
 ### Step 3: Filtering and Matching
@@ -81,14 +89,26 @@ The application applies multiple filters:
   - `min_departure_time_return`: Don't fly earlier than this time (return)
   - Applies to both Person 1 and Person 2
 
-#### Arrival Time Matching
-- **Arrival Tolerance**: Flights must arrive within ±X hours of each other
-- Example: If Person 1 arrives at 14:00, Person 2 must arrive between 11:00-17:00 (if tolerance is 3 hours)
+#### Arrival/Departure Time Matching
+- **Arrival Tolerance** (for "both" or "outbound" flight types): Flights must arrive within ±X hours of each other
+  - Example: If Person 1 arrives at 14:00, Person 2 must arrive between 11:00-17:00 (if tolerance is 3 hours)
+- **Departure Tolerance** (for "return" flight type): Flights must depart within ±X hours of each other
+  - Example: If Person 1 departs at 14:00, Person 2 must depart between 11:00-17:00 (if tolerance is 3 hours)
 
 #### Stops Filtering
 - Can filter for direct flights only (`max_stops_person1: 0`, `max_stops_person2: 0`)
 - Or allow connections (`max_stops_person1: 1, 2, etc.`, `max_stops_person2: 1, 2, etc.`)
 - Each person can have different stop preferences (e.g., Person 1: direct only, Person 2: up to 2 stops)
+
+#### Duration Filtering
+- Optional maximum flight duration limit per person (`max_flight_duration_hours_person1`, `max_flight_duration_hours_person2`)
+- Set to 0 to disable duration filtering for that person
+- Example: If Person 1 sets `max_flight_duration_hours_person1: 5`, only flights ≤ 5 hours will be considered
+
+#### Return Airport Flexibility
+- For round-trip flights, `return_airport_radius_km` allows return flights to depart from nearby airports of the destination
+- Example: If you fly to Paphos (PFO), you can return from Larnaca (LCA) if within the radius
+- Useful for destinations with multiple nearby airports (e.g., Cyprus: PFO/LCA)
 
 ### Step 4: Output Formatting
 
@@ -109,6 +129,14 @@ Results are formatted with:
      - Person 2 departure/arrival in Alicante local time
      - Destination arrival/departure in destination local time
    - Flight durations, airlines, etc.
+
+3. **HTML Output**: Visual report with:
+   - Top N destinations (configurable via `html_top_destinations`)
+   - Best flight option(s) per destination
+   - Complete flight details with local times
+   - Stop information with layover durations
+   - Direct booking links to Google Flights or Skyscanner
+   - Responsive design for desktop and mobile
 
 ---
 
@@ -236,14 +264,22 @@ origins:
 # Search parameters
 search:
   outbound_date: "2025-11-20"  # When to fly out
-  return_date: "2025-11-25"    # When to return
-  max_price: 400               # Maximum price per person (EUR)
+  return_date: "2025-11-25"    # When to return (required for "both" or "return", ignored for "outbound")
+  flight_type: "both"          # "both" (round-trip), "outbound" (one-way to destination), or "return" (one-way from destination)
+  max_price: 400               # Maximum price per person (EUR) - round-trip for "both", one-way for "outbound"/"return"
   max_stops_person1: 0         # Maximum stops for Person 1 (0 = direct flights only)
   max_stops_person2: 0         # Maximum stops for Person 2 (0 = direct flights only)
-  arrival_tolerance_hours: 6   # How close arrivals should be
+  arrival_tolerance_hours: 6   # How close arrivals/departures should be
   min_departure_time_outbound: "14:00"  # Don't fly earlier than this
   min_departure_time_return: "14:00"    # Don't fly earlier than this
+  return_airport_radius_km: 0  # Return flights can depart from nearby airports (0 = same airport)
+  max_flight_duration_hours_person1: 0  # Maximum flight duration for Person 1 (0 = no limit)
+  max_flight_duration_hours_person2: 0  # Maximum flight duration for Person 2 (0 = no limit)
   use_dynamic_destinations: true  # Use API or predefined list
+  destinations_to_check: []    # Optional: specific destinations to check (skips discovery if provided)
+  pre_validate_routes: true    # Pre-validate routes using cheaper APIs (saves API calls)
+  max_flight_results: 20       # Maximum results to request from API
+  early_exit_on_no_flights: true  # Skip Person 2 search if Person 1 has no flights
 
 # API Configuration
 api:
@@ -253,8 +289,11 @@ api:
 
 # Output settings
 output:
-  format: "console,csv"  # or "console" or "csv"
+  format: "console,csv"  # or "console" or "csv" or "console,csv"
   csv_file: "flight_results.csv"
+  html_file: "flight_results.html"  # HTML output file path
+  html_top_destinations: 3  # Number of top destinations to display in HTML
+  booking_link_provider: "google_flights"  # Options: "google_flights" or "skyscanner"
 ```
 
 ### Running the Application
@@ -372,19 +411,19 @@ poetry run python main.py
 
 ### Current Limitations
 
-1. **Max Flight Duration Filtering**: Parameter exists but not fully implemented
-2. **Limited Destination Data**: Test environment has limited data for some origins
-3. **No Multi-City Support**: Only handles two origins and one destination
-4. **No Date Flexibility**: Requires specific dates (no "flexible dates" search)
+1. **Limited Destination Data**: Test environment has limited data for some origins
+2. **No Multi-City Support**: Only handles two origins and one destination
+3. **No Date Flexibility**: Requires specific dates (no "flexible dates" search)
+4. **No Multi-Person Support**: Only handles two people meeting at one destination
 
 ### Potential Improvements
 
-1. **Implement Duration Filtering**: Filter destinations by actual flight duration
-2. **Add Date Flexibility**: Search across date ranges
-3. **Multi-City Support**: Handle more than two people
-4. **Price Alerts**: Notify when prices drop
-5. **Destination Recommendations**: Suggest destinations based on preferences
-6. **Visual Output**: Generate maps or charts of results
+1. **Add Date Flexibility**: Search across date ranges
+2. **Multi-City Support**: Handle more than two people
+3. **Price Alerts**: Notify when prices drop
+4. **Destination Recommendations**: Suggest destinations based on preferences
+5. **Visual Output**: Generate maps or charts of results
+6. **Multi-Destination Trips**: Support for trips with multiple destinations
 
 ---
 
