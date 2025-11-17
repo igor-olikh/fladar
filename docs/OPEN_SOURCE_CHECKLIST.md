@@ -8,6 +8,7 @@ This document outlines all the steps you need to complete before making Fladar o
 - [x] `config.yaml` is in `.gitignore` (not tracked in git)
 - [x] Only `config.yaml.example` with placeholders is tracked
 - [x] Security checklist exists (`docs/SECURITY_CHECKLIST.md`)
+- [x] SECURITY.md exists for vulnerability reporting
 
 ### ⚠️ ACTION REQUIRED
 
@@ -50,28 +51,30 @@ This document outlines all the steps you need to complete before making Fladar o
 - [x] LICENSE file exists (GPL-3.0)
 - [x] CONTRIBUTING.md exists (`.github/CONTRIBUTING.md`)
 - [x] CHANGELOG.md exists
-- [x] Security checklist exists
+- [x] Security checklist exists (`docs/SECURITY_CHECKLIST.md`)
+- [x] SECURITY.md exists for vulnerability reporting
+- [x] CODE_OF_CONDUCT.md exists
 - [x] Multiple documentation files in `docs/` folder
 - [x] Release notes exist (v1.0.0 and v1.1.0)
 
 ### ⚠️ ACTION REQUIRED
 
-1. **Update `pyproject.toml` author email**
-   - Current: `"Igor Olikh <your.email@example.com>"`
-   - ⚠️ **ACTION**: Replace `your.email@example.com` with your actual email (or remove if you prefer privacy)
-   - **Note**: This email will be public, so use a public email or GitHub noreply email
+1. **Verify `pyproject.toml` author email**
+   - Current: `"Igor Olikh <igor-olikh@users.noreply.github.com>"`
+   - ✅ **Status**: Already using GitHub noreply email (privacy-friendly)
 
-2. **Add CODE_OF_CONDUCT.md** (Recommended)
-   - ⚠️ **ACTION**: Create a Code of Conduct file
-   - GitHub provides a template: https://github.com/github/docs/blob/main/CODE_OF_CONDUCT.md
-   - Or use Contributor Covenant: https://www.contributor-covenant.org/
+2. **Verify CODE_OF_CONDUCT.md**
+   - ✅ **Status**: CODE_OF_CONDUCT.md exists and is properly configured
 
-3. **Review and update README.md**
+3. **Verify SECURITY.md**
+   - ✅ **Status**: SECURITY.md exists for vulnerability reporting
+
+4. **Review and update README.md**
    - ✅ Already comprehensive
    - ⚠️ **ACTION**: Verify all links work (especially GitHub links)
    - ⚠️ **ACTION**: Ensure all examples use placeholders, not real credentials
 
-4. **Add GitHub Topics** (After repository is public)
+5. **Add GitHub Topics** (After repository is public)
    - ⚠️ **ACTION**: Add relevant topics to repository for discoverability
    - Suggested topics: `flight-search`, `amadeus-api`, `travel`, `python`, `flight-finder`, `meeting-destinations`, `travel-planner`
    - See `.github/TOPICS.md` for more suggestions
@@ -122,12 +125,14 @@ This document outlines all the steps you need to complete before making Fladar o
    ```
    - ⚠️ **ACTION**: Run all tests and fix any failures
 
-2. **Add CI/CD** (Recommended)
-   - ⚠️ **ACTION**: Add GitHub Actions workflow for:
-     - Running tests on push/PR
-     - Linting code
-     - Checking for security issues
-   - Example: `.github/workflows/test.yml`
+2. **Verify CI/CD** (Recommended)
+   - ✅ **Status**: GitHub Actions workflow exists (`.github/workflows/test.yml`)
+   - ✅ Tests run on push/PR for main and dev branches
+   - ✅ Tests run on Python 3.11 and 3.12
+   - ⚠️ **OPTIONAL**: Consider adding:
+     - Security scanning (e.g., `github/codeql-action`)
+     - Dependency vulnerability scanning (e.g., `snyk/actions/python`)
+     - Code linting/formatting checks
 
 ---
 
@@ -147,6 +152,18 @@ This document outlines all the steps you need to complete before making Fladar o
 2. **Pin dependency versions** (Optional but recommended for stability)
    - ⚠️ **ACTION**: Consider pinning exact versions or using version ranges
    - Current: Uses `>=` which is fine for flexibility
+   - Note: `poetry.lock` pins exact versions for reproducible builds
+
+3. **Check dependency licenses**
+   - ⚠️ **ACTION**: Verify all dependency licenses are compatible with GPL-3.0
+   - Main dependencies:
+     - `amadeus` - Check license compatibility
+     - `pyyaml` - MIT License (compatible)
+     - `pytz` - MIT License (compatible)
+     - `airportsdata` - Check license
+     - `timezonefinder` - Check license
+   - ⚠️ **ACTION**: Document dependency licenses in README or separate file
+   - ⚠️ **ACTION**: Run license check tool (e.g., `pip-licenses` or `poetry show --tree`)
 
 ---
 
@@ -187,6 +204,65 @@ This document outlines all the steps you need to complete before making Fladar o
    ```bash
    git ls-files | grep -E "\.csv$|\.html$"
    ```
+
+---
+
+## 🔢 Version Management
+
+### ✅ Already Done
+- [x] Version specified in `pyproject.toml` (1.1.0)
+- [x] Version specified in `main.py` (`__version__ = "1.1.0"`)
+- [x] CHANGELOG.md follows Keep a Changelog format
+- [x] Semantic versioning is used
+
+### ⚠️ ACTION REQUIRED
+
+1. **Verify version consistency**
+   ```bash
+   # Check version in pyproject.toml
+   grep "version = " pyproject.toml
+   
+   # Check version in main.py
+   grep "__version__" main.py
+   
+   # Check latest version in CHANGELOG.md
+   head -20 CHANGELOG.md
+   ```
+   - ⚠️ **ACTION**: Ensure all version numbers match
+   - Current: All files show version 1.1.0 ✅
+
+2. **Before each release:**
+   - [ ] Update version in `pyproject.toml`
+   - [ ] Update version in `main.py`
+   - [ ] Update CHANGELOG.md with new version entry
+   - [ ] Ensure all changes are documented in CHANGELOG.md
+   - [ ] Create git tag: `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+   - [ ] Push tag: `git push origin vX.Y.Z`
+
+---
+
+## 🔨 Build Reproducibility
+
+### ✅ Already Done
+- [x] `poetry.lock` exists (locks dependency versions)
+- [x] `requirements.txt` exists (alternative installation method)
+- [x] Build system specified in `pyproject.toml`
+
+### ⚠️ ACTION REQUIRED
+
+1. **Verify reproducible builds**
+   ```bash
+   # Test clean installation
+   rm -rf .venv poetry.lock
+   poetry install
+   poetry run python -c "import flight_search; print('✓ Build successful')"
+   ```
+   - ⚠️ **ACTION**: Verify installation works from scratch
+   - ⚠️ **ACTION**: Test on multiple Python versions (3.11, 3.12)
+
+2. **Document build process**
+   - ✅ README.md includes installation instructions
+   - ⚠️ **OPTIONAL**: Add `BUILD.md` with detailed build instructions
 
 ---
 
@@ -233,19 +309,25 @@ Before making the repository public, complete this final checklist:
 - [ ] Verified all tracked files contain no real credentials
 - [ ] Reviewed `.gitignore` is comprehensive
 - [ ] Tested that `config.yaml` cannot be accidentally committed
+- [ ] SECURITY.md exists and is accessible
+- [ ] Security vulnerability reporting process is documented
 
 ### Documentation
-- [ ] Updated author email in `pyproject.toml`
-- [ ] Created CODE_OF_CONDUCT.md (recommended)
+- [ ] Verified author email in `pyproject.toml` (or confirmed privacy-friendly)
+- [ ] CODE_OF_CONDUCT.md exists
+- [ ] SECURITY.md exists
 - [ ] Verified all README links work
 - [ ] Reviewed all documentation for accuracy
 - [ ] Ensured all examples use placeholders
+- [ ] CHANGELOG.md is up to date
 
 ### Code
 - [ ] All tests pass
 - [ ] Reviewed and addressed TODO/FIXME comments
 - [ ] Code is clean and well-documented
 - [ ] No hardcoded secrets or credentials
+- [ ] CI/CD pipeline passes
+- [ ] Code compiles without errors
 
 ### Repository
 - [ ] Cleaned up untracked files
@@ -253,6 +335,8 @@ Before making the repository public, complete this final checklist:
 - [ ] Verified no log files are tracked
 - [ ] Verified no output files are tracked
 - [ ] Repository structure is clean
+- [ ] Version numbers are consistent across all files
+- [ ] Dependency licenses are verified and documented
 
 ### GitHub
 - [ ] Repository description is set
@@ -260,6 +344,7 @@ Before making the repository public, complete this final checklist:
 - [ ] Issues are enabled
 - [ ] README badges are added (optional)
 - [ ] Branch protection is configured (recommended)
+- [ ] SECURITY.md is accessible (GitHub will show security policy link)
 
 ---
 
@@ -294,7 +379,9 @@ Once all items above are completed:
 
 4. **Post-release tasks**
    - [ ] Add repository topics
-   - [ ] Create a release/tag for current version (v1.1.0)
+   - [ ] Create a GitHub release for current version (v1.1.0)
+   - [ ] Create git tag: `git tag -a v1.1.0 -m "Release v1.1.0"`
+   - [ ] Push tag: `git push origin v1.1.0`
    - [ ] Share on social media/communities (optional)
    - [ ] Monitor issues and pull requests
 
@@ -355,7 +442,7 @@ fi
 
 echo ""
 echo "5. Checking essential files exist..."
-files=("README.md" "LICENSE" ".github/CONTRIBUTING.md" "CHANGELOG.md" "pyproject.toml" ".gitignore")
+files=("README.md" "LICENSE" ".github/CONTRIBUTING.md" "CHANGELOG.md" "pyproject.toml" ".gitignore" "SECURITY.md" "CODE_OF_CONDUCT.md")
 for file in "${files[@]}"; do
     if [ -f "$file" ]; then
         echo "   ✅ $file exists"
@@ -365,6 +452,24 @@ for file in "${files[@]}"; do
 done
 
 echo ""
+echo "6. Checking version consistency..."
+pyproject_version=$(grep "version = " pyproject.toml | sed 's/.*version = "\(.*\)"/\1/')
+main_version=$(grep "__version__" main.py | sed 's/.*__version__ = "\(.*\)"/\1/')
+if [ "$pyproject_version" == "$main_version" ]; then
+    echo "   ✅ Versions match: $pyproject_version"
+else
+    echo "   ❌ Version mismatch: pyproject.toml=$pyproject_version, main.py=$main_version"
+fi
+
+echo ""
+echo "7. Checking for SECURITY.md..."
+if [ -f "SECURITY.md" ]; then
+    echo "   ✅ SECURITY.md exists"
+else
+    echo "   ⚠️  SECURITY.md is missing (recommended)"
+fi
+
+echo ""
 echo "✅ Verification complete!"
 ```
 
@@ -372,6 +477,67 @@ Save this as `verify_opensource.sh`, make it executable (`chmod +x verify_openso
 
 ---
 
-**Last Updated**: 2025-01-XX
-**Version**: 1.0
+## 📦 Release Process
+
+### Pre-Release Steps
+
+1. **Update version numbers**
+   ```bash
+   # Update pyproject.toml
+   # Update main.py __version__
+   # Update CHANGELOG.md with new version entry
+   ```
+
+2. **Run verification script**
+   ```bash
+   ./verify_opensource.sh
+   ```
+
+3. **Run all tests**
+   ```bash
+   poetry run python run_tests.py
+   ```
+
+4. **Check for secrets**
+   ```bash
+   git grep -i "api_key\|api_secret" -- "*.py" "*.yaml" "*.md" | grep -v "YOUR_API_KEY\|YOUR_API_SECRET\|example\|test_key\|test_secret"
+   ```
+
+5. **Update CHANGELOG.md**
+   - Add new version entry
+   - Document all changes since last release
+   - Follow [Keep a Changelog](https://keepachangelog.com/) format
+
+6. **Commit changes**
+   ```bash
+   git add .
+   git commit -m "chore: Prepare release vX.Y.Z"
+   git push origin main
+   ```
+
+### Creating a Release
+
+1. **Create and push tag**
+   ```bash
+   git tag -a vX.Y.Z -m "Release vX.Y.Z"
+   git push origin vX.Y.Z
+   ```
+
+2. **Create GitHub Release**
+   - Go to GitHub repository → Releases → Draft a new release
+   - Select the tag you just created
+   - Use CHANGELOG.md content for release notes
+   - Mark as "Latest release" if this is the newest version
+   - Publish release
+
+3. **Post-release verification**
+   - [ ] Verify release appears on GitHub
+   - [ ] Verify tag is pushed
+   - [ ] Verify release notes are correct
+   - [ ] Test installation from GitHub release (if applicable)
+
+---
+
+**Last Updated**: 2025-11-17
+**Version**: 2.0
 
