@@ -20,6 +20,7 @@ parts/
 sdist/
 var/
 wheels/
+private/
 data/flights_cache/
 *.egg-info/
 .installed.cfg
